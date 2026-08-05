@@ -1,0 +1,103 @@
+@import 'tailwindcss';
+
+/**
+ * Configuração CSS-first do Tailwind 4 (research §14). Não existe
+ * `tailwind.config.js`: os tokens abaixo viram utilitários automaticamente
+ * (`bg-surface`, `text-ink-muted`, `border-status-confident`, …).
+ */
+@theme {
+  --color-surface: oklch(100% 0 0);
+  --color-surface-muted: oklch(97% 0.004 260);
+  --color-surface-sunken: oklch(94.5% 0.006 260);
+  --color-border: oklch(88% 0.008 260);
+  --color-border-strong: oklch(76% 0.012 260);
+
+  --color-ink: oklch(24% 0.015 260);
+  --color-ink-muted: oklch(48% 0.014 260);
+  --color-ink-inverse: oklch(99% 0 0);
+
+  --color-accent: oklch(56% 0.14 155);
+  --color-accent-strong: oklch(47% 0.13 155);
+  --color-accent-soft: oklch(95% 0.03 155);
+
+  --color-danger: oklch(52% 0.19 25);
+  --color-danger-soft: oklch(96% 0.03 25);
+
+  /* Os três status de correspondência (data-model.md → MatchStatus). */
+  --color-status-confident: oklch(50% 0.13 155);
+  --color-status-confident-soft: oklch(95% 0.04 155);
+  --color-status-uncertain: oklch(53% 0.13 75);
+  --color-status-uncertain-soft: oklch(96% 0.05 85);
+  --color-status-not-found: oklch(52% 0.19 25);
+  --color-status-not-found-soft: oklch(96% 0.03 25);
+  --color-status-neutral: oklch(48% 0.014 260);
+  --color-status-neutral-soft: oklch(95% 0.005 260);
+
+  --radius-card: 0.75rem;
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+/**
+ * Recorrências que aparecem em três ou mais lugares viram utilitário nomeado,
+ * nunca uma string copiada entre componentes (research §14).
+ */
+@utility app-card {
+  border-radius: var(--radius-card);
+  border: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+  padding: 1rem;
+}
+
+@utility focus-ring {
+  &:focus-visible {
+    outline: 2px solid var(--color-accent-strong);
+    outline-offset: 2px;
+  }
+}
+
+@utility status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border-radius: 9999px;
+  border-width: 1px;
+  padding-inline: 0.5rem;
+  padding-block: 0.125rem;
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+@utility field-message {
+  margin-top: 0.25rem;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  color: var(--color-ink-muted);
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+  }
+
+  body {
+    margin: 0;
+    background-color: var(--color-surface-muted);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Nenhum contêiner usa largura fixa em pixels — SC-012 depende disso. */
+  img,
+  svg {
+    max-width: 100%;
+    height: auto;
+  }
+
+  :where(a) {
+    color: var(--color-accent-strong);
+  }
+}

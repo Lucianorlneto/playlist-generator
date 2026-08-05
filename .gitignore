@@ -1,0 +1,34 @@
+# Dependências
+node_modules/
+
+# Artefatos de build
+dist/
+dist-ssr/
+*.local
+
+# Testes
+coverage/
+playwright-report/
+test-results/
+blob-report/
+.playwright/
+
+# Ambiente — este projeto NÃO lê credenciais de arquivos de ambiente (FR-001);
+# a entrada existe apenas para impedir que um arquivo desses seja versionado por engano.
+.env
+.env.*
+
+# Editores e sistema operacional
+.DS_Store
+Thumbs.db
+*.swp
+*.tmp
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

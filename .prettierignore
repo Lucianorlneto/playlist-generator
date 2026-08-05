@@ -1,0 +1,14 @@
+node_modules/
+dist/
+coverage/
+playwright-report/
+test-results/
+package-lock.json
+
+# O dataset de referência é escrito com uma entrada por linha de propósito:
+# reformatado, cada faixa vira sete linhas e a lista deixa de ser legível.
+tests/fixtures/reference-50.json
+
+# Documentos de especificação são artefatos autorais: o Prettier reescreve
+# marcadores de tarefa ([X] vira [x]) e reflui tabelas.
+specs/
