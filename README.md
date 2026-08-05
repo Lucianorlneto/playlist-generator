@@ -159,3 +159,4 @@ onde está todo o I/O, isolado atrás de interfaces mockáveis.
 
 Documentação de projeto: [`specs/001-text-to-playlist/`](specs/001-text-to-playlist/).
 # playlist-generator
+# playlist-generator
