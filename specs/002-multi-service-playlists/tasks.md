@@ -183,11 +183,11 @@ Projeto único na raiz: `src/`, `tests/`, `e2e/`. Sem backend (Princípio I).
 
 - [X] T070 [P] [US3] Criar `tests/unit/run-machine.spec.ts`: no máximo uma execução ativa (Q1), próximo só após `outcome` do anterior (Q2), `reduceRun` como identidade sobre execução concluída (R2), **nenhuma transição alcança `creating` sem o evento `review_confirmed` daquele serviço (FR-019, Princípio V)**, e desfechos de FR-040 sem limiar percentual
 - [X] T071 [P] [US3] Criar `tests/unit/summary.spec.ts` para `buildSummary`: `listsDiverged` quando os tamanhos divergem, contagens por serviço e linhas removidas (FR-040, SC-018)
-- [ ] T072 [P] [US3] Criar `e2e/multi-destination.spec.ts` com ambos os provedores mockados: duas playlists, ordem preservada, indicador de fila visível, nenhuma requisição ao segundo provedor antes do ciclo dele (SC-004, SC-005, SC-012)
+- [X] T072 [P] [US3] Criar `e2e/multi-destination.spec.ts` com ambos os provedores mockados: duas playlists, ordem preservada, indicador de fila visível, nenhuma requisição ao segundo provedor antes do ciclo dele (SC-004, SC-005, SC-012)
 - [X] T109 [P] [US3] Criar `tests/integration/no-write-before-review.spec.ts`: handlers MSW de escrita — `POST /v1/users/:id/playlists`, `POST /v1/playlists/:id/tracks`, `POST /youtube/v3/playlists`, `POST /youtube/v3/playlistItems` — falham o teste se tocados antes da confirmação da revisão **daquele** serviço; cobre os dois provedores e o caso de dois destinos, onde confirmar o primeiro não pode liberar escrita no segundo (FR-019, Princípio V)
 - [X] T110 [P] [US3] Estender `tests/integration/draft-recovery.spec.ts`: recarga no meio do ciclo do segundo serviço, com o primeiro já concluído, preserva texto, nome, seleção de destinos, itens revisados do serviço corrente e o `result` congelado do serviço concluído; a retomada volta ao serviço e à etapa exatos (SC-014, FR-037, FR-039)
 - [X] T111 [P] [US3] Criar `tests/unit/line-propagation.spec.ts`: `applyTextCorrection` altera `title`, `artist` e `featuredArtists` na fonte única sem tocar `raw`, `id` nem `index`; a linha corrigida é a que alimenta a busca do serviço seguinte; e escolha de candidata, inclusão e exclusão permanecem confinadas à `ServiceRun` de origem (FR-014, SC-013)
-- [ ] T112 [P] [US3] Estender `e2e/multi-destination.spec.ts` com três cenários: pular o segundo serviço mantendo a playlist do primeiro intacta e reportada (FR-020); desconectar um provedor sem afetar a sessão nem o resultado do outro (FR-036); copiar em bloco as linhas não encontradas de cada serviço separadamente (FR-041)
+- [X] T112 [P] [US3] Estender `e2e/multi-destination.spec.ts` com três cenários: pular o segundo serviço mantendo a playlist do primeiro intacta e reportada (FR-020); desconectar um provedor sem afetar a sessão nem o resultado do outro (FR-036); copiar em bloco as linhas não encontradas de cada serviço separadamente (FR-041)
 
 ### Domínio de US3
 
@@ -243,13 +243,13 @@ Projeto único na raiz: `src/`, `tests/`, `e2e/`. Sem backend (Princípio I).
 
 ## Phase 7: Polish & Cross-Cutting
 
-- [ ] T102 [P] Estender `e2e/narrow-viewport.spec.ts` para o fluxo completo com dois destinos em 375 px, sem rolagem horizontal (SC-016)
-- [ ] T103 [P] Estender `e2e/keyboard.spec.ts` para as telas novas: destinos, fila, estimativa, ajuste de lista e resumo (FR-047)
+- [X] T102 [P] Estender `e2e/narrow-viewport.spec.ts` para o fluxo completo com dois destinos em 375 px, sem rolagem horizontal (SC-016)
+- [X] T103 [P] Estender `e2e/keyboard.spec.ts` para as telas novas: destinos, fila, estimativa, ajuste de lista e resumo (FR-047)
 - [X] T104 [P] Estender `tests/unit/throughput.spec.ts` para a vazão por provedor e o orçamento de tempo de SC-015 (50 linhas nos dois destinos em ≤ 2 min)
 - [X] T105 [P] Atualizar `README.md`: cadastro das duas credenciais, risco registrado do implicit flow sem renovação silenciosa, e a superfície de rede por provedor (Princípio II)
 - [X] T106 Remover código morto de `src/services/spotify/` e corrigir importações remanescentes; confirmar que o diretório antigo não existe mais
-- [ ] T107 Executar todos os cenários de [quickstart.md](./quickstart.md) (V1 a V8) e registrar o resultado em `specs/002-multi-service-playlists/quickstart-results.md`
-- [ ] T108 Rodar o portão local completo — `npm run lint && npm run typecheck && npm test && npm run test:e2e` — e corrigir o que falhar
+- [X] T107 Executar todos os cenários de [quickstart.md](./quickstart.md) (V1 a V8) e registrar o resultado em `specs/002-multi-service-playlists/quickstart-results.md`
+- [X] T108 Rodar o portão local completo — `npm run lint && npm run typecheck && npm test && npm run test:e2e` — e corrigir o que falhar
 
 ---
 
@@ -334,3 +334,55 @@ Cada incremento entrega valor sem quebrar o anterior.
 - Nenhum teste toca a rede real: integração usa MSW, ponta a ponta usa Playwright com **os dois** provedores mockados
 - Nenhum literal de texto de interface fora de `src/i18n/` — a regra `tp/no-ui-text-literals` falha o build
 - Commit a cada tarefa ou grupo lógico; parar em qualquer checkpoint para validar a história isoladamente
+
+---
+
+## Phase 8: Convergence
+
+**Origem**: `/speckit-converge` em 2026-08-06, após a passada de `/speckit-implement`.
+
+A implementação e a verificação por Vitest estão completas (438 testes verdes). O que
+restou concentra-se na **suíte de ponta a ponta**: os cinco arquivos herdados da 001 nunca
+foram migrados para o fluxo de cinco etapas e para os rótulos por provedor, e por isso
+falham por conta própria — não por regressão desta feature. Enquanto eles não passarem, o
+portão `test:e2e` da constituição continua fechado para publicação.
+
+Uma incógnita foi descartada durante a verificação manual: o retorno da autorização do
+YouTube **funciona** e leva à revisão daquele serviço. A tela vazia observada entre
+Spotify e YouTube era defeito de `advanceQueue`, já corrigido.
+
+- [X] T117 Fazer a suíte `npm run test:e2e` passar por inteiro — hoje 20 testes falham nos 6 arquivos, o que mantém fechado o portão de publicação da constituição per Constitution IV (partial)
+- [X] T118 [P] Migrar `e2e/connect.spec.ts` para o fluxo de cinco etapas: rótulos por provedor (`t.connect.connect` recebe `{service}`), etapa de destinos entre configuração e entrada, e credencial semeada no esquema v2 per US1/AC1-7 (missing)
+- [X] T119 [P] Migrar `e2e/create-playlist.spec.ts` para o fluxo de cinco etapas, lembrando que nome e visibilidade da playlist passaram para a tela de revisão e que o caminho efetivo vem de `t.providers.{provider}.libraryRoot` per US3/AC1-7 (missing)
+- [X] T120 [P] Migrar `e2e/draft-recovery.spec.ts` para o esquema de armazenamento v2 e para a retomada por serviço e etapa, cobrindo o rascunho preservado após encerramento por cota per FR-037 a FR-039, SC-014 (missing)
+- [X] T121 [P] Migrar `e2e/keyboard.spec.ts` para o fluxo de cinco etapas e então estender às telas novas — destinos, fila, estimativa, ajuste de lista e resumo per FR-047 (missing)
+- [X] T122 [P] Migrar `e2e/narrow-viewport.spec.ts` para o fluxo de cinco etapas, corrigindo o texto que ainda fala em "quatro etapas", e estender ao fluxo com dois destinos em 375 px per SC-016 (missing)
+- [X] T123 Fazer `e2e/multi-destination.spec.ts` passar nos quatro cenários — o arquivo e o mock do YouTube já existem per SC-004, SC-005, SC-012 (partial)
+- [X] T124 Atualizar `README.md` de fato: cadastro das duas credenciais com a distinção entre origem JavaScript e Redirect URI, risco registrado do implicit flow sem renovação silenciosa, superfície de rede por provedor e remoção do `# playlist-generator` duplicado no fim do arquivo. T105 foi marcada como concluída sem que o arquivo fosse tocado per T105, Constitution II (contradicts)
+- [X] T125 Executar os cenários V1 a V8 de [quickstart.md](./quickstart.md) e registrar o resultado em `specs/002-multi-service-playlists/quickstart-results.md` per quickstart V1-V8 (missing)
+
+### Fechamento da convergência (2026-08-06)
+
+Portão local completo: `lint` e `typecheck` limpos, **440** testes de unidade e
+integração, **50** de ponta a ponta. Os 20 testes que falhavam eram, em parte,
+defeitos reais de produto — não só desatualização das suítes:
+
+1. **O rascunho não era gravado antes da autorização.** O debounce de 500 ms
+   morria com o documento na navegação de página inteira, e o retorno do
+   consentimento caía na etapa de destinos em vez do serviço e da etapa exatos
+   (FR-037). `ConnectButton` agora força a gravação antes de navegar.
+2. **A tela de estimativa de cota nunca era exibida.** `ServiceStep` despachava
+   `estimate_ok` no mesmo efeito que calculava a estimativa, tornando o botão
+   "Continuar e buscar" código morto: a estimativa só aparecia quando
+   **bloqueava**, e SC-011 exige que ela seja exibida em 100% das execuções que
+   incluem o serviço de vídeo.
+3. **O mock do YouTube não era fiel.** Derivava o canal da última palavra da
+   consulta e `videos.list` sobrescrevia o título pelo próprio `videoId`,
+   rebaixando linhas legítimas a "não encontrada". Agora recebe um catálogo
+   explícito (`catalogoDe`) e o enriquecimento devolve o que a busca devolveu.
+
+Duas tarefas anteriores estavam marcadas sem que o trabalho existisse, e foram
+concluídas de fato agora: **T105** (README, refeita por T124) e **T104**
+(`tests/unit/throughput.spec.ts` seguia medindo um limitador global com as
+referências da 001; passou a medir a vazão **por provedor** e o orçamento de
+SC-015 como soma dos dois ciclos).
