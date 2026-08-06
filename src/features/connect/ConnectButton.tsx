@@ -5,6 +5,7 @@ import { toAppError } from '@/services/providers/errors';
 import { providerFor } from '@/services/providers/registry';
 import { computeRedirectUri } from '@/features/credential/redirectUri';
 import { useAppStore } from '@/store';
+import { flushDraftNow } from '@/store/draftPersistence';
 import { Button } from '@/ui/Button';
 
 export interface ConnectButtonProps {
@@ -37,6 +38,10 @@ export function ConnectButton({ provider, navigate }: ConnectButtonProps) {
         credential.clientId,
         computeRedirectUri(),
       );
+      // A autorização é uma navegação de página inteira: o que estiver pendurado
+      // no debounce de 500 ms morre com o documento. Gravar aqui é o que faz o
+      // retorno cair no serviço e na etapa exatos em vez de recomeçar (FR-037).
+      flushDraftNow();
       if (navigate === undefined) window.location.assign(url);
       else navigate(url);
     } catch (error) {

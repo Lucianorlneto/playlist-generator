@@ -82,8 +82,11 @@ export function ServiceStep() {
       // caro, e por isso não há segunda checagem depois da revisão (FR-029).
       const estimate = adapter.estimate(run.lineIds.length, run.lineIds.length, Date.now());
       store.dispatchRun({ type: 'estimate_ready', estimate }, provider);
-      if (!estimate.blocked) store.dispatchRun({ type: 'estimate_ok' }, provider);
-      else store.dispatchRun({ type: 'estimate_blocked' }, provider);
+      // Avançar sozinho aqui deixaria a estimativa invisível — SC-011 exige que
+      // ela seja **exibida** antes de qualquer busca, em 100% das execuções que
+      // incluem o serviço de vídeo. Quem emite `estimate_ok` é o usuário, pelo
+      // botão da tela; `estimate_blocked` apenas registra que não há saída por ali.
+      if (estimate.blocked) store.dispatchRun({ type: 'estimate_blocked' }, provider);
       return;
     }
 
