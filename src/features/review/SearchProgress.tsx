@@ -1,11 +1,17 @@
+import type { ProviderId } from '@/domain/providers';
+import { nameOf } from '@/features/credential/providerText';
 import { format, t } from '@/i18n/pt-BR';
 import { useAppStore } from '@/store';
 import { Button } from '@/ui/Button';
 import { LiveRegion } from '@/ui/LiveRegion';
 import { RateLimitWaiting } from '@/ui/RateLimitWaiting';
 
+export interface SearchProgressProps {
+  provider: ProviderId;
+}
+
 /**
- * Progresso da busca (FR-026, SC-011).
+ * Progresso da busca (`001/FR-026`, SC-011).
  *
  * Barra visual **mais** contagem textual em região viva: a barra sozinha não diz
  * nada a quem usa leitor de tela. O botão de cancelar é um botão real, sempre
@@ -14,9 +20,9 @@ import { RateLimitWaiting } from '@/ui/RateLimitWaiting';
  * A barra é o `<progress>` nativo, e não uma `<div>` com largura calculada. O
  * motivo é a CSP do artefato de produção: `style-src 'self'` também bloqueia
  * atributos `style` inline, então uma largura em porcentagem simplesmente não
- * seria aplicada — falha que não aparece em desenvolvimento (research §8).
+ * seria aplicada — falha que não aparece em desenvolvimento.
  */
-export function SearchProgress() {
+export function SearchProgress({ provider }: SearchProgressProps) {
   const search = useAppStore((state) => state.search);
   const cancelSearch = useAppStore((state) => state.cancelSearch);
 
@@ -56,7 +62,12 @@ export function SearchProgress() {
         )}
       </div>
 
-      {search.running && <RateLimitWaiting onCancel={cancelSearch} />}
+      {search.running && (
+        <RateLimitWaiting
+          onCancel={cancelSearch}
+          label={format(t.review.progressWaiting, { service: nameOf(provider) })}
+        />
+      )}
     </section>
   );
 }

@@ -45,7 +45,7 @@ test.describe('US3 — criar a playlist e ver o resultado', () => {
 
     // Caminho efetivo exato de FR-036.
     await expect(
-      page.getByText(`${t.result.libraryRoot} / ${DISPLAY_NAME} / Clássicos do Rock`),
+      page.getByText(`${t.providers.spotify.libraryRoot} / ${DISPLAY_NAME} / Clássicos do Rock`),
     ).toBeVisible();
 
     // Aviso de pastas em toda criação bem-sucedida (FR-037, SC-007).

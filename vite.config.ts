@@ -12,15 +12,18 @@ import { defineConfig, type Plugin } from 'vite';
  * exigiria `'unsafe-inline'` — por isso a meta é injetada **apenas no build**, para
  * que o afrouxamento de desenvolvimento nunca vaze para produção.
  *
- * Os hosts permitidos são exatamente os três de contracts/spotify-api.md (FR-010).
+ * Os hosts permitidos espelham `PROVIDER_HOSTS` de `src/services/providers/hosts.ts`,
+ * três por provedor (Princípio II). `accounts.google.com` fica **fora** de
+ * `connect-src`: a autorização do YouTube é navegação de página inteira, não
+ * `fetch` — por isso entra apenas em `form-action` (research §14).
  */
 const CONTENT_SECURITY_POLICY = [
   "default-src 'self'",
   "script-src 'self'",
   "style-src 'self'",
-  "img-src 'self' data: https://i.scdn.co",
-  "connect-src 'self' https://accounts.spotify.com https://api.spotify.com",
-  "form-action 'self' https://accounts.spotify.com",
+  "img-src 'self' data: https://i.scdn.co https://i.ytimg.com",
+  "connect-src 'self' https://accounts.spotify.com https://api.spotify.com https://www.googleapis.com",
+  "form-action 'self' https://accounts.spotify.com https://accounts.google.com",
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "object-src 'none'",

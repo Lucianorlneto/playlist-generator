@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
 import { parseLine } from '@/domain/parser';
+import type { ProviderId } from '@/domain/providers';
 import type { MatchItem } from '@/domain/types';
 import { matchLine } from '@/features/input/matchRunner';
 import { t } from '@/i18n/pt-BR';
@@ -11,18 +12,25 @@ import { TextField } from '@/ui/TextField';
 
 export interface LineEditorProps {
   item: MatchItem;
+  provider: ProviderId;
   onDone: () => void;
 }
 
 /**
- * Edição de uma linha com re-busca **apenas daquela linha** (FR-017).
+ * Edição de uma linha com re-busca **apenas daquela linha**.
+ *
+ * A correção de texto vai para a **fonte única** de linhas, não só para este
+ * item: é o que faz a linha corrigida aqui alimentar a busca do serviço seguinte
+ * (FR-014). O que **não** propaga é a escolha de candidata — essa pertence a
+ * esta execução e a mais nenhuma (SC-013).
  *
  * A busca dispara na confirmação — Enter ou saída do campo — nunca a cada tecla.
- * O `id` da linha é preservado na re-análise, e só este item é escrito de volta
- * no store, o que mantém intacto o estado de revisão de todas as demais linhas.
+ * O `id` da linha é preservado na reanálise, e só este item é escrito de volta,
+ * o que mantém intacto o estado de revisão de todas as demais linhas.
  */
-export function LineEditor({ item, onDone }: LineEditorProps) {
+export function LineEditor({ item, provider, onDone }: LineEditorProps) {
   const patchItem = useAppStore((state) => state.patchItem);
+  const correctLine = useAppStore((state) => state.correctLine);
   const [text, setText] = useState(item.line.raw);
   const [running, setRunning] = useState(false);
 
@@ -34,11 +42,15 @@ export function LineEditor({ item, onDone }: LineEditorProps) {
     }
 
     setRunning(true);
-    const line = parseLine(text, item.line.index, item.line.id);
-    patchItem(item.line.id, { line, status: 'searching', error: null });
+    const parsed = parseLine(text, item.line.index, item.line.id);
+
+    // `raw`, `id` e `index` da fonte única não mudam (invariante L2).
+    correctLine(item.line.id, { title: parsed.title, artist: parsed.artist });
+    patchItem(item.line.id, { status: 'searching', error: null });
 
     try {
-      const resolved = await matchLine(line, new AbortController().signal);
+      const line = useAppStore.getState().lines.find((entry) => entry.id === item.line.id) ?? parsed;
+      const resolved = await matchLine(provider, line, new AbortController().signal);
       patchItem(item.line.id, {
         line: resolved.line,
         status: resolved.status,

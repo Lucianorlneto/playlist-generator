@@ -6,7 +6,7 @@ import {
   createState,
   randomBase64Url,
   STATE_BYTES,
-} from '@/services/spotify/pkce';
+} from '@/services/providers/spotify/pkce';
 
 const BASE64URL = /^[A-Za-z0-9_-]+$/;
 

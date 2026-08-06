@@ -3,8 +3,9 @@ import { describe, expect, it } from 'vitest';
 import {
   buildOrderedUris,
   chunk,
-  committedTrackCount,
-  remainingBatches,
+  committedItemCount,
+  partition,
+  remainingItems,
   totalBatches,
 } from '@/domain/batching';
 
@@ -19,7 +20,7 @@ function item(index: number, included: boolean, uri = `spotify:track:t${index}`)
   });
 }
 
-describe('buildOrderedUris (FR-019, FR-032)', () => {
+describe('buildOrderedUris — a ordem é a das linhas', () => {
   it('preserva a ordem das linhas, não a do array', () => {
     const uris = buildOrderedUris([item(2, true), item(0, true), item(1, true)]);
     expect(uris).toEqual(['spotify:track:t0', 'spotify:track:t1', 'spotify:track:t2']);
@@ -47,64 +48,97 @@ describe('buildOrderedUris (FR-019, FR-032)', () => {
   });
 });
 
-describe('chunk', () => {
+describe('partition — o tamanho do lote vem do provedor', () => {
   it('particiona em lotes do tamanho pedido', () => {
-    expect(chunk([1, 2, 3, 4, 5], 2)).toEqual([[1, 2], [3, 4], [5]]);
+    expect(partition(['1', '2', '3', '4', '5'], 2)).toEqual([['1', '2'], ['3', '4'], ['5']]);
   });
 
   it('devolve lista vazia para entrada vazia', () => {
-    expect(chunk([], 100)).toEqual([]);
+    expect(partition([], 100)).toEqual([]);
+    expect(chunk([], 1)).toEqual([]);
   });
 
-  it('particiona 250 URIs em 3 lotes de no máximo 100', () => {
+  /** Spotify: 250 URIs viram 3 requisições. */
+  it('lote 100 particiona 250 URIs em 3 requisições', () => {
     const uris = Array.from({ length: 250 }, (_, index) => `spotify:track:${index}`);
-    const lotes = chunk(uris, 100);
+    const lotes = partition(uris, 100);
 
     expect(lotes).toHaveLength(3);
     expect(lotes.map((lote) => lote.length)).toEqual([100, 100, 50]);
     expect(lotes.flat()).toEqual(uris);
   });
+
+  /** YouTube: um vídeo por requisição — não existe endpoint de lote (research §9). */
+  it('lote 1 produz uma requisição por item', () => {
+    const ids = ['a', 'b', 'c'];
+    const lotes = partition(ids, 1);
+
+    expect(lotes).toHaveLength(3);
+    expect(lotes.every((lote) => lote.length === 1)).toBe(true);
+    expect(lotes.flat()).toEqual(ids);
+  });
 });
 
-describe('remainingBatches — a função que sustenta SC-009', () => {
+describe('remainingItems — a função que sustenta SC-010', () => {
   const uris = Array.from({ length: 250 }, (_, index) => `spotify:track:${index}`);
 
-  it('sem nada confirmado devolve todos os lotes', () => {
-    const lotes = remainingBatches(makeCreation({ orderedUris: uris, committedBatches: 0 }));
-    expect(lotes).toHaveLength(3);
+  it('sem nada confirmado devolve tudo', () => {
+    const lotes = remainingItems(makeCreation({ orderedUris: uris, committedItems: 0 }));
     expect(lotes.flat()).toEqual(uris);
   });
 
-  it('nunca reenvia um lote já confirmado', () => {
-    const lotes = remainingBatches(makeCreation({ orderedUris: uris, committedBatches: 1 }));
+  /** O ganho da contagem em itens: retomada exata no meio de um lote. */
+  it('lote 100: retoma de um índice **arbitrário**, não de fronteira de lote', () => {
+    const progresso = makeCreation({ orderedUris: uris, batchSize: 100, committedItems: 137 });
+    const restantes = remainingItems(progresso).flat();
 
-    expect(lotes).toHaveLength(2);
-    expect(lotes.flat()).toEqual(uris.slice(100));
-    expect(lotes.flat()).not.toContain(uris[0]);
-    expect(lotes.flat()).not.toContain(uris[99]);
+    expect(restantes).toEqual(uris.slice(137));
+    expect(restantes).not.toContain(uris[136]);
+    expect(restantes[0]).toBe(uris[137]);
+  });
+
+  it('lote 1: cada item confirmado avança exatamente um', () => {
+    const ids = ['a', 'b', 'c', 'd'];
+    for (let confirmados = 0; confirmados <= ids.length; confirmados += 1) {
+      const progresso = makeCreation({
+        orderedUris: ids,
+        batchSize: 1,
+        committedItems: confirmados,
+      });
+      const restantes = remainingItems(progresso);
+      expect(restantes).toHaveLength(ids.length - confirmados);
+      expect(restantes.flat()).toEqual(ids.slice(confirmados));
+    }
   });
 
   it('com tudo confirmado não sobra nada', () => {
-    expect(remainingBatches(makeCreation({ orderedUris: uris, committedBatches: 3 }))).toEqual([]);
+    expect(remainingItems(makeCreation({ orderedUris: uris, committedItems: 250 }))).toEqual([]);
+    expect(
+      remainingItems(makeCreation({ orderedUris: uris, batchSize: 1, committedItems: 250 })),
+    ).toEqual([]);
   });
 
-  it('a união do que foi confirmado com o que resta é exatamente a lista original', () => {
-    const progress = makeCreation({ orderedUris: uris, committedBatches: 2 });
-    const enviadas = uris.slice(0, committedTrackCount(progress));
-    const restantes = remainingBatches(progress).flat();
+  /** Sem duplicar e sem faltar, em qualquer batchSize (SC-010). */
+  it('confirmado + restante = lista original, exatamente uma vez cada', () => {
+    for (const batchSize of [1, 7, 100]) {
+      for (const committedItems of [0, 1, 99, 137, 250]) {
+        const progresso = makeCreation({ orderedUris: uris, batchSize, committedItems });
+        const enviadas = uris.slice(0, committedItemCount(progresso));
+        const restantes = remainingItems(progresso).flat();
 
-    expect([...enviadas, ...restantes]).toEqual(uris);
-    expect(new Set([...enviadas, ...restantes]).size).toBe(uris.length);
+        expect([...enviadas, ...restantes]).toEqual(uris);
+        expect(new Set([...enviadas, ...restantes]).size).toBe(uris.length);
+      }
+    }
   });
 
-  it('totalBatches e committedTrackCount acompanham o particionamento', () => {
-    const progress = makeCreation({ orderedUris: uris, committedBatches: 2 });
-    expect(totalBatches(progress)).toBe(3);
-    expect(committedTrackCount(progress)).toBe(200);
+  it('committedItemCount nunca passa do total', () => {
+    expect(committedItemCount(makeCreation({ orderedUris: uris, committedItems: 9_999 }))).toBe(250);
+    expect(committedItemCount(makeCreation({ orderedUris: uris, committedItems: -5 }))).toBe(0);
   });
 
-  it('committedTrackCount nunca passa do total de faixas', () => {
-    const progress = makeCreation({ orderedUris: uris, committedBatches: 99 });
-    expect(committedTrackCount(progress)).toBe(250);
+  it('totalBatches reflete o tamanho do lote do provedor', () => {
+    expect(totalBatches(makeCreation({ orderedUris: uris, batchSize: 100 }))).toBe(3);
+    expect(totalBatches(makeCreation({ orderedUris: uris, batchSize: 1 }))).toBe(250);
   });
 });

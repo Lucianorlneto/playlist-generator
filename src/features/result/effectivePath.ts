@@ -1,13 +1,23 @@
-import { t } from '@/i18n/pt-BR';
-
 /**
- * Caminho efetivo real da playlist (FR-036).
+ * Caminho efetivo real da playlist, **por provedor** (FR-027).
  *
- * A plataforma não expõe pastas para aplicações de terceiros, então este é o
- * único caminho que existe de fato: a raiz da biblioteca do usuário. Exibi-lo
- * antes e depois da criação é o que evita a expectativa de escolher pasta —
- * expectativa que FR-038 proíbe simular.
+ * Nenhuma das duas plataformas expõe pastas a aplicações de terceiros, e cada
+ * uma chama sua raiz de um jeito: "Sua Biblioteca / {conta}" no Spotify, "Você /
+ * Playlists" no YouTube. Exibir o caminho real antes e depois da criação é o que
+ * evita a expectativa de escolher pasta — expectativa que o Princípio de
+ * honestidade proíbe simular.
+ *
+ * O texto vem do adaptador, não daqui: inventar um caminho plausível seria
+ * exatamente o tipo de simulação que a constituição veda.
  */
-export function effectivePath(displayName: string, playlistName: string): string {
-  return `${t.result.libraryRoot} / ${displayName} / ${playlistName.trim()}`;
+
+import type { ProviderId } from '@/domain/providers';
+import { providerFor } from '@/services/providers/registry';
+
+export function effectivePath(
+  provider: ProviderId,
+  displayName: string,
+  playlistName: string,
+): string {
+  return providerFor(provider).effectivePath(displayName, playlistName.trim());
 }

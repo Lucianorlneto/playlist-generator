@@ -5,11 +5,15 @@ import { Button } from '@/ui/Button';
 const formatter = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
 
 /**
- * Avisos sobre o rascunho (FR-044, FR-045).
+ * Avisos sobre o rascunho (FR-037 a FR-039, FR-042).
  *
  * Recuperar trabalho sem avisar seria tão ruim quanto perdê-lo: o usuário
  * precisa saber por que a tela não está vazia e ter como começar do zero.
- * "Descartar rascunho" preserva a credencial — são coisas separadas.
+ * "Descartar rascunho" preserva as credenciais — são coisas separadas, e é a
+ * **única** ação, além do sucesso completo, que apaga trabalho (Princípio V).
+ *
+ * Um rascunho da versão anterior é restaurado como fluxo Spotify de destino
+ * único, sem aviso além deste banner (FR-042).
  */
 export function DraftRecoveryBanner() {
   const notice = useAppStore((state) => state.draftNotice);
@@ -39,6 +43,37 @@ export function DraftRecoveryBanner() {
     );
   }
 
+  if (notice === 'kept_after_quota') {
+    return (
+      <div
+        role="status"
+        className="border-status-uncertain bg-status-uncertain-soft text-ink rounded-lg border p-3 text-sm"
+      >
+        <p>{t.draft.keptAfterQuota}</p>
+        <div className="mt-2 flex flex-wrap gap-2">
+          <Button
+            size="sm"
+            variant="danger"
+            onClick={() => {
+              if (window.confirm(t.draft.discardConfirm)) discardDraft();
+            }}
+          >
+            {t.draft.discard}
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => {
+              setDraftNotice('none');
+            }}
+          >
+            {t.common.close}
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   if (notice === 'discarded') {
     return (
       <div role="status" className="border-border bg-surface rounded-lg border p-3 text-sm">
@@ -58,7 +93,9 @@ export function DraftRecoveryBanner() {
 
   return (
     <div role="status" className="border-accent bg-accent-soft rounded-lg border p-3 text-sm">
-      <p className="text-ink font-semibold">{t.draft.recoveredHeading}</p>
+      <p className="text-ink font-semibold">
+        {notice === 'migrated' ? t.draft.migrated : t.draft.recoveredHeading}
+      </p>
       <p className="text-ink-muted mt-1">
         {format(t.draft.recoveredBody, {
           when: savedAt === null ? '—' : formatter.format(new Date(savedAt)),

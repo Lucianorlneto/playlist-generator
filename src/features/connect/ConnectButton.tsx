@@ -1,33 +1,46 @@
+import type { ProviderId } from '@/domain/providers';
+import { nameOf, textFor } from '@/features/credential/providerText';
+import { format, t } from '@/i18n/pt-BR';
+import { toAppError } from '@/services/providers/errors';
+import { providerFor } from '@/services/providers/registry';
 import { computeRedirectUri } from '@/features/credential/redirectUri';
-import { t } from '@/i18n/pt-BR';
-import { buildAuthorizeUrl } from '@/services/spotify/auth';
-import { toAppError } from '@/services/spotify/errors';
 import { useAppStore } from '@/store';
 import { Button } from '@/ui/Button';
 
 export interface ConnectButtonProps {
+  provider: ProviderId;
   /** Injetável para teste: em produção é a navegação real do navegador. */
   navigate?: (url: string) => void;
 }
 
-export function ConnectButton({ navigate }: ConnectButtonProps) {
-  const credential = useAppStore((state) => state.credential);
-  const connecting = useAppStore((state) => state.connecting);
+/**
+ * Autoriza **um** serviço — o do ciclo que começou (FR-017, SC-005).
+ *
+ * O provedor vem por propriedade em vez de ser lido do estado global: é o que
+ * torna impossível, por construção, pedir consentimento a um serviço que não
+ * está na vez.
+ */
+export function ConnectButton({ provider, navigate }: ConnectButtonProps) {
+  const credential = useAppStore((state) => state.credentials[provider]);
+  const connecting = useAppStore((state) => state.connecting === provider);
   const setConnecting = useAppStore((state) => state.setConnecting);
   const setAuthError = useAppStore((state) => state.setAuthError);
 
+  const service = nameOf(provider);
+  const text = textFor(provider);
+
   async function connect(): Promise<void> {
     if (credential === null) return;
-    setConnecting(true);
+    setConnecting(provider);
     try {
-      const { url } = await buildAuthorizeUrl(credential.clientId, computeRedirectUri());
-      if (navigate === undefined) {
-        window.location.assign(url);
-      } else {
-        navigate(url);
-      }
+      const url = await providerFor(provider).buildAuthorizeUrl(
+        credential.clientId,
+        computeRedirectUri(),
+      );
+      if (navigate === undefined) window.location.assign(url);
+      else navigate(url);
     } catch (error) {
-      setAuthError(toAppError(error));
+      setAuthError(toAppError(error, provider));
     }
   }
 
@@ -38,10 +51,12 @@ export function ConnectButton({ navigate }: ConnectButtonProps) {
         disabled={credential === null || connecting}
         onClick={() => void connect()}
       >
-        {connecting ? t.connect.connecting : t.connect.connect}
+        {format(connecting ? t.connect.connecting : t.connect.connect, { service })}
       </Button>
-      {credential === null && <p className="field-message">{t.connect.needsCredential}</p>}
-      <p className="field-message">{t.connect.scopesNotice}</p>
+      {credential === null && (
+        <p className="field-message">{format(t.connect.needsCredential, { service })}</p>
+      )}
+      <p className="field-message">{text.scopesNotice}</p>
     </div>
   );
 }

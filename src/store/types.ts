@@ -1,23 +1,31 @@
 import type { StateCreator } from 'zustand';
 
+import type { RunEvent } from '@/domain/run/machine';
+import type { ProviderId } from '@/domain/providers';
 import type {
+  ConsolidatedSummary,
   Credential,
   CreationProgress,
   CreationResult,
+  DestinationSelection,
+  ExecutionQueue,
+  InputLine,
   MatchItem,
   PlaylistConfig,
-  Session,
+  ProviderSession,
+  QuotaEstimate,
+  ServiceRun,
   WizardStep,
 } from '@/domain/types';
-import type { AppError } from '@/services/spotify/errors';
+import type { AppError } from '@/services/providers/errors';
 
 // ---------------------------------------------------------------------------
-// Wizard (FR-041)
+// Wizard (FR-043)
 // ---------------------------------------------------------------------------
 
 export interface WizardSlice {
   step: WizardStep;
-  /** Incrementa a cada transição; o cabeçalho usa isso para reposicionar o foco (FR-046). */
+  /** Incrementa a cada transição; o cabeçalho usa isso para reposicionar o foco. */
   stepToken: number;
   goToStep: (step: WizardStep) => void;
   goNext: () => void;
@@ -25,35 +33,51 @@ export interface WizardSlice {
 }
 
 // ---------------------------------------------------------------------------
-// Credencial (US1)
+// Credenciais, uma por provedor (US1, FR-001 a FR-007)
 // ---------------------------------------------------------------------------
 
 export interface CredentialSlice {
-  credential: Credential | null;
-  credentialRevealed: boolean;
-  /** Aviso não bloqueante de formato divergente (data-model.md → Credential). */
-  credentialFormatWarning: boolean;
-  setCredential: (clientId: string) => void;
-  removeCredential: () => void;
-  toggleCredentialReveal: () => void;
+  credentials: Record<ProviderId, Credential | null>;
+  /** Qual credencial está revelada; `null` significa todas mascaradas. */
+  credentialRevealed: ProviderId | null;
+  /** Aviso não bloqueante de formato divergente, por provedor. */
+  credentialFormatWarning: Record<ProviderId, boolean>;
+  setCredential: (provider: ProviderId, clientId: string) => void;
+  removeCredential: (provider: ProviderId) => void;
+  toggleCredentialReveal: (provider: ProviderId) => void;
 }
 
 // ---------------------------------------------------------------------------
-// Sessão (US1, US4)
+// Sessões, uma por provedor (US1, FR-017, FR-035, FR-036)
 // ---------------------------------------------------------------------------
 
 export interface SessionSlice {
-  session: Session | null;
-  connecting: boolean;
+  sessions: Record<ProviderId, ProviderSession | null>;
+  /** Provedor cuja autorização está em curso; `null` quando nenhuma. */
+  connecting: ProviderId | null;
   authError: AppError | null;
-  setSession: (session: Session | null) => void;
-  setConnecting: (connecting: boolean) => void;
+  setSession: (provider: ProviderId, session: ProviderSession | null) => void;
+  setConnecting: (provider: ProviderId | null) => void;
   setAuthError: (error: AppError | null) => void;
-  disconnect: () => void;
+  /** Encerra a sessão de **um** serviço, sem afetar o outro (FR-036). */
+  disconnect: (provider: ProviderId) => void;
 }
 
 // ---------------------------------------------------------------------------
-// Entrada e correspondências (US2)
+// Destinos (US1, FR-008 a FR-013)
+// ---------------------------------------------------------------------------
+
+export interface DestinationsSlice {
+  destinations: DestinationSelection;
+  setDestinations: (selection: DestinationSelection) => void;
+  toggleDestination: (provider: ProviderId) => void;
+  /** Reaplica a regra "selecionado ⊆ com credencial" (FR-006). */
+  reconcileDestinations: () => void;
+  lockDestinations: () => void;
+}
+
+// ---------------------------------------------------------------------------
+// Entrada: fonte única de linhas, compartilhada por todos os serviços (FR-014)
 // ---------------------------------------------------------------------------
 
 export interface SearchProgressState {
@@ -65,13 +89,19 @@ export interface SearchProgressState {
 
 export interface ItemsSlice {
   rawText: string;
-  items: MatchItem[];
+  lines: InputLine[];
   search: SearchProgressState;
   searchAbort: AbortController | null;
 
   setRawText: (rawText: string) => void;
+  setLines: (lines: InputLine[]) => void;
+  /** Correção de texto na fonte única; propaga aos serviços seguintes (FR-014). */
+  correctLine: (lineId: string, patch: { title?: string; artist?: string }) => void;
+
+  /** Itens da execução corrente — atalho de leitura sobre a fila. */
+  items: () => MatchItem[];
   setItems: (items: MatchItem[]) => void;
-  /** Atualização local: nunca altera nenhum outro item (FR-017). */
+  /** Atualização local: nunca altera nenhum outro item. */
   patchItem: (lineId: string, patch: Partial<MatchItem>) => void;
   toggleIncluded: (lineId: string) => void;
   chooseCandidate: (lineId: string, uri: string) => void;
@@ -85,19 +115,42 @@ export interface ItemsSlice {
 }
 
 // ---------------------------------------------------------------------------
-// Configuração e criação da playlist (US3)
+// Fila de execução (US3, FR-015 a FR-021, FR-040)
+// ---------------------------------------------------------------------------
+
+export interface RunSlice {
+  queue: ExecutionQueue;
+
+  buildQueue: () => void;
+  currentRun: () => ServiceRun | null;
+  currentProvider: () => ProviderId | null;
+  runFor: (provider: ProviderId) => ServiceRun | null;
+  summary: () => ConsolidatedSummary;
+
+  startQueue: () => void;
+  /** Aplica um evento do ciclo à execução corrente (ou à indicada). */
+  dispatchRun: (event: RunEvent, provider?: ProviderId) => void;
+  advance: () => void;
+  reduceUpcoming: (provider: ProviderId, lineIds: string[]) => void;
+
+  setEstimate: (provider: ProviderId, estimate: QuotaEstimate | null) => void;
+  setCreation: (provider: ProviderId, creation: CreationProgress | null) => void;
+  setResult: (provider: ProviderId, result: CreationResult | null) => void;
+}
+
+// ---------------------------------------------------------------------------
+// Configuração da playlist, informada uma vez para todos (FR-014)
 // ---------------------------------------------------------------------------
 
 export interface PlaylistConfigSlice {
   playlistConfig: PlaylistConfig;
+  /** Nomes existentes **do serviço corrente**; a checagem é local a ele (FR-022). */
   existingNames: string[] | null;
   nameCheckError: AppError | null;
   nameCheckRunning: boolean;
 
-  creation: CreationProgress | null;
   creating: boolean;
   creationError: AppError | null;
-  result: CreationResult | null;
 
   setPlaylistName: (name: string) => void;
   setPlaylistDescription: (description: string) => void;
@@ -107,17 +160,22 @@ export interface PlaylistConfigSlice {
   setNameCheckError: (error: AppError | null) => void;
   setNameCheckRunning: (running: boolean) => void;
 
-  setCreation: (creation: CreationProgress | null) => void;
   setCreating: (creating: boolean) => void;
   setCreationError: (error: AppError | null) => void;
-  setResult: (result: CreationResult | null) => void;
 }
 
 // ---------------------------------------------------------------------------
-// Rascunho (US4)
+// Rascunho
 // ---------------------------------------------------------------------------
 
-export type DraftNotice = 'none' | 'recovered' | 'quota_degraded' | 'quota_failed' | 'discarded';
+export type DraftNotice =
+  | 'none'
+  | 'recovered'
+  | 'migrated'
+  | 'quota_degraded'
+  | 'quota_failed'
+  | 'kept_after_quota'
+  | 'discarded';
 
 export interface DraftSlice {
   draftNotice: DraftNotice;
@@ -130,7 +188,9 @@ export interface DraftSlice {
 export type AppState = WizardSlice &
   CredentialSlice &
   SessionSlice &
+  DestinationsSlice &
   ItemsSlice &
+  RunSlice &
   PlaylistConfigSlice &
   DraftSlice;
 

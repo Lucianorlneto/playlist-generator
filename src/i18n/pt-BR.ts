@@ -1,10 +1,16 @@
 /**
- * Todos os textos da interface (FR-048). Nenhum literal de texto de UI pode
- * existir fora deste módulo — a regra de lint `tp/no-ui-text-literals` falha o
- * build se algum escapar.
+ * Todos os textos da interface (Princípio de idioma). Nenhum literal de texto de
+ * UI pode existir fora deste módulo — a regra de lint `tp/no-ui-text-literals`
+ * falha o build se algum escapar.
  *
- * Não há mecanismo de troca de idioma: múltiplos idiomas estão fora de escopo
- * (research §13). O módulo único existe para revisão e teste dos textos.
+ * Não há mecanismo de troca de idioma: múltiplos idiomas estão fora de escopo.
+ * O módulo único existe para revisão e teste dos textos.
+ *
+ * **Sobre os dois serviços.** Textos comuns interpolam `{service}` e são
+ * resolvidos com o nome do provedor; textos que só fazem sentido em um serviço
+ * vivem sob `providers.{id}`. É a tradução literal da seção "Assimetria entre
+ * provedores" da constituição: a limitação é dita onde ela afeta o que o usuário
+ * pode fazer, não diluída em nota genérica.
  */
 
 type Frozen<T> = T extends (infer U)[]
@@ -23,7 +29,7 @@ function deepFreeze<T>(value: T): Frozen<T> {
   return value as Frozen<T>;
 }
 
-/** Mensagem acionável: causa provável + próximo passo (FR-042). */
+/** Mensagem acionável: causa provável + próximo passo (FR-046). */
 export interface ActionableMessage {
   title: string;
   cause: string;
@@ -33,15 +39,16 @@ export interface ActionableMessage {
 const messages = {
   app: {
     title: 'Importador de Playlist por Texto',
-    subtitle: 'Transforme uma lista de músicas em uma playlist do Spotify.',
+    subtitle: 'Transforme uma lista de músicas em playlists nos serviços que você escolher.',
     skipToContent: 'Ir para o conteúdo',
   },
 
   steps: {
-    credential: 'Credencial',
+    credential: 'Configuração',
+    destinations: 'Destinos',
     input: 'Entrada',
-    review: 'Revisão',
-    result: 'Resultado',
+    service: 'Serviço',
+    summary: 'Resumo',
     progressLabel: 'Etapas do fluxo',
     current: 'Etapa atual',
     completed: 'Etapa concluída',
@@ -67,61 +74,167 @@ const messages = {
     required: 'obrigatório',
     open: 'Abrir',
     of: 'de',
+    skip: 'Pular',
   },
+
+  // -------------------------------------------------------------------------
+  // O que é específico de cada serviço (FR-005, FR-045, Assimetria)
+  // -------------------------------------------------------------------------
+
+  providers: {
+    /** Usado quando ainda não há serviço atribuído à mensagem. */
+    generic: 'o serviço',
+
+    spotify: {
+      name: 'Spotify',
+      credentialHeading: 'Credencial do Spotify',
+      credentialLabel: 'Client ID do Spotify',
+      credentialHint: 'O Client ID aparece na página do seu app no Spotify Developer Dashboard.',
+      placeholder: 'Cole aqui o Client ID do Spotify',
+      formatWarning:
+        'Esse valor não parece um Client ID do Spotify (normalmente 32 caracteres hexadecimais). Você pode salvar mesmo assim — a autorização é a validação real.',
+      howToHeading: 'Como obter o Client ID do Spotify',
+      howToSteps: [
+        'Acesse o Spotify Developer Dashboard e entre com sua conta.',
+        'Crie um app (qualquer nome e descrição servem).',
+        'Copie o Client ID exibido na página do app.',
+        'Em Settings, cadastre o Redirect URI exato mostrado abaixo.',
+        'Se o app estiver em modo de desenvolvimento, adicione sua conta em Users and Access.',
+      ],
+      consoleLinkLabel: 'Abrir o Spotify Developer Dashboard',
+      scopesNotice:
+        'Permissões solicitadas: criar playlists privadas e públicas e ler a lista das suas playlists (para checar nome repetido).',
+      /** Avisos exibidos na configuração deste serviço (FR-045). */
+      setupNotices: [] as readonly string[],
+      /** Raiz da biblioteca — o único "caminho" que a plataforma expõe (FR-027). */
+      libraryRoot: 'Sua Biblioteca',
+      folderNotice:
+        'A plataforma do Spotify não permite que aplicativos de terceiros criem ou escolham pastas de playlist. Sua playlist foi criada na raiz da biblioteca — para movê-la para uma pasta, arraste-a no aplicativo do Spotify.',
+      openPlaylist: 'Abrir no Spotify',
+      /** Avisos exibidos no resultado deste serviço (FR-027, FR-028). */
+      resultNotices: [] as readonly string[],
+    },
+
+    youtube: {
+      name: 'YouTube',
+      credentialHeading: 'Credencial do YouTube',
+      credentialLabel: 'Client ID do YouTube',
+      credentialHint:
+        'O Client ID vem de um cliente OAuth do tipo "Aplicativo da Web", criado no Google Cloud Console.',
+      placeholder: 'Cole aqui o Client ID do YouTube',
+      formatWarning:
+        'Esse valor não parece um Client ID do Google (normalmente termina em .apps.googleusercontent.com). Você pode salvar mesmo assim — a autorização é a validação real.',
+      howToHeading: 'Como obter o Client ID do YouTube',
+      howToSteps: [
+        'Acesse o Google Cloud Console e crie (ou escolha) um projeto.',
+        'Ative a YouTube Data API v3 na biblioteca de APIs do projeto.',
+        'Em Credenciais, crie um ID do cliente OAuth do tipo "Aplicativo da Web".',
+        'Cadastre o endereço abaixo em "Origens JavaScript autorizadas" e em "URIs de redirecionamento autorizados".',
+        'Na tela de consentimento, adicione sua conta como usuário de teste enquanto o app não for verificado.',
+      ],
+      consoleLinkLabel: 'Abrir o Google Cloud Console',
+      scopesNotice:
+        'Permissão solicitada: gerenciar sua conta do YouTube — é o menor escopo que permite listar e criar playlists.',
+      setupNotices: [
+        /**
+         * FR-045: o escopo do YouTube é mais amplo do que o app usa, e não
+         * existe escopo menor que crie playlists. Dizer isso é obrigação.
+         */
+        'O YouTube não oferece uma permissão apenas para playlists. A permissão concedida cobre mais do que este app faz — ele lista suas playlists, cria uma nova e adiciona vídeos a ela, e nada além disso. Você pode revogar o acesso a qualquer momento na sua Conta Google.',
+        /** FR-035: a plataforma não oferece renovação silenciosa (research §1). */
+        'A autorização do YouTube vale cerca de uma hora e não pode ser renovada em silêncio por um app sem servidor. Quando ela vencer, pediremos para autorizar de novo — seu trabalho é preservado integralmente.',
+      ] as readonly string[],
+      /** Raiz que o YouTube expõe (FR-027). */
+      libraryRoot: 'Você / Playlists',
+      folderNotice:
+        'O YouTube não expõe pastas de playlist a aplicativos de terceiros. Sua playlist foi criada na sua lista de playlists — este app não cria nem escolhe pastas.',
+      openPlaylist: 'Abrir no YouTube',
+      resultNotices: [
+        /** FR-028: honestidade sobre limites. Não é playlist do YouTube Music. */
+        'A playlist criada é uma playlist do YouTube, não do YouTube Music. Ela pode aparecer no YouTube Music, mas quem a gerencia é o YouTube — este app não cria playlists do YouTube Music.',
+      ] as readonly string[],
+    },
+  },
+
+  // -------------------------------------------------------------------------
+  // Etapa 1 — Configuração (FR-001 a FR-007)
+  // -------------------------------------------------------------------------
 
   credential: {
-    heading: 'Informe sua credencial do Spotify',
+    heading: 'Informe suas credenciais',
     intro:
-      'O app usa apenas o Client ID de um aplicativo registrado por você. Nenhum Client Secret é solicitado, aceito ou armazenado.',
+      'Cadastre o Client ID de cada serviço que você quer usar. Nenhum deles é obrigatório isoladamente — basta um para continuar. Nenhum Client Secret é solicitado, aceito ou armazenado.',
     fieldLabel: 'Client ID',
-    fieldHint: 'O Client ID aparece na página do seu app no Spotify Developer Dashboard.',
-    placeholder: 'Cole aqui o Client ID',
     save: 'Salvar credencial',
-    saved: 'Credencial salva neste dispositivo.',
+    saved: 'Credencial de {service} salva neste dispositivo.',
     emptyError: 'Informe o Client ID antes de salvar.',
-    formatWarning:
-      'Esse valor não parece um Client ID do Spotify (normalmente 32 caracteres hexadecimais). Você pode salvar mesmo assim — a autorização é a validação real.',
-    reveal: 'Revelar credencial',
-    hide: 'Ocultar credencial',
-    maskedLabel: 'Credencial salva, exibida de forma mascarada',
+    noneSaved: 'Cadastre ao menos um Client ID para continuar.',
+    reveal: 'Revelar credencial de {service}',
+    hide: 'Ocultar credencial de {service}',
+    maskedLabel: 'Credencial de {service} salva, exibida de forma mascarada',
     removeHeading: 'Remover credencial',
-    remove: 'Remover credencial',
-    removeHint: 'Apaga o Client ID deste dispositivo. Não afeta o rascunho de trabalho.',
-    removeConfirm: 'Remover a credencial salva deste dispositivo?',
-    removed: 'Credencial removida deste dispositivo.',
-    howToHeading: 'Como obter o Client ID',
-    howToSteps: [
-      'Acesse o Spotify Developer Dashboard e entre com sua conta.',
-      'Crie um app (qualquer nome e descrição servem).',
-      'Copie o Client ID exibido na página do app.',
-      'Em Settings, cadastre o Redirect URI exato mostrado abaixo.',
-      'Se o app estiver em modo de desenvolvimento, adicione sua conta em Users and Access.',
-    ],
-    dashboardLinkLabel: 'Abrir o Spotify Developer Dashboard',
+    remove: 'Remover credencial de {service}',
+    removeHint:
+      'Apaga o Client ID de {service} deste dispositivo. Não afeta o outro serviço nem o rascunho de trabalho.',
+    removeConfirm: 'Remover a credencial de {service} salva neste dispositivo?',
+    removed: 'Credencial de {service} removida deste dispositivo.',
     redirectUriHeading: 'Redirect URI a cadastrar',
     redirectUriHint:
-      'Cadastre exatamente este endereço no Developer Dashboard. A correspondência é exata, incluindo maiúsculas, minúsculas e a barra final.',
+      'Cadastre exatamente este endereço. A correspondência é exata, incluindo maiúsculas, minúsculas e a barra final.',
     redirectUriLocalhostWarning:
-      'A plataforma não aceita http://localhost. Em desenvolvimento use o endereço IPv4 literal 127.0.0.1, como mostrado acima.',
+      'As plataformas não aceitam http://localhost. Em desenvolvimento use o endereço IPv4 literal 127.0.0.1, como mostrado acima.',
     copyRedirectUri: 'Copiar Redirect URI',
+    javascriptOriginHeading: 'Origem JavaScript autorizada',
+    javascriptOriginHint:
+      'Cadastre também esta origem em "Origens JavaScript autorizadas". Sem ela a autorização é recusada antes mesmo da tela de consentimento.',
+    copyJavascriptOrigin: 'Copiar origem JavaScript',
   },
 
-  connect: {
-    heading: 'Conectar sua conta',
-    intro: 'Você será levado ao Spotify para autorizar. Nada é criado na sua conta nesta etapa.',
-    connect: 'Conectar ao Spotify',
-    connecting: 'Redirecionando para o Spotify…',
-    disconnect: 'Desconectar',
-    disconnected: 'Sessão encerrada. Sua credencial e seu rascunho foram preservados.',
-    connectedAs: 'Conectado como',
-    accountLabel: 'Conta conectada',
-    scopesNotice:
-      'Permissões solicitadas: criar playlists privadas e públicas e ler a lista das suas playlists (para checar nome repetido).',
-    needsCredential: 'Salve o Client ID antes de conectar.',
-    reconnect: 'Reconectar',
-    reconnectNeeded:
-      'Sua autorização expirou. Reconecte para continuar — seu trabalho foi mantido.',
+  // -------------------------------------------------------------------------
+  // Etapa 2 — Destinos (US1, FR-008 a FR-012)
+  // -------------------------------------------------------------------------
+
+  destinations: {
+    heading: 'Para onde vai a playlist?',
+    intro:
+      'Escolha um ou mais destinos. O texto, o nome e a visibilidade são informados uma vez só e valem para todos.',
+    groupLabel: 'Serviços de destino',
+    selectLabel: 'Criar no {service}',
+    unavailableReason: 'Sem Client ID de {service} cadastrado.',
+    unavailableAction: 'Cadastrar Client ID de {service}',
+    lockedNotice:
+      'A seleção foi travada quando a primeira criação começou. Para mudá-la, descarte o rascunho.',
+    noneSelected: 'Selecione ao menos um destino para continuar.',
+    orderNotice:
+      'Quando você escolhe os dois, executamos um serviço de cada vez, sempre nesta ordem: {first}, depois {second}.',
+    selectedCountOne: '1 destino selecionado',
+    selectedCountOther: '{count} destinos selecionados',
   },
+
+  // -------------------------------------------------------------------------
+  // Conexão por serviço (FR-017, FR-036)
+  // -------------------------------------------------------------------------
+
+  connect: {
+    heading: 'Conectar sua conta do {service}',
+    intro: 'Você será levado ao {service} para autorizar. Nada é criado na sua conta nesta etapa.',
+    connect: 'Conectar ao {service}',
+    connecting: 'Redirecionando para o {service}…',
+    disconnect: 'Desconectar do {service}',
+    disconnected: 'Sessão do {service} encerrada. Sua credencial e seu rascunho foram preservados.',
+    connectedAs: 'Conectado como',
+    accountLabel: 'Conta conectada no {service}',
+    sessionsLabel: 'Contas conectadas',
+    needsCredential: 'Salve o Client ID do {service} antes de conectar.',
+    reconnect: 'Reconectar ao {service}',
+    reconnectNeeded:
+      'Sua autorização do {service} expirou. Reconecte para continuar — seu trabalho foi mantido.',
+    resumeAt: 'Ao reconectar, você volta para: {where}',
+  },
+
+  // -------------------------------------------------------------------------
+  // Etapa 3 — Entrada (compartilhada por todos os serviços)
+  // -------------------------------------------------------------------------
 
   input: {
     heading: 'Cole sua lista',
@@ -136,10 +249,94 @@ const messages = {
       'Sua lista tem {count} linhas. A busca pode levar vários minutos — o progresso fica visível e você pode cancelar a qualquer momento.',
     search: 'Buscar correspondências',
     searching: 'Buscando…',
+    start: 'Começar',
   },
 
+  // -------------------------------------------------------------------------
+  // Redução da lista para um destino posterior (FR-013)
+  // -------------------------------------------------------------------------
+
+  reduction: {
+    heading: 'Ajustar a lista para o {service}',
+    intro:
+      'Você pode remover linhas antes de começar este destino. Não é possível acrescentar nem reordenar — os destinos posteriores sempre recebem um subconjunto do que veio antes.',
+    listLabel: 'Linhas que irão para o {service}',
+    removeLine: 'Remover "{line}"',
+    restoreLine: 'Voltar "{line}" para a lista',
+    remainingOne: '1 linha continua na lista',
+    remainingOther: '{count} linhas continuam na lista',
+    removedCountOne: '1 linha removida deste destino',
+    removedCountOther: '{count} linhas removidas deste destino',
+    emptyMeansSkip:
+      'Sem nenhuma linha, este destino é pulado — nada será criado na sua conta do {service}.',
+    fitHint: 'Cabem {count} linhas no saldo de hoje.',
+    confirm: 'Usar esta lista',
+    notASubset: 'Só é possível remover linhas, nunca acrescentar ou alterar.',
+  },
+
+  // -------------------------------------------------------------------------
+  // Fila de execução (FR-018)
+  // -------------------------------------------------------------------------
+
+  queue: {
+    label: 'Serviço em andamento',
+    position: '{service} — {current} de {total}',
+    phase: {
+      connect: 'Conectando',
+      estimate: 'Conferindo o orçamento',
+      search: 'Buscando',
+      review: 'Revisando',
+      creating: 'Criando',
+      done: 'Concluído',
+      skipped: 'Pulado',
+      failed: 'Falhou',
+      pending: 'Aguardando',
+    },
+    skipService: 'Pular o {service}',
+    skipConfirm:
+      'Pular o {service}? O que já foi criado nos outros serviços continua intacto e será relatado.',
+    endService: 'Encerrar este serviço',
+    skipped: 'O {service} foi pulado. Nada foi criado na sua conta desse serviço.',
+  },
+
+  // -------------------------------------------------------------------------
+  // Estimativa e bloqueio de cota (FR-029, FR-034, US4)
+  // -------------------------------------------------------------------------
+
+  quota: {
+    heading: 'Orçamento diário do {service}',
+    intro:
+      'O {service} limita quanto um app pode consumir por dia. Antes de qualquer busca, mostramos o que esta lista deve custar.',
+    estimateLabel: 'Consumo previsto',
+    availableLabel: 'Saldo estimado de hoje',
+    unit: 'unidades',
+    fractionLabel: 'Isso é cerca de {percent}% do orçamento diário.',
+    premise:
+      'O cálculo parte sempre do orçamento padrão do serviço, menos o que este app já consumiu hoje neste dispositivo. Ampliar a cota junto ao {service} não altera este cálculo.',
+    resetNotice: 'O orçamento é renovado à meia-noite no fuso do provedor.',
+    proceed: 'Continuar e buscar',
+    blockedHeading: 'Esta lista não cabe no saldo de hoje',
+    blockedBody:
+      'A busca consumiria cerca de {estimated} unidades e restam cerca de {available}. Nada foi enviado ao {service}.',
+    blockedFits: 'Cabem {count} linhas no saldo de hoje.',
+    blockedFitsNone: 'Nenhuma linha cabe no saldo de hoje.',
+    reduceList: 'Reduzir a lista',
+    skipDestination: 'Pular o {service}',
+    exhaustedHeading: 'O orçamento do {service} acabou durante a criação',
+    exhaustedBody:
+      'A playlist "{name}" existe na sua conta com {added} de {total} itens. Paramos na hora — repetir a chamada não traria nada de volta.',
+    exhaustedNextStep:
+      'Você pode ampliar o orçamento no projeto que você criou no console do provedor, ou esperar a renovação diária e criar uma nova playlist com outro nome.',
+    incompleteWarning:
+      'A playlist ficou incompleta e **não** foi removida. Se você repetir com o mesmo nome, a checagem de nome duplicado vai bloquear — escolha outro nome.',
+  },
+
+  // -------------------------------------------------------------------------
+  // Revisão (FR-019, FR-023 a FR-025)
+  // -------------------------------------------------------------------------
+
   review: {
-    heading: 'Confira as correspondências',
+    heading: 'Confira as correspondências no {service}',
     intro:
       'Nada é criado na sua conta até você confirmar. Itens confiantes já vêm marcados; incertos precisam da sua confirmação.',
     listLabel: 'Correspondências encontradas',
@@ -152,10 +349,12 @@ const messages = {
     originalLine: 'Linha original',
     noSelection: 'Nenhuma faixa escolhida',
     album: 'Álbum',
+    channel: 'Canal',
     duration: 'Duração',
     coverAlt: 'Capa do álbum {album}',
+    thumbnailAlt: 'Miniatura do vídeo {title}',
     noCover: 'Sem capa',
-    openInSpotify: 'Abrir no Spotify',
+    openExternal: 'Abrir no {service}',
     alternatives: 'Ver alternativas',
     alternativesHeading: 'Outras candidatas para "{line}"',
     alternativesEmpty: 'Nenhuma outra candidata foi encontrada para esta linha.',
@@ -166,6 +365,8 @@ const messages = {
     editLine: 'Editar linha',
     editLineLabel: 'Texto da linha',
     editLineHint: 'Pressione Enter ou saia do campo para buscar de novo apenas esta linha.',
+    editLinePropagates:
+      'Corrigir o texto aqui corrige a linha para os serviços seguintes. A faixa escolhida, não — cada serviço tem a sua.',
     reSearch: 'Buscar esta linha de novo',
     selectedCount: '{selected} de {total} faixas selecionadas',
     summaryConfident: '{count} confiantes',
@@ -173,10 +374,11 @@ const messages = {
     summaryNotFound: '{count} não encontradas',
     progressLabel: 'Progresso da busca',
     progressCounting: '{done} de {total} linhas buscadas',
-    progressWaiting: 'Aguardando o limite de requisições do Spotify…',
+    progressWaiting: 'Aguardando o limite de requisições do {service}…',
     progressDone: 'Busca concluída: {done} de {total} linhas.',
     cancelSearch: 'Cancelar busca',
     searchCanceled: 'Busca cancelada. O que já foi encontrado foi mantido.',
+    confirm: 'Confirmar e criar no {service}',
     status: {
       pending: 'Aguardando',
       searching: 'Buscando',
@@ -194,7 +396,29 @@ const messages = {
       notFound: 'Nenhuma faixa suficientemente parecida. Edite a linha e tente de novo.',
       unparsed: 'Não encontramos um separador nesta linha. Corrija para "Música - Artista".',
       duplicate: 'Repetida na sua lista. Desmarcada para não duplicar na playlist.',
+      versionHint: 'Pode ser outra versão da faixa. Confirme antes de incluir.',
     },
+  },
+
+  /** Indícios de versão diferente (FR-025). Marcador visível na revisão. */
+  versionHints: {
+    badgeLabel: 'Possível outra versão',
+    badgeLabelFor: 'Possível outra versão: {hints}',
+    live: 'ao vivo',
+    cover: 'cover',
+    remix: 'remix',
+    acoustic: 'acústico',
+    karaoke: 'karaokê',
+    instrumental: 'instrumental',
+    sped_up: 'acelerado',
+    slowed: 'desacelerado',
+    nightcore: 'nightcore',
+    mashup: 'mashup',
+    tribute: 'tributo',
+    remaster: 'remasterizado',
+    excerpt: 'trecho',
+    reaction: 'reação',
+    duration_outlier: 'duração destoante',
   },
 
   playlistConfig: {
@@ -203,7 +427,9 @@ const messages = {
     namePlaceholder: 'Ex.: Clássicos do rock',
     nameRequired: 'O nome da playlist é obrigatório.',
     nameOnlySpaces: 'O nome não pode conter apenas espaços.',
-    nameDuplicate: 'Você já tem uma playlist com esse nome. Escolha outro.',
+    nameDuplicate: 'Você já tem uma playlist com esse nome no {service}. Escolha outro.',
+    nameDuplicateScope:
+      'A checagem vale só para este serviço — o nome usado em outro destino não interfere.',
     descriptionLabel: 'Descrição',
     descriptionPlaceholder: 'Opcional',
     visibilityLabel: 'Visibilidade',
@@ -211,79 +437,115 @@ const messages = {
     visibilityPublic: 'Pública',
     visibilityHint: 'Playlists privadas ficam visíveis apenas para você.',
     noTracksSelected: 'Selecione ao menos uma faixa para criar a playlist.',
-    checkingNames: 'Verificando se o nome já existe…',
-    create: 'Criar playlist',
-    creating: 'Criando playlist…',
-    confirmHeading: 'Confirmar criação',
+    checkingNames: 'Verificando se o nome já existe no {service}…',
+    create: 'Criar playlist no {service}',
+    creating: 'Criando playlist no {service}…',
+    confirmHeading: 'Confirmar criação no {service}',
     confirmBody: '{count} faixas serão adicionadas a "{name}", nesta ordem.',
     pathPreview: 'A playlist será criada em:',
   },
 
   result: {
-    heading: 'Playlist criada',
-    /** Raiz da biblioteca — o único "caminho" que a plataforma expõe (FR-036). */
-    libraryRoot: 'Sua Biblioteca',
+    heading: 'Playlist criada no {service}',
     playlistName: 'Nome',
-    added: 'Faixas adicionadas',
-    skipped: 'Faixas ignoradas',
+    added: 'Itens adicionados',
+    skipped: 'Itens ignorados',
     skippedHint: 'Somamos aqui as descartadas, as duplicatas e as não incluídas.',
-    openPlaylist: 'Abrir no Spotify',
+    openPlaylist: 'Abrir a playlist',
     effectivePath: 'Caminho da playlist',
+    accountNotice: 'Criada na conta {account}.',
     folderNoticeHeading: 'Sobre pastas',
-    folderNotice:
-      'A plataforma do Spotify não permite que aplicativos de terceiros criem ou escolham pastas de playlist. Sua playlist foi criada na raiz da biblioteca — para movê-la para uma pasta, arraste-a no aplicativo do Spotify.',
-    failedHeading: 'Linhas sem correspondência',
+    failedHeading: 'Linhas sem correspondência no {service}',
     failedHint: 'Estas linhas não entraram na playlist, na ordem original da sua lista.',
-    copyFailed: 'Copiar linhas que falharam',
+    copyFailed: 'Copiar linhas que falharam no {service}',
     startOver: 'Começar uma nova playlist',
+    continueNext: 'Continuar para o {service}',
+    adjustList: 'Ajustar a lista antes de continuar',
     partialHeading: 'A criação parou no meio',
     partialBody:
-      '{added} de {total} faixas já foram adicionadas a "{name}". Você pode continuar de onde parou — as já adicionadas não serão repetidas.',
-    retryRemaining: 'Adicionar as faixas restantes',
-    retryingRemaining: 'Adicionando as faixas restantes…',
-    creationProgress: 'Lote {current} de {total}',
+      '{added} de {total} itens já foram adicionados a "{name}". Você pode continuar de onde parou — os já adicionados não serão repetidos.',
+    retryRemaining: 'Adicionar os itens restantes',
+    retryingRemaining: 'Adicionando os itens restantes…',
+    creationProgress: '{current} de {total} itens',
+  },
+
+  // -------------------------------------------------------------------------
+  // Etapa 5 — Resumo consolidado (US3, FR-040, FR-041)
+  // -------------------------------------------------------------------------
+
+  summary: {
+    heading: 'Resumo',
+    intro: 'O que aconteceu em cada serviço.',
+    listLabel: 'Resultado por serviço',
+    outcome: {
+      completed: 'Concluído',
+      partial: 'Parcial',
+      failed: 'Falhou',
+      skipped: 'Pulado',
+    },
+    outcomeHint: {
+      completed: 'A playlist foi criada e todos os itens confirmados entraram.',
+      partial: 'A playlist existe na sua conta, mas faltou item confirmado.',
+      failed: 'Nenhuma playlist foi criada neste serviço.',
+      skipped: 'Você encerrou este serviço antes de confirmar a criação.',
+    },
+    accountLabel: 'Conta',
+    linesUsedOne: '1 linha enviada',
+    linesUsedOther: '{count} linhas enviadas',
+    divergedHeading: 'Os destinos receberam listas diferentes',
+    divergedBody:
+      'Você ajustou a lista entre os serviços. Cada resultado acima vale para a lista que aquele serviço recebeu — o relato de um serviço concluído nunca é reescrito.',
+    removedForLater: 'Linhas removidas para os destinos posteriores',
+    copyFailedFor: 'Copiar linhas que falharam no {service}',
+    startOver: 'Começar uma nova playlist',
   },
 
   draft: {
     recoveredHeading: 'Recuperamos um trabalho em andamento',
     recoveredBody: 'Salvo em {when}. Você pode continuar de onde parou ou começar do zero.',
+    resumeAt: 'Você volta para: {where}',
     continue: 'Continuar de onde parei',
     discard: 'Descartar rascunho',
-    discardConfirm: 'Descartar o trabalho salvo? A credencial salva será preservada.',
-    discarded: 'Rascunho descartado. Sua credencial foi preservada.',
+    discardConfirm: 'Descartar o trabalho salvo? As credenciais salvas serão preservadas.',
+    discarded: 'Rascunho descartado. Suas credenciais foram preservadas.',
     quotaWarning:
       'Não foi possível salvar o rascunho neste dispositivo: o armazenamento local está cheio. O trabalho continua na memória, mas será perdido se a página for recarregada.',
     quotaDegraded:
       'O armazenamento local está quase cheio. Salvamos o rascunho sem as candidatas alternativas.',
+    quotaDegradedFinished:
+      'O armazenamento local está cheio. Mantivemos o essencial e descartamos as candidatas alternativas dos serviços já concluídos — o resultado deles continua íntegro.',
     corrupted: 'O rascunho salvo estava ilegível e foi descartado. Começamos do zero.',
+    migrated: 'Recuperamos um trabalho salvo antes dos destinos múltiplos.',
     unknownVersion:
       'O rascunho salvo veio de uma versão diferente do aplicativo e foi descartado por segurança.',
+    keptAfterQuota:
+      'O rascunho foi preservado. Você pode consultar o relato acima e descartá-lo quando quiser — não há retomada depois que o orçamento do dia acaba.',
   },
 
   errors: {
     authInvalidClient: {
       title: 'Não foi possível autorizar com esse Client ID',
-      cause: 'O Client ID está incorreto ou o app não existe mais no Developer Dashboard.',
-      nextStep: 'Volte à etapa de credencial e confira o valor copiado do painel do seu app.',
+      cause: 'O Client ID do {service} está incorreto ou o app não existe mais no painel.',
+      nextStep: 'Volte à configuração e confira o valor copiado do painel do seu app.',
     },
     authRedirectUriMismatch: {
       title: 'O Redirect URI não está cadastrado',
       cause:
-        'O endereço de retorno usado por este app não consta na lista do seu app no Developer Dashboard.',
+        'O endereço de retorno usado por este app não consta na lista do seu app no painel do {service}.',
       nextStep:
-        'Copie o Redirect URI exibido abaixo, cadastre-o em Settings do seu app e tente conectar de novo.',
+        'Copie o Redirect URI exibido na configuração, cadastre-o no painel do seu app e tente conectar de novo.',
     },
     authAccessDenied: {
       title: 'A autorização foi recusada',
       cause:
-        'O consentimento foi negado — ou seu app está em modo de desenvolvimento e esta conta não está na lista de usuários permitidos.',
+        'O consentimento foi negado — ou seu app está em modo de teste e esta conta não está na lista de usuários permitidos do {service}.',
       nextStep:
-        'Tente conectar de novo e aceite o consentimento. Se o app estiver em modo de desenvolvimento, adicione sua conta em Users and Access no Developer Dashboard.',
+        'Tente conectar de novo e aceite o consentimento. Se o app estiver em modo de teste, adicione sua conta como usuário de teste no painel do provedor.',
     },
     authStateMismatch: {
       title: 'O retorno da autorização não pôde ser validado',
       cause:
-        'O código devolvido não corresponde ao pedido feito por esta aba — pode ter vindo de outra janela ou de um link antigo.',
+        'A resposta devolvida não corresponde ao pedido feito por esta aba — pode ter vindo de outra janela ou de um link antigo.',
       nextStep: 'Inicie a conexão novamente a partir desta página.',
     },
     authInvalidGrant: {
@@ -291,65 +553,86 @@ const messages = {
       cause: 'Códigos de autorização valem por pouco tempo e só podem ser usados uma vez.',
       nextStep: 'Clique em conectar para iniciar uma nova autorização.',
     },
+    authNotVerified: {
+      title: 'O app não é verificado pelo provedor',
+      cause:
+        'Seu app do {service} está em modo de teste: a tela de consentimento avisa que ele não é verificado e só aceita contas na lista de testadores do seu projeto.',
+      nextStep:
+        'Adicione a conta que você está usando como usuário de teste no projeto e autorize de novo.',
+    },
     authGeneric: {
       title: 'A autorização falhou',
-      cause: 'O Spotify recusou o pedido de autorização.',
+      cause: 'O {service} recusou o pedido de autorização.',
       nextStep: 'Confira o Client ID e o Redirect URI cadastrados e tente de novo.',
     },
     sessionExpired: {
-      title: 'Sua sessão expirou',
+      title: 'Sua sessão do {service} expirou',
       cause: 'A autorização de acesso venceu e não foi possível renová-la automaticamente.',
       nextStep: 'Reconecte sua conta. Seu texto, o nome da playlist e a revisão foram preservados.',
     },
+    reauthRequired: {
+      title: 'Autorize o {service} de novo para continuar',
+      cause:
+        'A autorização do {service} vale cerca de uma hora e não pode ser renovada em silêncio por um app sem servidor. Isso é limitação da plataforma, não falha.',
+      nextStep:
+        'Clique em reconectar. Nenhuma decisão da revisão foi perdida — você volta exatamente para onde parou.',
+    },
+    quotaExhausted: {
+      title: 'O orçamento diário do {service} acabou',
+      cause:
+        'O {service} recusou a operação por esgotamento da cota diária do seu projeto. Repetir agora não mudaria a resposta.',
+      nextStep:
+        'Encerramos este serviço sem repetir. Amplie o orçamento no projeto que você criou no console do provedor ou espere a renovação diária.',
+    },
     forbidden: {
-      title: 'Permissão insuficiente',
+      title: 'Permissão insuficiente no {service}',
       cause: 'A autorização concedida não cobre esta operação.',
       nextStep: 'Desconecte e conecte de novo, aceitando todas as permissões pedidas.',
     },
     notFound: {
-      title: 'Recurso não encontrado',
+      title: 'Recurso não encontrado no {service}',
       cause: 'O item solicitado não existe mais ou não pertence a esta conta.',
       nextStep: 'Recarregue a página e tente novamente.',
     },
     rateLimited: {
-      title: 'O Spotify limitou as requisições',
+      title: 'O {service} limitou as requisições',
       cause: 'Muitas requisições em pouco tempo. O serviço pediu uma pausa.',
       nextStep: 'Aguardamos automaticamente e continuamos. Você pode cancelar a qualquer momento.',
     },
     serverError: {
-      title: 'O Spotify respondeu com um erro',
-      cause: 'Falha temporária no serviço do Spotify.',
+      title: 'O {service} respondeu com um erro',
+      cause: 'Falha temporária no serviço do {service}.',
       nextStep: 'Tentamos algumas vezes automaticamente. Se persistir, tente de novo em instantes.',
     },
     offline: {
       title: 'Sem conexão com a internet',
-      cause: 'Não foi possível alcançar o Spotify a partir deste dispositivo.',
+      cause: 'Não foi possível alcançar o {service} a partir deste dispositivo.',
       nextStep: 'Verifique sua conexão e repita a operação — seu trabalho foi preservado.',
     },
     network: {
       title: 'Falha de rede',
-      cause: 'A requisição não chegou ao Spotify.',
+      cause: 'A requisição não chegou ao {service}.',
       nextStep: 'Verifique sua conexão e tente novamente.',
     },
     playlistListFailed: {
-      title: 'Não foi possível verificar seus nomes de playlist',
+      title: 'Não foi possível verificar seus nomes de playlist no {service}',
       cause:
         'A consulta às playlists existentes falhou, e sem ela não dá para checar nome repetido.',
       nextStep: 'Tente novamente. A playlist não será criada sem essa verificação.',
     },
     createPlaylistFailed: {
-      title: 'Não foi possível criar a playlist',
-      cause: 'O Spotify recusou a criação da playlist.',
-      nextStep: 'Tente novamente em instantes. Nada foi criado na sua conta.',
+      title: 'Não foi possível criar a playlist no {service}',
+      cause: 'O {service} recusou a criação da playlist.',
+      nextStep: 'Tente novamente em instantes. Nada foi criado nessa conta.',
     },
-    addTracksFailed: {
-      title: 'A adição de faixas foi interrompida',
-      cause: 'Um lote de faixas não pôde ser enviado ao Spotify.',
+    addItemsFailed: {
+      title: 'A adição de itens no {service} foi interrompida',
+      cause: 'Um item não pôde ser enviado ao {service}.',
       nextStep:
-        'Use "Adicionar as faixas restantes": as já adicionadas não serão repetidas e nenhuma segunda playlist será criada.',
+        'Use "Adicionar os itens restantes": os já adicionados não serão repetidos e nenhuma segunda playlist será criada.',
     },
     searchLineFailed: {
-      title: 'Não foi possível buscar esta linha',
+      title: 'Não foi possível buscar esta linha no {service}',
       cause: 'A busca desta linha falhou após algumas tentativas.',
       nextStep:
         'Edite a linha e confirme para buscar de novo. As demais linhas não foram afetadas.',

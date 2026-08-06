@@ -1,17 +1,18 @@
 /**
- * Busca no catálogo (contrato §6, research §5).
+ * Busca no catálogo do Spotify (001/contrato §6, research §5).
  *
- * Busca **por campos** (`track:"…" artist:"…"`), como FR-020 exige. Zero
- * resultados dispara **um** fallback de texto livre — o suficiente para recuperar
- * grafia de artista divergente sem dobrar o custo do caminho feliz.
+ * Busca **por campos** (`track:"…" artist:"…"`). Zero resultados dispara **um**
+ * fallback de texto livre — o suficiente para recuperar grafia de artista
+ * divergente sem dobrar o custo do caminho feliz.
  *
  * `limit=5` alimenta diretamente as cinco candidatas de FR-023, sem requisição
  * extra.
  */
 
 import type { InputLine, TrackCandidateRaw } from '@/domain/types';
+import { apiRequest } from '@/services/providers/http';
 
-import { apiRequest } from './client';
+const PROVIDER = 'spotify' as const;
 
 export const SEARCH_LIMIT = 5;
 
@@ -62,14 +63,14 @@ function freeTextQuery(line: InputLine): string {
 }
 
 async function runSearch(query: string, signal?: AbortSignal): Promise<TrackCandidateRaw[]> {
-  const response = await apiRequest<SearchResponse>('/v1/search', {
+  const response = await apiRequest<SearchResponse>(PROVIDER, '/v1/search', {
     params: {
       q: query,
       type: 'track',
       limit: SEARCH_LIMIT,
       // Sem `market`: `from_token` exigiria o escopo `user-read-private` (403
       // "Insufficient client scope"), e omitir o parâmetro já faz a API usar o
-      // país da conta do próprio token de usuário (research §3).
+      // país da conta do próprio token de usuário.
     },
     ...(signal === undefined ? {} : { signal }),
   });

@@ -4,8 +4,10 @@
  * Três camadas: token bucket de 5 req/s com rajada 10, pool de concorrência 4 e
  * esperas canceláveis. O ponto não negociável é o cancelamento: o `AbortSignal`
  * interrompe **inclusive durante a espera** — de token, de fila ou de
- * `Retry-After`. É disso que dependem FR-026 e SC-011.
+ * `Retry-After`. É disso que dependem `001/FR-026` e SC-011.
  */
+
+import type { ProviderId } from '@/domain/providers';
 
 export const DEFAULT_RATE_PER_SECOND = 5;
 export const DEFAULT_BURST = 10;
@@ -235,5 +237,34 @@ export function createLimiter(options: LimiterOptions = {}): Limiter {
   };
 }
 
-/** Limitador compartilhado pela aplicação. Testes criam o próprio. */
-export const limiter = createLimiter();
+// ---------------------------------------------------------------------------
+// Uma instância por provedor
+// ---------------------------------------------------------------------------
+
+/**
+ * Cada serviço tem seu próprio orçamento de vazão (research §16). Um limitador
+ * global compartilhado faria a busca no segundo destino herdar os tokens gastos
+ * pelo primeiro, atrasando-a sem que nenhum provedor tivesse pedido pausa.
+ *
+ * Spotify: 5 req/s · YouTube: 4 req/s — mais conservador porque `403
+ * rateLimitExceeded` custa um backoff mais caro do que o ganho de velocidade.
+ */
+const LIMITER_OPTIONS: Record<ProviderId, LimiterOptions> = {
+  spotify: { ratePerSecond: 5, burst: 10, concurrency: 4 },
+  youtube: { ratePerSecond: 4, burst: 8, concurrency: 4 },
+};
+
+const limiters = new Map<ProviderId, Limiter>();
+
+export function limiterFor(provider: ProviderId): Limiter {
+  const existing = limiters.get(provider);
+  if (existing !== undefined) return existing;
+  const created = createLimiter(LIMITER_OPTIONS[provider]);
+  limiters.set(provider, created);
+  return created;
+}
+
+/** Apenas para testes: descarta os limitadores acumulados entre casos. */
+export function resetLimiters(): void {
+  limiters.clear();
+}

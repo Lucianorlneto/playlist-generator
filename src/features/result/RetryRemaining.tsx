@@ -1,4 +1,6 @@
-import { committedTrackCount } from '@/domain/batching';
+import { committedItemCount } from '@/domain/batching';
+import type { ProviderId } from '@/domain/providers';
+import { nameOf } from '@/features/credential/providerText';
 import { format, t } from '@/i18n/pt-BR';
 import { useAppStore } from '@/store';
 import { Button } from '@/ui/Button';
@@ -6,22 +8,27 @@ import { RateLimitWaiting } from '@/ui/RateLimitWaiting';
 
 import { retryRemaining } from './creationRunner';
 
+export interface RetryRemainingProps {
+  provider: ProviderId;
+}
+
 /**
- * Retomada de uma criação interrompida (FR-033, SC-009).
+ * Retomada de uma criação interrompida (FR-033, SC-010).
  *
- * O botão repete **apenas os lotes restantes**, reutilizando a playlist já
+ * O botão reenvia **apenas os itens restantes**, reutilizando a playlist já
  * criada. Não existe caminho aqui que crie uma segunda playlist nem que reenvie
- * um lote confirmado.
+ * um item confirmado — a contagem em itens torna isso exato com `batchSize` 100
+ * ou 1.
  */
-export function RetryRemaining() {
-  const creation = useAppStore((state) => state.creation);
+export function RetryRemaining({ provider }: RetryRemainingProps) {
+  const creation = useAppStore((state) => state.queue.runs[provider]?.creation ?? null);
   const creating = useAppStore((state) => state.creating);
   const error = useAppStore((state) => state.creationError);
   const config = useAppStore((state) => state.playlistConfig);
 
   if (creation === null) return null;
 
-  const added = committedTrackCount(creation);
+  const added = committedItemCount(creation);
 
   return (
     <section
@@ -51,7 +58,7 @@ export function RetryRemaining() {
         </Button>
       </div>
 
-      <RateLimitWaiting />
+      <RateLimitWaiting label={format(t.review.progressWaiting, { service: nameOf(provider) })} />
     </section>
   );
 }

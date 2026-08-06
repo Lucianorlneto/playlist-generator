@@ -1,3 +1,5 @@
+import { applyTextCorrection } from '@/domain/run/lines';
+import { currentProvider } from '@/domain/run/queue';
 import type { MatchItem } from '@/domain/types';
 
 import type { ItemsSlice, SliceCreator } from './types';
@@ -5,9 +7,9 @@ import type { ItemsSlice, SliceCreator } from './types';
 /**
  * Aplica uma transformação a um único item, preservando a identidade dos demais.
  *
- * Não é micro-otimização: FR-017 exige que rebuscar ou editar uma linha não
- * altere o estado de revisão de nenhuma outra, e devolver os mesmos objetos é o
- * que torna isso verificável.
+ * Não é micro-otimização: rebuscar ou editar uma linha não pode alterar o estado
+ * de revisão de nenhuma outra, e devolver os mesmos objetos é o que torna isso
+ * verificável.
  */
 function mapItem(
   items: MatchItem[],
@@ -23,67 +25,104 @@ function mapItem(
   return changed ? next : items;
 }
 
+/**
+ * Entrada e revisão.
+ *
+ * Os itens **pertencem à execução corrente**, não ao store: escolha de
+ * candidata, inclusão e exclusão não atravessam serviços (FR-014, invariante
+ * M1). As linhas, ao contrário, são fonte única compartilhada — e uma correção
+ * de texto reescreve a linha para os serviços seguintes.
+ */
 export const createItemsSlice: SliceCreator<ItemsSlice> = (set, get) => ({
   rawText: '',
-  items: [],
+  lines: [],
   search: { running: false, done: 0, total: 0, canceled: false },
   searchAbort: null,
 
   setRawText: (rawText) => set({ rawText }),
 
-  setItems: (items) => set({ items }),
+  setLines: (lines) => set({ lines }),
 
-  patchItem: (lineId, patch) =>
-    set((state) => ({ items: mapItem(state.items, lineId, (item) => ({ ...item, ...patch })) })),
+  correctLine: (lineId, patch) => {
+    set((state) => {
+      const lines = applyTextCorrection(state.lines, lineId, patch);
+      return lines === state.lines ? state : { lines };
+    });
+    // A linha corrigida também aparece no item em revisão do serviço corrente.
+    const corrected = get().lines.find((line) => line.id === lineId);
+    if (corrected === undefined) return;
+    get().patchItem(lineId, { line: corrected });
+  },
 
-  toggleIncluded: (lineId) =>
-    set((state) => ({
-      items: mapItem(state.items, lineId, (item) => {
-        // Incluir exige uma faixa escolhida (invariante de data-model.md).
-        if (!item.included && item.selectedUri === null) return item;
-        return { ...item, included: !item.included };
-      }),
-    })),
+  items: () => {
+    const state = get();
+    const provider = currentProvider(state.queue);
+    if (provider === null) return [];
+    return state.queue.runs[provider]?.items ?? [];
+  },
 
-  chooseCandidate: (lineId, uri) =>
-    set((state) => ({
-      items: mapItem(state.items, lineId, (item) => {
-        const candidate = item.candidates.find((entry) => entry.uri === uri);
-        if (candidate === undefined) return item;
-        return {
-          ...item,
-          selectedUri: uri,
-          // Escolha manual é confirmação visual: o item passa a Confiante (FR-024).
-          status: 'confident',
-          included: item.duplicateOf === null,
-          previousStatus: null,
-        };
-      }),
-    })),
+  setItems: (items) => {
+    get().dispatchRun({ type: 'items_changed', items });
+  },
 
-  discardItem: (lineId) =>
-    set((state) => ({
-      items: mapItem(state.items, lineId, (item) =>
-        item.status === 'discarded'
-          ? item
-          : { ...item, previousStatus: item.status, status: 'discarded', included: false },
-      ),
-    })),
+  patchItem: (lineId, patch) => {
+    const items = get().items();
+    const next = mapItem(items, lineId, (item) => ({ ...item, ...patch }));
+    if (next !== items) get().setItems(next);
+  },
 
-  restoreItem: (lineId) =>
-    set((state) => ({
-      items: mapItem(state.items, lineId, (item) => {
-        if (item.status !== 'discarded') return item;
-        const restored = item.previousStatus ?? 'pending';
-        return {
-          ...item,
-          status: restored,
-          previousStatus: null,
-          included:
-            restored === 'confident' && item.selectedUri !== null && item.duplicateOf === null,
-        };
-      }),
-    })),
+  toggleIncluded: (lineId) => {
+    const items = get().items();
+    const next = mapItem(items, lineId, (item) => {
+      // Incluir exige uma faixa escolhida (invariante de data-model.md).
+      if (!item.included && item.selectedUri === null) return item;
+      return { ...item, included: !item.included };
+    });
+    if (next !== items) get().setItems(next);
+  },
+
+  chooseCandidate: (lineId, uri) => {
+    const items = get().items();
+    const next = mapItem(items, lineId, (item) => {
+      const candidate = item.candidates.find((entry) => entry.uri === uri);
+      if (candidate === undefined) return item;
+      return {
+        ...item,
+        selectedUri: uri,
+        // Escolha manual é confirmação visual: o item passa a Confiante.
+        status: 'confident',
+        included: item.duplicateOf === null,
+        previousStatus: null,
+      };
+    });
+    if (next !== items) get().setItems(next);
+  },
+
+  discardItem: (lineId) => {
+    const items = get().items();
+    const next = mapItem(items, lineId, (item) =>
+      item.status === 'discarded'
+        ? item
+        : { ...item, previousStatus: item.status, status: 'discarded', included: false },
+    );
+    if (next !== items) get().setItems(next);
+  },
+
+  restoreItem: (lineId) => {
+    const items = get().items();
+    const next = mapItem(items, lineId, (item) => {
+      if (item.status !== 'discarded') return item;
+      const restored = item.previousStatus ?? 'pending';
+      return {
+        ...item,
+        status: restored,
+        previousStatus: null,
+        included:
+          restored === 'confident' && item.selectedUri !== null && item.duplicateOf === null,
+      };
+    });
+    if (next !== items) get().setItems(next);
+  },
 
   startSearch: (total, controller) =>
     set({

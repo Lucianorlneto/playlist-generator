@@ -1,0 +1,1805 @@
+{
+  "description": "Lista de referência de SC-006: as mesmas 50 faixas de reference-50.json, agora no catálogo de vídeo. Cada entrada traz até 5 candidatas com as decorações editoriais reais do YouTube (Official Music Video, Live, Cover, Karaoke, Audio), o canal e a duração em ISO-8601, mais o videoId que a correspondência Confiante deve escolher. Os títulos vêm com as entidades HTML que search.list devolve — decodificá-los é parte do que o teste verifica.",
+  "entries": [
+    {
+      "line": "Bohemian Rhapsody - Queen",
+      "expectedVideoId": "vid_bohemian_0a",
+      "candidates": [
+        {
+          "videoId": "vid_bohemian_0a",
+          "title": "Bohemian Rhapsody (Official Music Video)",
+          "channel": "QueenVEVO",
+          "duration": "PT5M54S"
+        },
+        {
+          "videoId": "vid_bohemian_0b",
+          "title": "Bohemian Rhapsody (Live at Wembley) [HD]",
+          "channel": "Queen",
+          "duration": "PT8M34S"
+        },
+        {
+          "videoId": "vid_bohemian_0c",
+          "title": "Bohemian Rhapsody - Cover by Marina Reis",
+          "channel": "Marina Reis",
+          "duration": "PT6M5S"
+        },
+        {
+          "videoId": "vid_bohemian_0d",
+          "title": "Bohemian Rhapsody (Karaoke Version) | Instrumental",
+          "channel": "Karaoke Universe",
+          "duration": "PT5M44S"
+        },
+        {
+          "videoId": "vid_underpre_0e",
+          "title": "Under Pressure (Audio)",
+          "channel": "Queen - Topic",
+          "duration": "PT6M12S"
+        }
+      ]
+    },
+    {
+      "line": "Imagine - John Lennon",
+      "expectedVideoId": "vid_imagine_1a",
+      "candidates": [
+        {
+          "videoId": "vid_imagine_1a",
+          "title": "Imagine (Official Music Video)",
+          "channel": "John LennonVEVO",
+          "duration": "PT3M7S"
+        },
+        {
+          "videoId": "vid_imagine_1b",
+          "title": "Imagine (Live at Wembley) [HD]",
+          "channel": "John Lennon",
+          "duration": "PT4M31S"
+        },
+        {
+          "videoId": "vid_imagine_1c",
+          "title": "Imagine - Cover by Marina Reis",
+          "channel": "Marina Reis",
+          "duration": "PT3M13S"
+        },
+        {
+          "videoId": "vid_imagine_1d",
+          "title": "Imagine (Karaoke Version) | Instrumental",
+          "channel": "Karaoke Universe",
+          "duration": "PT3M1S"
+        },
+        {
+          "videoId": "vid_woman_1e",
+          "title": "Woman (Audio)",
+          "channel": "John Lennon - Topic",
+          "duration": "PT3M16S"
+        }
+      ]
+    },
+    {
+      "line": "Smells Like Teen Spirit - Nirvana",
+      "expectedVideoId": "vid_smellsli_2a",
+      "candidates": [
+        {
+          "videoId": "vid_smellsli_2a",
+          "title": "Smells Like Teen Spirit (Official Music Video)",
+          "channel": "NirvanaVEVO",
+          "duration": "PT5M2S"
+        },
+        {
+          "videoId": "vid_smellsli_2b",
+          "title": "Smells Like Teen Spirit (Live at Wembley) [HD]",
+          "channel": "Nirvana",
+          "duration": "PT7M18S"
+        },
+        {
+          "videoId": "vid_smellsli_2c",
+          "title": "Smells Like Teen Spirit - Cover by Marina Reis",
+          "channel": "Marina Reis",
+          "duration": "PT5M11S"
+        },
+        {
+          "videoId": "vid_smellsli_2d",
+          "title": "Smells Like Teen Spirit (Karaoke Version) | Instrumental",
+          "channel": "Karaoke Universe",
+          "duration": "PT4M53S"
+        },
+        {
+          "videoId": "vid_comeasyo_2e",
+          "title": "Come As You Are (Audio)",
+          "channel": "Nirvana - Topic",
+          "duration": "PT5M17S"
+        }
+      ]
+    },
+    {
+      "line": "Hey Jude - The Beatles",
+      "expectedVideoId": "vid_heyjude_3a",
+      "candidates": [
+        {
+          "videoId": "vid_heyjude_3a",
+          "title": "Hey Jude (Official Music Video)",
+          "channel": "The BeatlesVEVO",
+          "duration": "PT7M11S"
+        },
+        {
+          "videoId": "vid_heyjude_3b",
+          "title": "Hey Jude (Live at Wembley) [HD]",
+          "channel": "The Beatles",
+          "duration": "PT10M25S"
+        },
+        {
+          "videoId": "vid_heyjude_3c",
+          "title": "Hey Jude - Cover by Marina Reis",
+          "channel": "Marina Reis",
+          "duration": "PT7M24S"
+        },
+        {
+          "videoId": "vid_heyjude_3d",
+          "title": "Hey Jude (Karaoke Version) | Instrumental",
+          "channel": "Karaoke Universe",
+          "duration": "PT6M58S"
+        },
+        {
+          "videoId": "vid_letitbe_3e",
+          "title": "Let It Be (Audio)",
+          "channel": "The Beatles - Topic",
+          "duration": "PT7M33S"
+        }
+      ]
+    },
+    {
+      "line": "Billie Jean - Michael Jackson",
+      "expectedVideoId": "vid_billieje_4a",
+      "candidates": [
+        {
+          "videoId": "vid_billieje_4a",
+          "title": "Billie Jean (Official Music Video)",
+          "channel": "Michael JacksonVEVO",
+          "duration": "PT4M54S"
+        },
+        {
+          "videoId": "vid_billieje_4b",
+          "title": "Billie Jean (Live at Wembley) [HD]",
+          "channel": "Michael Jackson",
+          "duration": "PT7M7S"
+        },
+        {
+          "videoId": "vid_billieje_4c",
+          "title": "Billie Jean - Cover by Marina Reis",
+          "channel": "Marina Reis",
+          "duration": "PT5M3S"
+        },
+        {
+          "videoId": "vid_billieje_4d",
+          "title": "Billie Jean (Karaoke Version) | Instrumental",
+          "channel": "Karaoke Universe",
+          "duration": "PT4M45S"
+        },
+        {
+          "videoId": "vid_beatit_4e",
+          "title": "Beat It (Audio)",
+          "channel": "Michael Jackson - Topic",
+          "duration": "PT5M9S"
+        }
+      ]
+    },
+    {
+      "line": "Like a Rolling Stone - Bob Dylan",
+      "expectedVideoId": "vid_likearol_5a",
+      "candidates": [
+        {
+          "videoId": "vid_likearol_5a",
+          "title": "Like a Rolling Stone (Official Music Video)",
+          "channel": "Bob DylanVEVO",
+          "duration": "PT6M10S"
+        },
+        {
+          "videoId": "vid_likearol_5b",
+          "title": "Like a Rolling Stone (Live at Wembley) [HD]",
+          "channel": "Bob Dylan",
+          "duration": "PT8M56S"
+        },
+        {
+          "videoId": "vid_likearol_5c",
+          "title": "Like a Rolling Stone - Cover by Marina Reis",
+          "channel": "Marina Reis",
+          "duration": "PT6M21S"
+        },
+        {
+          "videoId": "vid_likearol_5d",
+          "title": "Like a Rolling Stone (Karaoke Version) | Instrumental",
+          "channel": "Karaoke Universe",
+          "duration": "PT5M59S"
+        },
+        {
+          "videoId": "vid_blowinin_5e",
+          "title": "Blowin&#39; in the Wind (Audio)",
+          "channel": "Bob Dylan - Topic",
+          "duration": "PT6M28S"
+        }
+      ]
+    },
+    {
+      "line": "Hotel California - Eagles",
+      "expectedVideoId": "vid_hotelcal_6a",
+      "candidates": [
+        {
+          "videoId": "vid_hotelcal_6a",
+          "title": "Hotel California (Official Music Video)",
+          "channel": "EaglesVEVO",
+          "duration": "PT6M31S"
+        },
+        {
+          "videoId": "vid_hotelcal_6b",
+          "title": "Hotel California (Live at Wembley) [HD]",
+          "channel": "Eagles",
+          "duration": "PT9M27S"
+        },
+        {
+          "videoId": "vid_hotelcal_6c",
+          "title": "Hotel California - Cover by Marina Reis",
+          "channel": "Marina Reis",
+          "duration": "PT6M43S"
+        },
+        {
+          "videoId": "vid_hotelcal_6d",
+          "title": "Hotel California (Karaoke Version) | Instrumental",
+          "channel": "Karaoke Universe",
+          "duration": "PT6M20S"
+        },
+        {
+          "videoId": "vid_takeitea_6e",
+          "title": "Take It Easy (Audio)",
+          "channel": "Eagles - Topic",
+          "duration": "PT6M51S"
+        }
+      ]
+    },
+    {
+      "line": "Stairway to Heaven - Led Zeppelin",
+      "expectedVideoId": "vid_stairway_7a",
+      "candidates": [
+        {
+          "videoId": "vid_stairway_7a",
+          "title": "Stairway to Heaven (Official Music Video)",
+          "channel": "Led ZeppelinVEVO",
+          "duration": "PT8M3S"
+        },
+        {
+          "videoId": "vid_stairway_7b",
+          "title": "Stairway to Heaven (Live at Wembley) [HD]",
+          "channel": "Led Zeppelin",
+          "duration": "PT11M40S"
+        },
+        {
+          "videoId": "vid_stairway_7c",
+          "title": "Stairway to Heaven - Cover by Marina Reis",
+          "channel": "Marina Reis",
+          "duration": "PT8M17S"
+        },
+        {
+          "videoId": "vid_stairway_7d",
+          "title": "Stairway to Heaven (Karaoke Version) | Instrumental",
+          "channel": "Karaoke Universe",
+          "duration": "PT7M48S"
+        },
+        {
+          "videoId": "vid_wholelot_7e",
+          "title": "Whole Lotta Love (Audio)",
+          "channel": "Led Zeppelin - Topic",
+          "duration": "PT8M27S"
+        }
+      ]
+    },
+    {
+      "line": "Sweet Child O' Mine - Guns N' Roses",
+      "expectedVideoId": "vid_sweetchi_8a",
+      "candidates": [
+        {
+          "videoId": "vid_sweetchi_8a",
+          "title": "Sweet Child O&#39; Mine (Official Music Video)",
+          "channel": "Guns N' RosesVEVO",
+          "duration": "PT5M56S"
+        },
+        {
+          "videoId": "vid_sweetchi_8b",
+          "title": "Sweet Child O&#39; Mine (Live at Wembley) [HD]",
+          "channel": "Guns N' Roses",
+          "duration": "PT8M36S"
+        },
+        {
+          "videoId": "vid_sweetchi_8c",
+          "title": "Sweet Child O&#39; Mine - Cover by Marina Reis",
+          "channel": "Marina Reis",
+          "duration": "PT6M7S"
+        },
+        {
+          "videoId": "vid_sweetchi_8d",
+          "title": "Sweet Child O&#39; Mine (Karaoke Version) | Instrumental",
+          "channel": "Karaoke Universe",
+          "duration": "PT5M45S"
+        },
+        {
+          "videoId": "vid_welcomet_8e",
+          "title": "Welcome to the Jungle (Audio)",
+          "channel": "Guns N' Roses - Topic",
+          "duration": "PT6M14S"
+        }
+      ]
+    },
+    {
+      "line": "Wonderwall - Oasis",
+      "expectedVideoId": "vid_wonderwa_9a",
+      "candidates": [
+        {
+          "videoId": "vid_wonderwa_9a",
+          "title": "Wonderwall (Official Music Video)",
+          "channel": "OasisVEVO",
+          "duration": "PT4M19S"
+        },
+        {
+          "videoId": "vid_wonderwa_9b",
+          "title": "Wonderwall (Live at Wembley) [HD]",
+          "channel": "Oasis",
+          "duration": "PT6M15S"
+        },
+        {
+          "videoId": "vid_wonderwa_9c",
+          "title": "Wonderwall - Cover by Marina Reis",
+          "channel": "Marina Reis",
+          "duration": "PT4M27S"
+        },
+        {
+          "videoId": "vid_wonderwa_9d",
+          "title": "Wonderwall (Karaoke Version) | Instrumental",
+          "channel": "Karaoke Universe",
+          "duration": "PT4M11S"
+        },
+        {
+          "videoId": "vid_dontlook_9e",
+          "title": "Don&#39;t Look Back in Anger (Audio)",
+          "channel": "Oasis - Topic",
+          "duration": "PT4M32S"
+        }
+      ]
+    },
+    {
+      "line": "Losing My Religion - R.E.M.",
+      "expectedVideoId": "vid_losingmy_10a",
+      "candidates": [
+        {
+          "videoId": "vid_losingmy_10a",
+          "title": "Losing My Religion (Official Music Video)",
+          "channel": "R.E.M.VEVO",
+          "duration": "PT4M28S"
+        },
+        {
+          "videoId": "vid_losingmy_10b",
+          "title": "Losing My Religion (Live at Wembley) [HD]",
+          "channel": "R.E.M.",
+          "duration": "PT6M29S"
+        },
+        {
+          "videoId": "vid_losingmy_10c",
+          "title": "Losing My Religion - Cover by Marina Reis",
+          "channel": "Marina Reis",
+          "duration": "PT4M36S"
+        },
+        {
+          "videoId": "vid_losingmy_10d",
+          "title": "Losing My Religion (Karaoke Version) | Instrumental",
+          "channel": "Karaoke Universe",
+          "duration": "PT4M20S"
+        },
+        {
+          "videoId": "vid_everybod_10e",
+          "title": "Everybody Hurts (Audio)",
+          "channel": "R.E.M. - Topic",
+          "duration": "PT4M41S"
+        }
+      ]
+    },
+    {
+      "line": "Creep - Radiohead",
+      "expectedVideoId": "vid_creep_11a",
+      "candidates": [
+        {
+          "videoId": "vid_creep_11a",
+          "title": "Creep (Official Music Video)",
+          "channel": "RadioheadVEVO",
+          "duration": "PT3M59S"
+        },
+        {
+          "videoId": "vid_creep_11b",
+          "title": "Creep (Live at Wembley) [HD]",
+          "channel": "Radiohead",
+          "duration": "PT5M46S"
+        },
+        {
+          "videoId": "vid_creep_11c",
+          "title": "Creep - Cover by Marina Reis",
+          "channel": "Marina Reis",
+          "duration": "PT4M6S"
+        },
+        {
+          "videoId": "vid_creep_11d",
+          "title": "Creep (Karaoke Version) | Instrumental",
+          "channel": "Karaoke Universe",
+          "duration": "PT3M51S"
+        },
+        {
+          "videoId": "vid_karmapol_11e",
+          "title": "Karma Police (Audio)",
+          "channel": "Radiohead - Topic",
+          "duration": "PT4M11S"
+        }
+      ]
+    },
+    {
+      "line": "Rolling in the Deep - Adele",
+      "expectedVideoId": "vid_rollingi_12a",
+      "candidates": [
+        {
+          "videoId": "vid_rollingi_12a",
+          "title": "Rolling in the Deep (Official Music Video)",
+          "channel": "AdeleVEVO",
+          "duration": "PT3M48S"
+        },
+        {
+          "videoId": "vid_rollingi_12b",
+          "title": "Rolling in the Deep (Live at Wembley) [HD]",
+          "channel": "Adele",
+          "duration": "PT5M31S"
+        },
+        {
+          "videoId": "vid_rollingi_12c",
+          "title": "Rolling in the Deep - Cover by Marina Reis",
+          "channel": "Marina Reis",
+          "duration": "PT3M55S"
+        },
+        {
+          "videoId": "vid_rollingi_12d",
+          "title": "Rolling in the Deep (Karaoke Version) | Instrumental",
+          "channel": "Karaoke Universe",
+          "duration": "PT3M41S"
+        },
+        {
+          "videoId": "vid_setfiret_12e",
+          "title": "Set Fire to the Rain (Audio)",
+          "channel": "Adele - Topic",
+          "duration": "PT4M"
+        }
+      ]
+    },
+    {
+      "line": "Shape of You - Ed Sheeran",
+      "expectedVideoId": "vid_shapeofy_13a",
+      "candidates": [
+        {
+          "videoId": "vid_shapeofy_13a",
+          "title": "Shape of You (Official Music Video)",
+          "channel": "Ed SheeranVEVO",
+          "duration": "PT3M54S"
+        },
+        {
+          "videoId": "vid_shapeofy_13b",
+          "title": "Shape of You (Live at Wembley) [HD]",
+          "channel": "Ed Sheeran",
+          "duration": "PT5M39S"
+        },
+        {
+          "videoId": "vid_shapeofy_13c",
+          "title": "Shape of You - Cover by Marina Reis",
+          "channel": "Marina Reis",
+          "duration": "PT4M1S"
+        },
+        {
+          "videoId": "vid_shapeofy_13d",
+          "title": "Shape of You (Karaoke Version) | Instrumental",
+          "channel": "Karaoke Universe",
+          "duration": "PT3M47S"
+        },
+        {
+          "videoId": "vid_perfect_13e",
+          "title": "Perfect (Audio)",
+          "channel": "Ed Sheeran - Topic",
+          "duration": "PT4M5S"
+        }
+      ]
+    },
+    {
+      "line": "Blinding Lights - The Weeknd",
+      "expectedVideoId": "vid_blinding_14a",
+      "candidates": [
+        {
+          "videoId": "vid_blinding_14a",
+          "title": "Blinding Lights (Official Music Video)",
+          "channel": "The WeekndVEVO",
+          "duration": "PT3M20S"
+        },
+        {
+          "videoId": "vid_blinding_14b",
+          "title": "Blinding Lights (Live at Wembley) [HD]",
+          "channel": "The Weeknd",
+          "duration": "PT4M50S"
+        },
+        {
+          "videoId": "vid_blinding_14c",
+          "title": "Blinding Lights - Cover by Marina Reis",
+          "channel": "Marina Reis",
+          "duration": "PT3M26S"
+        },
+        {
+          "videoId": "vid_blinding_14d",
+          "title": "Blinding Lights (Karaoke Version) | Instrumental",
+          "channel": "Karaoke Universe",
+          "duration": "PT3M14S"
+        },
+        {
+          "videoId": "vid_saveyour_14e",
+          "title": "Save Your Tears (Audio)",
+          "channel": "The Weeknd - Topic",
+          "duration": "PT3M30S"
+        }
+      ]
+    },
+    {
+      "line": "Bad Guy - Billie Eilish",
+      "expectedVideoId": "vid_badguy_15a",
+      "candidates": [
+        {
+          "videoId": "vid_badguy_15a",
+          "title": "bad guy (Official Music Video)",
+          "channel": "Billie EilishVEVO",
+          "duration": "PT3M14S"
+        },
+        {
+          "videoId": "vid_badguy_15b",
+          "title": "bad guy (Live at Wembley) [HD]",
+          "channel": "Billie Eilish",
+          "duration": "PT4M41S"
+        },
+        {
+          "videoId": "vid_badguy_15c",
+          "title": "bad guy - Cover by Marina Reis",
+          "channel": "Marina Reis",
+          "duration": "PT3M20S"
+        },
+        {
+          "videoId": "vid_badguy_15d",
+          "title": "bad guy (Karaoke Version) | Instrumental",
+          "channel": "Karaoke Universe",
+          "duration": "PT3M8S"
+        },
+        {
+          "videoId": "vid_buryafri_15e",
+          "title": "bury a friend (Audio)",
+          "channel": "Billie Eilish - Topic",
+          "duration": "PT3M24S"
+        }
+      ]
+    },
+    {
+      "line": "Someone Like You - Adele",
+      "expectedVideoId": "vid_someonel_16a",
+      "candidates": [
+        {
+          "videoId": "vid_someonel_16a",
+          "title": "Someone Like You (Official Music Video)",
+          "channel": "AdeleVEVO",
+          "duration": "PT4M45S"
+        },
+        {
+          "videoId": "vid_someonel_16b",
+          "title": "Someone Like You (Live at Wembley) [HD]",
+          "channel": "Adele",
+          "duration": "PT6M53S"
+        },
+        {
+          "videoId": "vid_someonel_16c",
+          "title": "Someone Like You - Cover by Marina Reis",
+          "channel": "Marina Reis",
+          "duration": "PT4M54S"
+        },
+        {
+          "videoId": "vid_someonel_16d",
+          "title": "Someone Like You (Karaoke Version) | Instrumental",
+          "channel": "Karaoke Universe",
+          "duration": "PT4M36S"
+        },
+        {
+          "videoId": "vid_hello_16e",
+          "title": "Hello (Audio)",
+          "channel": "Adele - Topic",
+          "duration": "PT4M59S"
+        }
+      ]
+    },
+    {
+      "line": "Viva La Vida - Coldplay",
+      "expectedVideoId": "vid_vivalavi_17a",
+      "candidates": [
+        {
+          "videoId": "vid_vivalavi_17a",
+          "title": "Viva La Vida (Official Music Video)",
+          "channel": "ColdplayVEVO",
+          "duration": "PT4M2S"
+        },
+        {
+          "videoId": "vid_vivalavi_17b",
+          "title": "Viva La Vida (Live at Wembley) [HD]",
+          "channel": "Coldplay",
+          "duration": "PT5M51S"
+        },
+        {
+          "videoId": "vid_vivalavi_17c",
+          "title": "Viva La Vida - Cover by Marina Reis",
+          "channel": "Marina Reis",
+          "duration": "PT4M10S"
+        },
+        {
+          "videoId": "vid_vivalavi_17d",
+          "title": "Viva La Vida (Karaoke Version) | Instrumental",
+          "channel": "Karaoke Universe",
+          "duration": "PT3M55S"
+        },
+        {
+          "videoId": "vid_thescien_17e",
+          "title": "The Scientist (Audio)",
+          "channel": "Coldplay - Topic",
+          "duration": "PT4M14S"
+        }
+      ]
+    },
+    {
+      "line": "Yellow - Coldplay",
+      "expectedVideoId": "vid_yellow_18a",
+      "candidates": [
+        {
+          "videoId": "vid_yellow_18a",
+          "title": "Yellow (Official Music Video)",
+          "channel": "ColdplayVEVO",
+          "duration": "PT4M27S"
+        },
+        {
+          "videoId": "vid_yellow_18b",
+          "title": "Yellow (Live at Wembley) [HD]",
+          "channel": "Coldplay",
+          "duration": "PT6M27S"
+        },
+        {
+          "videoId": "vid_yellow_18c",
+          "title": "Yellow - Cover by Marina Reis",
+          "channel": "Marina Reis",
+          "duration": "PT4M35S"
+        },
+        {
+          "videoId": "vid_yellow_18d",
+          "title": "Yellow (Karaoke Version) | Instrumental",
+          "channel": "Karaoke Universe",
+          "duration": "PT4M19S"
+        },
+        {
+          "videoId": "vid_fixyou_18e",
+          "title": "Fix You (Audio)",
+          "channel": "Coldplay - Topic",
+          "duration": "PT4M40S"
+        }
+      ]
+    },
+    {
+      "line": "Take On Me - a-ha",
+      "expectedVideoId": "vid_takeonme_19a",
+      "candidates": [
+        {
+          "videoId": "vid_takeonme_19a",
+          "title": "Take On Me (Official Music Video)",
+          "channel": "a-haVEVO",
+          "duration": "PT3M45S"
+        },
+        {
+          "videoId": "vid_takeonme_19b",
+          "title": "Take On Me (Live at Wembley) [HD]",
+          "channel": "a-ha",
+          "duration": "PT5M27S"
+        },
+        {
+          "videoId": "vid_takeonme_19c",
+          "title": "Take On Me - Cover by Marina Reis",
+          "channel": "Marina Reis",
+          "duration": "PT3M52S"
+        },
+        {
+          "videoId": "vid_takeonme_19d",
+          "title": "Take On Me (Karaoke Version) | Instrumental",
+          "channel": "Karaoke Universe",
+          "duration": "PT3M39S"
+        },
+        {
+          "videoId": "vid_thesunal_19e",
+          "title": "The Sun Always Shines on T.V. (Audio)",
+          "channel": "a-ha - Topic",
+          "duration": "PT3M57S"
+        }
+      ]
+    },
+    {
+      "line": "Africa - Toto",
+      "expectedVideoId": "vid_africa_20a",
+      "candidates": [
+        {
+          "videoId": "vid_africa_20a",
+          "title": "Africa (Official Music Video)",
+          "channel": "TotoVEVO",
+          "duration": "PT4M56S"
+        },
+        {
+          "videoId": "vid_africa_20b",
+          "title": "Africa (Live at Wembley) [HD]",
+          "channel": "Toto",
+          "duration": "PT7M9S"
+        },
+        {
+          "videoId": "vid_africa_20c",
+          "title": "Africa - Cover by Marina Reis",
+          "channel": "Marina Reis",
+          "duration": "PT5M5S"
+        },
+        {
+          "videoId": "vid_africa_20d",
+          "title": "Africa (Karaoke Version) | Instrumental",
+          "channel": "Karaoke Universe",
+          "duration": "PT4M47S"
+        },
+        {
+          "videoId": "vid_holdthel_20e",
+          "title": "Hold the Line (Audio)",
+          "channel": "Toto - Topic",
+          "duration": "PT5M11S"
+        }
+      ]
+    },
+    {
+      "line": "Every Breath You Take - The Police",
+      "expectedVideoId": "vid_everybre_21a",
+      "candidates": [
+        {
+          "videoId": "vid_everybre_21a",
+          "title": "Every Breath You Take (Official Music Video)",
+          "channel": "The PoliceVEVO",
+          "duration": "PT4M14S"
+        },
+        {
+          "videoId": "vid_everybre_21b",
+          "title": "Every Breath You Take (Live at Wembley) [HD]",
+          "channel": "The Police",
+          "duration": "PT6M8S"
+        },
+        {
+          "videoId": "vid_everybre_21c",
+          "title": "Every Breath You Take - Cover by Marina Reis",
+          "channel": "Marina Reis",
+          "duration": "PT4M22S"
+        },
+        {
+          "videoId": "vid_everybre_21d",
+          "title": "Every Breath You Take (Karaoke Version) | Instrumental",
+          "channel": "Karaoke Universe",
+          "duration": "PT4M6S"
+        },
+        {
+          "videoId": "vid_roxanne_21e",
+          "title": "Roxanne (Audio)",
+          "channel": "The Police - Topic",
+          "duration": "PT4M27S"
+        }
+      ]
+    },
+    {
+      "line": "Purple Rain - Prince",
+      "expectedVideoId": "vid_purplera_22a",
+      "candidates": [
+        {
+          "videoId": "vid_purplera_22a",
+          "title": "Purple Rain (Official Music Video)",
+          "channel": "PrinceVEVO",
+          "duration": "PT8M41S"
+        },
+        {
+          "videoId": "vid_purplera_22b",
+          "title": "Purple Rain (Live at Wembley) [HD]",
+          "channel": "Prince",
+          "duration": "PT12M35S"
+        },
+        {
+          "videoId": "vid_purplera_22c",
+          "title": "Purple Rain - Cover by Marina Reis",
+          "channel": "Marina Reis",
+          "duration": "PT8M57S"
+        },
+        {
+          "videoId": "vid_purplera_22d",
+          "title": "Purple Rain (Karaoke Version) | Instrumental",
+          "channel": "Karaoke Universe",
+          "duration": "PT8M25S"
+        },
+        {
+          "videoId": "vid_whendove_22e",
+          "title": "When Doves Cry (Audio)",
+          "channel": "Prince - Topic",
+          "duration": "PT9M7S"
+        }
+      ]
+    },
+    {
+      "line": "What's Going On - Marvin Gaye",
+      "expectedVideoId": "vid_whatsgoi_23a",
+      "candidates": [
+        {
+          "videoId": "vid_whatsgoi_23a",
+          "title": "What&#39;s Going On (Official Music Video)",
+          "channel": "Marvin GayeVEVO",
+          "duration": "PT3M53S"
+        },
+        {
+          "videoId": "vid_whatsgoi_23b",
+          "title": "What&#39;s Going On (Live at Wembley) [HD]",
+          "channel": "Marvin Gaye",
+          "duration": "PT5M38S"
+        },
+        {
+          "videoId": "vid_whatsgoi_23c",
+          "title": "What&#39;s Going On - Cover by Marina Reis",
+          "channel": "Marina Reis",
+          "duration": "PT4M"
+        },
+        {
+          "videoId": "vid_whatsgoi_23d",
+          "title": "What&#39;s Going On (Karaoke Version) | Instrumental",
+          "channel": "Karaoke Universe",
+          "duration": "PT3M46S"
+        },
+        {
+          "videoId": "vid_letsgeti_23e",
+          "title": "Let&#39;s Get It On (Audio)",
+          "channel": "Marvin Gaye - Topic",
+          "duration": "PT4M5S"
+        }
+      ]
+    },
+    {
+      "line": "Respect - Aretha Franklin",
+      "expectedVideoId": "vid_respect_24a",
+      "candidates": [
+        {
+          "videoId": "vid_respect_24a",
+          "title": "Respect (Official Music Video)",
+          "channel": "Aretha FranklinVEVO",
+          "duration": "PT2M27S"
+        },
+        {
+          "videoId": "vid_respect_24b",
+          "title": "Respect (Live at Wembley) [HD]",
+          "channel": "Aretha Franklin",
+          "duration": "PT3M33S"
+        },
+        {
+          "videoId": "vid_respect_24c",
+          "title": "Respect - Cover by Marina Reis",
+          "channel": "Marina Reis",
+          "duration": "PT2M31S"
+        },
+        {
+          "videoId": "vid_respect_24d",
+          "title": "Respect (Karaoke Version) | Instrumental",
+          "channel": "Karaoke Universe",
+          "duration": "PT2M23S"
+        },
+        {
+          "videoId": "vid_think_24e",
+          "title": "Think (Audio)",
+          "channel": "Aretha Franklin - Topic",
+          "duration": "PT2M34S"
+        }
+      ]
+    },
+    {
+      "line": "Superstition - Stevie Wonder",
+      "expectedVideoId": "vid_supersti_25a",
+      "candidates": [
+        {
+          "videoId": "vid_supersti_25a",
+          "title": "Superstition (Official Music Video)",
+          "channel": "Stevie WonderVEVO",
+          "duration": "PT4M26S"
+        },
+        {
+          "videoId": "vid_supersti_25b",
+          "title": "Superstition (Live at Wembley) [HD]",
+          "channel": "Stevie Wonder",
+          "duration": "PT6M26S"
+        },
+        {
+          "videoId": "vid_supersti_25c",
+          "title": "Superstition - Cover by Marina Reis",
+          "channel": "Marina Reis",
+          "duration": "PT4M34S"
+        },
+        {
+          "videoId": "vid_supersti_25d",
+          "title": "Superstition (Karaoke Version) | Instrumental",
+          "channel": "Karaoke Universe",
+          "duration": "PT4M18S"
+        },
+        {
+          "videoId": "vid_isntshel_25e",
+          "title": "Isn&#39;t She Lovely (Audio)",
+          "channel": "Stevie Wonder - Topic",
+          "duration": "PT4M39S"
+        }
+      ]
+    },
+    {
+      "line": "Wish You Were Here - Pink Floyd",
+      "expectedVideoId": "vid_wishyouw_26a",
+      "candidates": [
+        {
+          "videoId": "vid_wishyouw_26a",
+          "title": "Wish You Were Here (Official Music Video)",
+          "channel": "Pink FloydVEVO",
+          "duration": "PT5M35S"
+        },
+        {
+          "videoId": "vid_wishyouw_26b",
+          "title": "Wish You Were Here (Live at Wembley) [HD]",
+          "channel": "Pink Floyd",
+          "duration": "PT8M5S"
+        },
+        {
+          "videoId": "vid_wishyouw_26c",
+          "title": "Wish You Were Here - Cover by Marina Reis",
+          "channel": "Marina Reis",
+          "duration": "PT5M45S"
+        },
+        {
+          "videoId": "vid_wishyouw_26d",
+          "title": "Wish You Were Here (Karaoke Version) | Instrumental",
+          "channel": "Karaoke Universe",
+          "duration": "PT5M25S"
+        },
+        {
+          "videoId": "vid_money_26e",
+          "title": "Money (Audio)",
+          "channel": "Pink Floyd - Topic",
+          "duration": "PT5M51S"
+        }
+      ]
+    },
+    {
+      "line": "Comfortably Numb - Pink Floyd",
+      "expectedVideoId": "vid_comforta_27a",
+      "candidates": [
+        {
+          "videoId": "vid_comforta_27a",
+          "title": "Comfortably Numb (Official Music Video)",
+          "channel": "Pink FloydVEVO",
+          "duration": "PT6M22S"
+        },
+        {
+          "videoId": "vid_comforta_27b",
+          "title": "Comfortably Numb (Live at Wembley) [HD]",
+          "channel": "Pink Floyd",
+          "duration": "PT9M14S"
+        },
+        {
+          "videoId": "vid_comforta_27c",
+          "title": "Comfortably Numb - Cover by Marina Reis",
+          "channel": "Marina Reis",
+          "duration": "PT6M34S"
+        },
+        {
+          "videoId": "vid_comforta_27d",
+          "title": "Comfortably Numb (Karaoke Version) | Instrumental",
+          "channel": "Karaoke Universe",
+          "duration": "PT6M11S"
+        },
+        {
+          "videoId": "vid_anotherb_27e",
+          "title": "Another Brick in the Wall (Audio)",
+          "channel": "Pink Floyd - Topic",
+          "duration": "PT6M41S"
+        }
+      ]
+    },
+    {
+      "line": "Nothing Else Matters - Metallica",
+      "expectedVideoId": "vid_nothinge_28a",
+      "candidates": [
+        {
+          "videoId": "vid_nothinge_28a",
+          "title": "Nothing Else Matters (Official Music Video)",
+          "channel": "MetallicaVEVO",
+          "duration": "PT6M29S"
+        },
+        {
+          "videoId": "vid_nothinge_28b",
+          "title": "Nothing Else Matters (Live at Wembley) [HD]",
+          "channel": "Metallica",
+          "duration": "PT9M24S"
+        },
+        {
+          "videoId": "vid_nothinge_28c",
+          "title": "Nothing Else Matters - Cover by Marina Reis",
+          "channel": "Marina Reis",
+          "duration": "PT6M40S"
+        },
+        {
+          "videoId": "vid_nothinge_28d",
+          "title": "Nothing Else Matters (Karaoke Version) | Instrumental",
+          "channel": "Karaoke Universe",
+          "duration": "PT6M17S"
+        },
+        {
+          "videoId": "vid_one_28e",
+          "title": "One (Audio)",
+          "channel": "Metallica - Topic",
+          "duration": "PT6M48S"
+        }
+      ]
+    },
+    {
+      "line": "Enter Sandman - Metallica",
+      "expectedVideoId": "vid_entersan_29a",
+      "candidates": [
+        {
+          "videoId": "vid_entersan_29a",
+          "title": "Enter Sandman (Official Music Video)",
+          "channel": "MetallicaVEVO",
+          "duration": "PT5M31S"
+        },
+        {
+          "videoId": "vid_entersan_29b",
+          "title": "Enter Sandman (Live at Wembley) [HD]",
+          "channel": "Metallica",
+          "duration": "PT8M"
+        },
+        {
+          "videoId": "vid_entersan_29c",
+          "title": "Enter Sandman - Cover by Marina Reis",
+          "channel": "Marina Reis",
+          "duration": "PT5M41S"
+        },
+        {
+          "videoId": "vid_entersan_29d",
+          "title": "Enter Sandman (Karaoke Version) | Instrumental",
+          "channel": "Karaoke Universe",
+          "duration": "PT5M21S"
+        },
+        {
+          "videoId": "vid_masterof_29e",
+          "title": "Master of Puppets (Audio)",
+          "channel": "Metallica - Topic",
+          "duration": "PT5M48S"
+        }
+      ]
+    },
+    {
+      "line": "Zombie - The Cranberries",
+      "expectedVideoId": "vid_zombie_30a",
+      "candidates": [
+        {
+          "videoId": "vid_zombie_30a",
+          "title": "Zombie (Official Music Video)",
+          "channel": "The CranberriesVEVO",
+          "duration": "PT5M7S"
+        },
+        {
+          "videoId": "vid_zombie_30b",
+          "title": "Zombie (Live at Wembley) [HD]",
+          "channel": "The Cranberries",
+          "duration": "PT7M25S"
+        },
+        {
+          "videoId": "vid_zombie_30c",
+          "title": "Zombie - Cover by Marina Reis",
+          "channel": "Marina Reis",
+          "duration": "PT5M16S"
+        },
+        {
+          "videoId": "vid_zombie_30d",
+          "title": "Zombie (Karaoke Version) | Instrumental",
+          "channel": "Karaoke Universe",
+          "duration": "PT4M58S"
+        },
+        {
+          "videoId": "vid_linger_30e",
+          "title": "Linger (Audio)",
+          "channel": "The Cranberries - Topic",
+          "duration": "PT5M22S"
+        }
+      ]
+    },
+    {
+      "line": "Boulevard of Broken Dreams - Green Day",
+      "expectedVideoId": "vid_boulevar_31a",
+      "candidates": [
+        {
+          "videoId": "vid_boulevar_31a",
+          "title": "Boulevard of Broken Dreams (Official Music Video)",
+          "channel": "Green DayVEVO",
+          "duration": "PT4M21S"
+        },
+        {
+          "videoId": "vid_boulevar_31b",
+          "title": "Boulevard of Broken Dreams (Live at Wembley) [HD]",
+          "channel": "Green Day",
+          "duration": "PT6M18S"
+        },
+        {
+          "videoId": "vid_boulevar_31c",
+          "title": "Boulevard of Broken Dreams - Cover by Marina Reis",
+          "channel": "Marina Reis",
+          "duration": "PT4M29S"
+        },
+        {
+          "videoId": "vid_boulevar_31d",
+          "title": "Boulevard of Broken Dreams (Karaoke Version) | Instrumental",
+          "channel": "Karaoke Universe",
+          "duration": "PT4M13S"
+        },
+        {
+          "videoId": "vid_basketca_31e",
+          "title": "Basket Case (Audio)",
+          "channel": "Green Day - Topic",
+          "duration": "PT4M34S"
+        }
+      ]
+    },
+    {
+      "line": "In the End - Linkin Park",
+      "expectedVideoId": "vid_intheend_32a",
+      "candidates": [
+        {
+          "videoId": "vid_intheend_32a",
+          "title": "In the End (Official Music Video)",
+          "channel": "Linkin ParkVEVO",
+          "duration": "PT3M37S"
+        },
+        {
+          "videoId": "vid_intheend_32b",
+          "title": "In the End (Live at Wembley) [HD]",
+          "channel": "Linkin Park",
+          "duration": "PT5M14S"
+        },
+        {
+          "videoId": "vid_intheend_32c",
+          "title": "In the End - Cover by Marina Reis",
+          "channel": "Marina Reis",
+          "duration": "PT3M43S"
+        },
+        {
+          "videoId": "vid_intheend_32d",
+          "title": "In the End (Karaoke Version) | Instrumental",
+          "channel": "Karaoke Universe",
+          "duration": "PT3M30S"
+        },
+        {
+          "videoId": "vid_crawling_32e",
+          "title": "Crawling (Audio)",
+          "channel": "Linkin Park - Topic",
+          "duration": "PT3M48S"
+        }
+      ]
+    },
+    {
+      "line": "Numb - Linkin Park",
+      "expectedVideoId": "vid_numb_33a",
+      "candidates": [
+        {
+          "videoId": "vid_numb_33a",
+          "title": "Numb (Official Music Video)",
+          "channel": "Linkin ParkVEVO",
+          "duration": "PT3M6S"
+        },
+        {
+          "videoId": "vid_numb_33b",
+          "title": "Numb (Live at Wembley) [HD]",
+          "channel": "Linkin Park",
+          "duration": "PT4M29S"
+        },
+        {
+          "videoId": "vid_numb_33c",
+          "title": "Numb - Cover by Marina Reis",
+          "channel": "Marina Reis",
+          "duration": "PT3M11S"
+        },
+        {
+          "videoId": "vid_numb_33d",
+          "title": "Numb (Karaoke Version) | Instrumental",
+          "channel": "Karaoke Universe",
+          "duration": "PT3M"
+        },
+        {
+          "videoId": "vid_faint_33e",
+          "title": "Faint (Audio)",
+          "channel": "Linkin Park - Topic",
+          "duration": "PT3M15S"
+        }
+      ]
+    },
+    {
+      "line": "Californication - Red Hot Chili Peppers",
+      "expectedVideoId": "vid_californ_34a",
+      "candidates": [
+        {
+          "videoId": "vid_californ_34a",
+          "title": "Californication (Official Music Video)",
+          "channel": "Red Hot Chili PeppersVEVO",
+          "duration": "PT5M30S"
+        },
+        {
+          "videoId": "vid_californ_34b",
+          "title": "Californication (Live at Wembley) [HD]",
+          "channel": "Red Hot Chili Peppers",
+          "duration": "PT7M58S"
+        },
+        {
+          "videoId": "vid_californ_34c",
+          "title": "Californication - Cover by Marina Reis",
+          "channel": "Marina Reis",
+          "duration": "PT5M40S"
+        },
+        {
+          "videoId": "vid_californ_34d",
+          "title": "Californication (Karaoke Version) | Instrumental",
+          "channel": "Karaoke Universe",
+          "duration": "PT5M20S"
+        },
+        {
+          "videoId": "vid_underthe_34e",
+          "title": "Under the Bridge (Audio)",
+          "channel": "Red Hot Chili Peppers - Topic",
+          "duration": "PT5M46S"
+        }
+      ]
+    },
+    {
+      "line": "Garota de Ipanema - Tom Jobim",
+      "expectedVideoId": "vid_garotade_35a",
+      "candidates": [
+        {
+          "videoId": "vid_garotade_35a",
+          "title": "Garota de Ipanema (Official Music Video)",
+          "channel": "Tom JobimVEVO",
+          "duration": "PT5M25S"
+        },
+        {
+          "videoId": "vid_garotade_35b",
+          "title": "Garota de Ipanema (Live at Wembley) [HD]",
+          "channel": "Tom Jobim",
+          "duration": "PT7M51S"
+        },
+        {
+          "videoId": "vid_garotade_35c",
+          "title": "Garota de Ipanema - Cover by Marina Reis",
+          "channel": "Marina Reis",
+          "duration": "PT5M35S"
+        },
+        {
+          "videoId": "vid_garotade_35d",
+          "title": "Garota de Ipanema (Karaoke Version) | Instrumental",
+          "channel": "Karaoke Universe",
+          "duration": "PT5M15S"
+        },
+        {
+          "videoId": "vid_corcovad_35e",
+          "title": "Corcovado (Audio)",
+          "channel": "Tom Jobim - Topic",
+          "duration": "PT5M41S"
+        }
+      ]
+    },
+    {
+      "line": "Águas de Março - Elis Regina",
+      "expectedVideoId": "vid_aguasdem_36a",
+      "candidates": [
+        {
+          "videoId": "vid_aguasdem_36a",
+          "title": "Águas de Março (Official Music Video)",
+          "channel": "Elis ReginaVEVO",
+          "duration": "PT3M33S"
+        },
+        {
+          "videoId": "vid_aguasdem_36b",
+          "title": "Águas de Março (Live at Wembley) [HD]",
+          "channel": "Elis Regina",
+          "duration": "PT5M9S"
+        },
+        {
+          "videoId": "vid_aguasdem_36c",
+          "title": "Águas de Março - Cover by Marina Reis",
+          "channel": "Marina Reis",
+          "duration": "PT3M39S"
+        },
+        {
+          "videoId": "vid_aguasdem_36d",
+          "title": "Águas de Março (Karaoke Version) | Instrumental",
+          "channel": "Karaoke Universe",
+          "duration": "PT3M27S"
+        },
+        {
+          "videoId": "vid_comonoss_36e",
+          "title": "Como Nossos Pais (Audio)",
+          "channel": "Elis Regina - Topic",
+          "duration": "PT3M44S"
+        }
+      ]
+    },
+    {
+      "line": "Construção - Chico Buarque",
+      "expectedVideoId": "vid_construc_37a",
+      "candidates": [
+        {
+          "videoId": "vid_construc_37a",
+          "title": "Construção (Official Music Video)",
+          "channel": "Chico BuarqueVEVO",
+          "duration": "PT6M20S"
+        },
+        {
+          "videoId": "vid_construc_37b",
+          "title": "Construção (Live at Wembley) [HD]",
+          "channel": "Chico Buarque",
+          "duration": "PT9M11S"
+        },
+        {
+          "videoId": "vid_construc_37c",
+          "title": "Construção - Cover by Marina Reis",
+          "channel": "Marina Reis",
+          "duration": "PT6M31S"
+        },
+        {
+          "videoId": "vid_construc_37d",
+          "title": "Construção (Karaoke Version) | Instrumental",
+          "channel": "Karaoke Universe",
+          "duration": "PT6M9S"
+        },
+        {
+          "videoId": "vid_calice_37e",
+          "title": "Cálice (Audio)",
+          "channel": "Chico Buarque - Topic",
+          "duration": "PT6M39S"
+        }
+      ]
+    },
+    {
+      "line": "Alegria, Alegria - Caetano Veloso",
+      "expectedVideoId": "vid_alegriaa_38a",
+      "candidates": [
+        {
+          "videoId": "vid_alegriaa_38a",
+          "title": "Alegria, Alegria (Official Music Video)",
+          "channel": "Caetano VelosoVEVO",
+          "duration": "PT2M45S"
+        },
+        {
+          "videoId": "vid_alegriaa_38b",
+          "title": "Alegria, Alegria (Live at Wembley) [HD]",
+          "channel": "Caetano Veloso",
+          "duration": "PT3M59S"
+        },
+        {
+          "videoId": "vid_alegriaa_38c",
+          "title": "Alegria, Alegria - Cover by Marina Reis",
+          "channel": "Marina Reis",
+          "duration": "PT2M50S"
+        },
+        {
+          "videoId": "vid_alegriaa_38d",
+          "title": "Alegria, Alegria (Karaoke Version) | Instrumental",
+          "channel": "Karaoke Universe",
+          "duration": "PT2M40S"
+        },
+        {
+          "videoId": "vid_sampa_38e",
+          "title": "Sampa (Audio)",
+          "channel": "Caetano Veloso - Topic",
+          "duration": "PT2M53S"
+        }
+      ]
+    },
+    {
+      "line": "Sozinho - Caetano Veloso",
+      "expectedVideoId": "vid_sozinho_39a",
+      "candidates": [
+        {
+          "videoId": "vid_sozinho_39a",
+          "title": "Sozinho (Official Music Video)",
+          "channel": "Caetano VelosoVEVO",
+          "duration": "PT3M52S"
+        },
+        {
+          "videoId": "vid_sozinho_39b",
+          "title": "Sozinho (Live at Wembley) [HD]",
+          "channel": "Caetano Veloso",
+          "duration": "PT5M36S"
+        },
+        {
+          "videoId": "vid_sozinho_39c",
+          "title": "Sozinho - Cover by Marina Reis",
+          "channel": "Marina Reis",
+          "duration": "PT3M59S"
+        },
+        {
+          "videoId": "vid_sozinho_39d",
+          "title": "Sozinho (Karaoke Version) | Instrumental",
+          "channel": "Karaoke Universe",
+          "duration": "PT3M45S"
+        },
+        {
+          "videoId": "vid_voceelin_39e",
+          "title": "Você é Linda (Audio)",
+          "channel": "Caetano Veloso - Topic",
+          "duration": "PT4M4S"
+        }
+      ]
+    },
+    {
+      "line": "Trem-Bala - Ana Vilela",
+      "expectedVideoId": "vid_trembala_40a",
+      "candidates": [
+        {
+          "videoId": "vid_trembala_40a",
+          "title": "Trem-Bala (Official Music Video)",
+          "channel": "Ana VilelaVEVO",
+          "duration": "PT3M52S"
+        },
+        {
+          "videoId": "vid_trembala_40b",
+          "title": "Trem-Bala (Live at Wembley) [HD]",
+          "channel": "Ana Vilela",
+          "duration": "PT5M36S"
+        },
+        {
+          "videoId": "vid_trembala_40c",
+          "title": "Trem-Bala - Cover by Marina Reis",
+          "channel": "Marina Reis",
+          "duration": "PT3M59S"
+        },
+        {
+          "videoId": "vid_trembala_40d",
+          "title": "Trem-Bala (Karaoke Version) | Instrumental",
+          "channel": "Karaoke Universe",
+          "duration": "PT3M45S"
+        },
+        {
+          "videoId": "vid_meninaso_40e",
+          "title": "Menina Solta (Audio)",
+          "channel": "Ana Vilela - Topic",
+          "duration": "PT4M4S"
+        }
+      ]
+    },
+    {
+      "line": "País Tropical - Jorge Ben Jor",
+      "expectedVideoId": "vid_paistrop_41a",
+      "candidates": [
+        {
+          "videoId": "vid_paistrop_41a",
+          "title": "País Tropical (Official Music Video)",
+          "channel": "Jorge Ben JorVEVO",
+          "duration": "PT3M"
+        },
+        {
+          "videoId": "vid_paistrop_41b",
+          "title": "País Tropical (Live at Wembley) [HD]",
+          "channel": "Jorge Ben Jor",
+          "duration": "PT4M21S"
+        },
+        {
+          "videoId": "vid_paistrop_41c",
+          "title": "País Tropical - Cover by Marina Reis",
+          "channel": "Marina Reis",
+          "duration": "PT3M5S"
+        },
+        {
+          "videoId": "vid_paistrop_41d",
+          "title": "País Tropical (Karaoke Version) | Instrumental",
+          "channel": "Karaoke Universe",
+          "duration": "PT2M55S"
+        },
+        {
+          "videoId": "vid_tajmahal_41e",
+          "title": "Taj Mahal (Audio)",
+          "channel": "Jorge Ben Jor - Topic",
+          "duration": "PT3M9S"
+        }
+      ]
+    },
+    {
+      "line": "Mas Que Nada - Jorge Ben Jor",
+      "expectedVideoId": "vid_masquena_42a",
+      "candidates": [
+        {
+          "videoId": "vid_masquena_42a",
+          "title": "Mas Que Nada (Official Music Video)",
+          "channel": "Jorge Ben JorVEVO",
+          "duration": "PT2M38S"
+        },
+        {
+          "videoId": "vid_masquena_42b",
+          "title": "Mas Que Nada (Live at Wembley) [HD]",
+          "channel": "Jorge Ben Jor",
+          "duration": "PT3M49S"
+        },
+        {
+          "videoId": "vid_masquena_42c",
+          "title": "Mas Que Nada - Cover by Marina Reis",
+          "channel": "Marina Reis",
+          "duration": "PT2M43S"
+        },
+        {
+          "videoId": "vid_masquena_42d",
+          "title": "Mas Que Nada (Karaoke Version) | Instrumental",
+          "channel": "Karaoke Universe",
+          "duration": "PT2M33S"
+        },
+        {
+          "videoId": "vid_chovechu_42e",
+          "title": "Chove Chuva (Audio)",
+          "channel": "Jorge Ben Jor - Topic",
+          "duration": "PT2M46S"
+        }
+      ]
+    },
+    {
+      "line": "Detalhes - Roberto Carlos",
+      "expectedVideoId": "vid_detalhes_43a",
+      "candidates": [
+        {
+          "videoId": "vid_detalhes_43a",
+          "title": "Detalhes (Official Music Video)",
+          "channel": "Roberto CarlosVEVO",
+          "duration": "PT4M28S"
+        },
+        {
+          "videoId": "vid_detalhes_43b",
+          "title": "Detalhes (Live at Wembley) [HD]",
+          "channel": "Roberto Carlos",
+          "duration": "PT6M29S"
+        },
+        {
+          "videoId": "vid_detalhes_43c",
+          "title": "Detalhes - Cover by Marina Reis",
+          "channel": "Marina Reis",
+          "duration": "PT4M36S"
+        },
+        {
+          "videoId": "vid_detalhes_43d",
+          "title": "Detalhes (Karaoke Version) | Instrumental",
+          "channel": "Karaoke Universe",
+          "duration": "PT4M20S"
+        },
+        {
+          "videoId": "vid_comoegra_43e",
+          "title": "Como É Grande o Meu Amor por Você (Audio)",
+          "channel": "Roberto Carlos - Topic",
+          "duration": "PT4M41S"
+        }
+      ]
+    },
+    {
+      "line": "Emoções - Roberto Carlos",
+      "expectedVideoId": "vid_emocoes_44a",
+      "candidates": [
+        {
+          "videoId": "vid_emocoes_44a",
+          "title": "Emoções (Official Music Video)",
+          "channel": "Roberto CarlosVEVO",
+          "duration": "PT4M11S"
+        },
+        {
+          "videoId": "vid_emocoes_44b",
+          "title": "Emoções (Live at Wembley) [HD]",
+          "channel": "Roberto Carlos",
+          "duration": "PT6M4S"
+        },
+        {
+          "videoId": "vid_emocoes_44c",
+          "title": "Emoções - Cover by Marina Reis",
+          "channel": "Marina Reis",
+          "duration": "PT4M19S"
+        },
+        {
+          "videoId": "vid_emocoes_44d",
+          "title": "Emoções (Karaoke Version) | Instrumental",
+          "channel": "Karaoke Universe",
+          "duration": "PT4M3S"
+        },
+        {
+          "videoId": "vid_jesuscri_44e",
+          "title": "Jesus Cristo (Audio)",
+          "channel": "Roberto Carlos - Topic",
+          "duration": "PT4M24S"
+        }
+      ]
+    },
+    {
+      "line": "Ainda Bem - Marisa Monte",
+      "expectedVideoId": "vid_aindabem_45a",
+      "candidates": [
+        {
+          "videoId": "vid_aindabem_45a",
+          "title": "Ainda Bem (Official Music Video)",
+          "channel": "Marisa MonteVEVO",
+          "duration": "PT3M35S"
+        },
+        {
+          "videoId": "vid_aindabem_45b",
+          "title": "Ainda Bem (Live at Wembley) [HD]",
+          "channel": "Marisa Monte",
+          "duration": "PT5M12S"
+        },
+        {
+          "videoId": "vid_aindabem_45c",
+          "title": "Ainda Bem - Cover by Marina Reis",
+          "channel": "Marina Reis",
+          "duration": "PT3M41S"
+        },
+        {
+          "videoId": "vid_aindabem_45d",
+          "title": "Ainda Bem (Karaoke Version) | Instrumental",
+          "channel": "Karaoke Universe",
+          "duration": "PT3M29S"
+        },
+        {
+          "videoId": "vid_amorilov_45e",
+          "title": "Amor I Love You (Audio)",
+          "channel": "Marisa Monte - Topic",
+          "duration": "PT3M46S"
+        }
+      ]
+    },
+    {
+      "line": "Velha Infância - Tribalistas",
+      "expectedVideoId": "vid_velhainf_46a",
+      "candidates": [
+        {
+          "videoId": "vid_velhainf_46a",
+          "title": "Velha Infância (Official Music Video)",
+          "channel": "TribalistasVEVO",
+          "duration": "PT3M35S"
+        },
+        {
+          "videoId": "vid_velhainf_46b",
+          "title": "Velha Infância (Live at Wembley) [HD]",
+          "channel": "Tribalistas",
+          "duration": "PT5M12S"
+        },
+        {
+          "videoId": "vid_velhainf_46c",
+          "title": "Velha Infância - Cover by Marina Reis",
+          "channel": "Marina Reis",
+          "duration": "PT3M41S"
+        },
+        {
+          "videoId": "vid_velhainf_46d",
+          "title": "Velha Infância (Karaoke Version) | Instrumental",
+          "channel": "Karaoke Universe",
+          "duration": "PT3M29S"
+        },
+        {
+          "videoId": "vid_jaseinam_46e",
+          "title": "Já Sei Namorar (Audio)",
+          "channel": "Tribalistas - Topic",
+          "duration": "PT3M46S"
+        }
+      ]
+    },
+    {
+      "line": "Pais e Filhos - Legião Urbana",
+      "expectedVideoId": "vid_paisefil_47a",
+      "candidates": [
+        {
+          "videoId": "vid_paisefil_47a",
+          "title": "Pais e Filhos (Official Music Video)",
+          "channel": "Legião UrbanaVEVO",
+          "duration": "PT5M19S"
+        },
+        {
+          "videoId": "vid_paisefil_47b",
+          "title": "Pais e Filhos (Live at Wembley) [HD]",
+          "channel": "Legião Urbana",
+          "duration": "PT7M43S"
+        },
+        {
+          "videoId": "vid_paisefil_47c",
+          "title": "Pais e Filhos - Cover by Marina Reis",
+          "channel": "Marina Reis",
+          "duration": "PT5M29S"
+        },
+        {
+          "videoId": "vid_paisefil_47d",
+          "title": "Pais e Filhos (Karaoke Version) | Instrumental",
+          "channel": "Karaoke Universe",
+          "duration": "PT5M9S"
+        },
+        {
+          "videoId": "vid_tempoper_47e",
+          "title": "Tempo Perdido (Audio)",
+          "channel": "Legião Urbana - Topic",
+          "duration": "PT5M35S"
+        }
+      ]
+    },
+    {
+      "line": "Eduardo e Mônica - Legião Urbana",
+      "expectedVideoId": "vid_eduardoe_48a",
+      "candidates": [
+        {
+          "videoId": "vid_eduardoe_48a",
+          "title": "Eduardo e Mônica (Official Music Video)",
+          "channel": "Legião UrbanaVEVO",
+          "duration": "PT4M28S"
+        },
+        {
+          "videoId": "vid_eduardoe_48b",
+          "title": "Eduardo e Mônica (Live at Wembley) [HD]",
+          "channel": "Legião Urbana",
+          "duration": "PT6M29S"
+        },
+        {
+          "videoId": "vid_eduardoe_48c",
+          "title": "Eduardo e Mônica - Cover by Marina Reis",
+          "channel": "Marina Reis",
+          "duration": "PT4M36S"
+        },
+        {
+          "videoId": "vid_eduardoe_48d",
+          "title": "Eduardo e Mônica (Karaoke Version) | Instrumental",
+          "channel": "Karaoke Universe",
+          "duration": "PT4M20S"
+        },
+        {
+          "videoId": "vid_faroeste_48e",
+          "title": "Faroeste Caboclo (Audio)",
+          "channel": "Legião Urbana - Topic",
+          "duration": "PT4M41S"
+        }
+      ]
+    },
+    {
+      "line": "Oceano - Djavan",
+      "expectedVideoId": "vid_oceano_49a",
+      "candidates": [
+        {
+          "videoId": "vid_oceano_49a",
+          "title": "Oceano (Official Music Video)",
+          "channel": "DjavanVEVO",
+          "duration": "PT4M22S"
+        },
+        {
+          "videoId": "vid_oceano_49b",
+          "title": "Oceano (Live at Wembley) [HD]",
+          "channel": "Djavan",
+          "duration": "PT6M20S"
+        },
+        {
+          "videoId": "vid_oceano_49c",
+          "title": "Oceano - Cover by Marina Reis",
+          "channel": "Marina Reis",
+          "duration": "PT4M30S"
+        },
+        {
+          "videoId": "vid_oceano_49d",
+          "title": "Oceano (Karaoke Version) | Instrumental",
+          "channel": "Karaoke Universe",
+          "duration": "PT4M14S"
+        },
+        {
+          "videoId": "vid_flordeli_49e",
+          "title": "Flor de Lis (Audio)",
+          "channel": "Djavan - Topic",
+          "duration": "PT4M35S"
+        }
+      ]
+    }
+  ]
+}

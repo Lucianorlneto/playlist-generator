@@ -30,6 +30,19 @@ export function computeRedirectUri(
   return `${location.origin}${directory === '' ? '/' : directory}`;
 }
 
+/**
+ * Origem JavaScript autorizada, exigida pelo cadastro do cliente OAuth do Google
+ * (quickstart §1, research §1).
+ *
+ * É a mesma raiz do Redirect URI **sem caminho e sem barra final** — o Google
+ * recusa origens com path. Sem ela cadastrada, a autorização falha antes mesmo
+ * da tela de consentimento, com uma mensagem que não diz o que fazer; por isso a
+ * interface a exibe junto do Redirect URI, e não como nota de rodapé.
+ */
+export function computeJavaScriptOrigin(location: LocationLike = window.location): string {
+  return location.origin;
+}
+
 /** A plataforma rejeita `localhost`; em desenvolvimento é obrigatório o IPv4 literal. */
 export function usesRejectedLocalhost(redirectUri: string): boolean {
   try {

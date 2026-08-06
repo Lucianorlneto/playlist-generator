@@ -1,6 +1,6 @@
 import { computeRedirectUri } from '@/features/credential/redirectUri';
 import { t } from '@/i18n/pt-BR';
-import type { AppError } from '@/services/spotify/errors';
+import type { AppError } from '@/services/providers/errors';
 import { CopyButton } from '@/ui/CopyButton';
 
 export interface AuthErrorProps {

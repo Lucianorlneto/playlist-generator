@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
 import { parseLine } from '@/domain/parser';
-import { classify, scoreCandidate, similarity } from '@/domain/scoring';
-import { CONFIDENT_THRESHOLD, UNCERTAIN_THRESHOLD } from '@/domain/scoring/thresholds';
+import { classify, classifyFor, scoreCandidate, similarity } from '@/domain/scoring';
+import { SPOTIFY_CONFIDENT_THRESHOLD, UNCERTAIN_THRESHOLD } from '@/domain/scoring/thresholds';
 import type { TrackCandidateRaw } from '@/domain/types';
 
 function track(overrides: Partial<TrackCandidateRaw> = {}): TrackCandidateRaw {
@@ -24,8 +24,8 @@ const line = (raw: string) => parseLine(raw, 0, 'l0');
 describe('classify — fronteiras dos limiares (research §6)', () => {
   it('respeita os três intervalos', () => {
     expect(classify(1)).toBe('confident');
-    expect(classify(CONFIDENT_THRESHOLD)).toBe('confident');
-    expect(classify(CONFIDENT_THRESHOLD - 0.0001)).toBe('uncertain');
+    expect(classify(SPOTIFY_CONFIDENT_THRESHOLD)).toBe('confident');
+    expect(classify(SPOTIFY_CONFIDENT_THRESHOLD - 0.0001)).toBe('uncertain');
     expect(classify(UNCERTAIN_THRESHOLD)).toBe('uncertain');
     expect(classify(UNCERTAIN_THRESHOLD - 0.0001)).toBe('not_found');
     expect(classify(0)).toBe('not_found');
@@ -60,7 +60,7 @@ describe('scoreCandidate', () => {
       track({ title: 'Bohemian Rhapsody', artists: ['Queen'] }),
     );
 
-    expect(score).toBeLessThan(CONFIDENT_THRESHOLD);
+    expect(score).toBeLessThan(SPOTIFY_CONFIDENT_THRESHOLD);
     expect(classify(score)).not.toBe('confident');
   });
 
@@ -69,7 +69,7 @@ describe('scoreCandidate', () => {
       line('Under Pressure - Queen'),
       track({ title: 'Bohemian Rhapsody', artists: ['Queen'] }),
     );
-    expect(score).toBeLessThan(CONFIDENT_THRESHOLD);
+    expect(score).toBeLessThan(SPOTIFY_CONFIDENT_THRESHOLD);
   });
 
   it('tolera erro de digitação pequeno', () => {
@@ -120,5 +120,36 @@ describe('scoreCandidate', () => {
 
     expect(original).toBeGreaterThan(karaoke);
     expect(classify(karaoke)).not.toBe('confident');
+  });
+});
+
+describe('FR-023, FR-025 — classifyFor com limiares do provedor', () => {
+  const spotify = { confident: 0.82, uncertain: 0.55 };
+  const youtube = { confident: 0.88, uncertain: 0.55 };
+
+  it('o mesmo score classifica diferente em cada catálogo', () => {
+    expect(classifyFor(0.85, spotify)).toBe('confident');
+    expect(classifyFor(0.85, youtube)).toBe('uncertain');
+  });
+
+  it('respeita as três faixas em ambos', () => {
+    for (const thresholds of [spotify, youtube]) {
+      expect(classifyFor(1, thresholds)).toBe('confident');
+      expect(classifyFor(thresholds.confident, thresholds)).toBe('confident');
+      expect(classifyFor(thresholds.confident - 0.0001, thresholds)).toBe('uncertain');
+      expect(classifyFor(thresholds.uncertain, thresholds)).toBe('uncertain');
+      expect(classifyFor(thresholds.uncertain - 0.0001, thresholds)).toBe('not_found');
+    }
+  });
+
+  /** Invariante K2: o indício rebaixa, seja qual for a pontuação. */
+  it('qualquer indício de versão impede a classificação Confiante', () => {
+    expect(classifyFor(1, youtube, ['live'])).toBe('uncertain');
+    expect(classifyFor(1, spotify, ['duration_outlier'])).toBe('uncertain');
+    expect(classifyFor(0.99, youtube, ['cover', 'live'])).toBe('uncertain');
+  });
+
+  it('o indício não promove nada que já estava abaixo do piso', () => {
+    expect(classifyFor(0.1, youtube, ['live'])).toBe('not_found');
   });
 });

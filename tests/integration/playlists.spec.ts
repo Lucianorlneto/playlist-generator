@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { createRefresher } from '@/services/spotify/auth';
-import { configureSpotifyClient } from '@/services/spotify/client';
-import { addTracks, createPlaylist, listMyPlaylistNames } from '@/services/spotify/playlists';
+import { createRefresher } from '@/services/providers/spotify/auth';
+import { configureProviderClient } from '@/services/providers/http';
+import { addTracks, createPlaylist, listMyPlaylistNames } from '@/services/providers/spotify/playlists';
 
 import { makeSession } from '../fixtures/factories';
 import { createdPlaylist, requestLog, setPlaylists } from '../msw/handlers';
@@ -11,8 +11,8 @@ const CLIENT_ID = 'a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6';
 const USER_ID = 'usuario_teste';
 
 beforeEach(() => {
-  configureSpotifyClient({
-    getSession: () => makeSession(),
+  configureProviderClient('spotify', {
+    getSession: () => makeSession('spotify'),
     saveSession: () => undefined,
     clearSession: () => undefined,
     refresh: createRefresher(() => CLIENT_ID),
@@ -117,7 +117,7 @@ describe('Criação e adição (contrato §7 e §8)', () => {
 
     const uris = Array.from({ length: 101 }, (_, index) => `spotify:track:${index}`);
 
-    await expect(addTracks(created.id, uris)).rejects.toMatchObject({ kind: 'add_tracks_failed' });
+    await expect(addTracks(created.id, uris)).rejects.toMatchObject({ kind: 'add_items_failed' });
     expect(requestLog.filter((entry) => entry.endpoint === 'addTracks')).toHaveLength(0);
   });
 

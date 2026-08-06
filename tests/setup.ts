@@ -4,8 +4,8 @@ import { cleanup } from '@testing-library/react';
 import { Window } from 'happy-dom';
 import { afterAll, afterEach, beforeAll } from 'vitest';
 
-import { resetWaitState } from '@/services/rate-limiter';
-import { resetSpotifyClient } from '@/services/spotify/client';
+import { resetLimiters, resetWaitState } from '@/services/rate-limiter';
+import { resetProviderClients } from '@/services/providers/http';
 import { useAppStore } from '@/store';
 
 import { resetMockSpotify } from './msw/handlers';
@@ -32,9 +32,9 @@ if (globalThis.localStorage === undefined || globalThis.sessionStorage === undef
   });
 }
 
-// `onUnhandledRequest: 'error'` é o que transforma o contrato de
-// contracts/spotify-api.md em contrato executável: qualquer requisição para um
-// endpoint fora da lista quebra o teste em vez de vazar silenciosamente (FR-010).
+// `onUnhandledRequest: 'error'` é o que transforma os contratos de API em
+// contrato executável: qualquer requisição para um endpoint fora da lista quebra
+// o teste em vez de vazar silenciosamente (Princípio II).
 beforeAll(() => {
   server.listen({ onUnhandledRequest: 'error' });
 });
@@ -48,7 +48,8 @@ afterEach(() => {
   server.resetHandlers();
   resetMockSpotify();
   resetWaitState();
-  resetSpotifyClient();
+  resetLimiters();
+  resetProviderClients();
   localStorage.clear();
   sessionStorage.clear();
 });

@@ -1,14 +1,17 @@
 /**
- * Handlers MSW dos 8 pontos de contato de contracts/spotify-api.md.
+ * Handlers MSW dos 13 pontos de contato dos dois provedores — 8 de
+ * `001/contracts/spotify-api.md` e 5 de `002/contracts/youtube-api.md`.
  *
- * O contrato é executável: cada entrada do documento tem um handler aqui, e
+ * O contrato é executável: cada entrada dos documentos tem um handler aqui, e
  * `tests/setup.ts` roda com `onUnhandledRequest: 'error'` — qualquer requisição
- * para fora desta lista quebra o teste em vez de vazar (FR-010).
+ * para fora desta lista quebra o teste em vez de vazar (Princípio II).
  *
  * Os testes dirigem o mock por três alavancas:
- * - `setCatalog(...)`: o que a busca encontra;
- * - `setPlaylists(...)`: o que `/v1/me/playlists` devolve (com paginação real);
- * - `program(endpoint, ...respostas)`: fila de respostas anômalas (401, 429, 5xx).
+ * - `setCatalog(...)` / `setYouTubeCatalog(...)`: o que a busca encontra;
+ * - `setPlaylists(...)` / `setYouTubePlaylists(...)`: o que a listagem devolve
+ *   (com paginação real nos dois provedores);
+ * - `program(endpoint, ...respostas)`: fila de respostas anômalas (401, 403 com
+ *   `reason`, 429, 5xx).
  */
 
 import { http, HttpResponse, type HttpHandler } from 'msw';
@@ -32,8 +35,32 @@ export interface MockPlaylist {
   ownerId: string;
 }
 
+export interface MockVideo {
+  id: string;
+  title: string;
+  channel: string;
+  /** ISO-8601, como `contentDetails.duration` (`PT3M52S`). */
+  duration: string;
+}
+
+export interface MockYouTubePlaylist {
+  id: string;
+  title: string;
+}
+
 export type EndpointKey =
-  'token' | 'me' | 'myPlaylists' | 'search' | 'createPlaylist' | 'addTracks';
+  | 'token'
+  | 'me'
+  | 'myPlaylists'
+  | 'search'
+  | 'createPlaylist'
+  | 'addTracks'
+  | 'ytChannels'
+  | 'ytSearch'
+  | 'ytVideos'
+  | 'ytPlaylists'
+  | 'ytCreatePlaylist'
+  | 'ytPlaylistItems';
 
 export interface ProgrammedResponse {
   status: number;
@@ -42,7 +69,7 @@ export interface ProgrammedResponse {
 }
 
 export interface RecordedRequest {
-  endpoint: EndpointKey | 'authorize' | 'image';
+  endpoint: EndpointKey | 'authorize' | 'image' | 'ytImage';
   method: string;
   url: string;
   headers: Record<string, string>;
@@ -54,6 +81,8 @@ export interface RecordedRequest {
 // ---------------------------------------------------------------------------
 
 export const DEFAULT_USER = { id: 'usuario_teste', display_name: 'Fulano de Teste' };
+
+export const DEFAULT_YOUTUBE_CHANNEL = { id: 'UC_teste', title: 'Canal de Teste' };
 
 const state = {
   user: { ...DEFAULT_USER } as { id: string; display_name: string | null },
@@ -68,6 +97,14 @@ const state = {
   rotatedRefreshToken: null as string | null,
   expiresIn: 3600,
   pageSize: 50,
+
+  // --- YouTube -------------------------------------------------------------
+  ytChannel: { ...DEFAULT_YOUTUBE_CHANNEL },
+  ytCatalog: [] as MockVideo[],
+  ytPlaylists: [] as MockYouTubePlaylist[],
+  ytCreatedPlaylists: new Map<string, { title: string; videoIds: string[]; privacy: string }>(),
+  ytPageSize: 50,
+  ytAccessToken: 'ya29.token-1',
 };
 
 const queues = new Map<EndpointKey, ProgrammedResponse[]>();
@@ -85,8 +122,42 @@ export function resetMockSpotify(): void {
   state.rotatedRefreshToken = null;
   state.expiresIn = 3600;
   state.pageSize = 50;
+  state.ytChannel = { ...DEFAULT_YOUTUBE_CHANNEL };
+  state.ytCatalog = [];
+  state.ytPlaylists = [];
+  state.ytCreatedPlaylists = new Map();
+  state.ytPageSize = 50;
+  state.ytAccessToken = 'ya29.token-1';
   queues.clear();
   requestLog.length = 0;
+}
+
+export function setYouTubeCatalog(videos: MockVideo[]): void {
+  state.ytCatalog = videos;
+}
+
+export function setYouTubePlaylists(playlists: MockYouTubePlaylist[], pageSize = 50): void {
+  state.ytPlaylists = playlists;
+  state.ytPageSize = pageSize;
+}
+
+export function setYouTubeChannel(channel: { id: string; title: string }): void {
+  state.ytChannel = channel;
+}
+
+export function createdYouTubePlaylist(
+  id: string,
+): { title: string; videoIds: string[]; privacy: string } | undefined {
+  return state.ytCreatedPlaylists.get(id);
+}
+
+export function currentYouTubeAccessToken(): string {
+  return state.ytAccessToken;
+}
+
+/** Requisições registradas para um endpoint — base da contagem de SC-009. */
+export function requestsTo(endpoint: RecordedRequest['endpoint']): RecordedRequest[] {
+  return requestLog.filter((entry) => entry.endpoint === endpoint);
 }
 
 export function setCatalog(tracks: MockTrack[]): void {
@@ -150,6 +221,45 @@ export const RESPONSES = {
   serverError: (): ProgrammedResponse => ({
     status: 503,
     body: { error: { status: 503, message: 'Service unavailable' } },
+  }),
+} as const;
+
+/**
+ * Anomalias do YouTube. Os `403` diferem **apenas** pelo
+ * `error.errors[0].reason` e exigem comportamentos opostos — cota encerra sem
+ * repetir, limitação de taxa repete com backoff (contracts/youtube-api.md §8).
+ */
+function youTubeError(status: number, reason: string, message: string): ProgrammedResponse {
+  return {
+    status,
+    body: {
+      error: {
+        code: status,
+        message,
+        errors: [{ domain: 'youtube.quota', reason, message }],
+      },
+    },
+  };
+}
+
+export const YT_RESPONSES = {
+  unauthorized: (): ProgrammedResponse =>
+    youTubeError(401, 'authError', 'Invalid Credentials'),
+  quotaExceeded: (): ProgrammedResponse =>
+    youTubeError(403, 'quotaExceeded', 'The request cannot be completed because you have exceeded your quota.'),
+  dailyLimitExceeded: (): ProgrammedResponse =>
+    youTubeError(403, 'dailyLimitExceeded', 'Daily Limit Exceeded'),
+  rateLimitExceeded: (): ProgrammedResponse =>
+    youTubeError(403, 'rateLimitExceeded', 'Rate Limit Exceeded'),
+  userRateLimitExceeded: (): ProgrammedResponse =>
+    youTubeError(403, 'userRateLimitExceeded', 'User Rate Limit Exceeded'),
+  insufficientPermissions: (): ProgrammedResponse =>
+    youTubeError(403, 'insufficientPermissions', 'Request had insufficient authentication scopes.'),
+  forbidden: (): ProgrammedResponse => youTubeError(403, 'forbidden', 'Forbidden'),
+  videoNotFound: (): ProgrammedResponse => youTubeError(404, 'videoNotFound', 'Video not found'),
+  serverError: (): ProgrammedResponse => ({
+    status: 503,
+    body: { error: { code: 503, message: 'Backend Error', errors: [{ reason: 'backendError' }] } },
   }),
 } as const;
 
@@ -242,6 +352,28 @@ function matchCatalog(query: string, limit: number) {
   });
 
   return matches.slice(0, limit).map(toTrackObject);
+}
+
+/** Reintroduz as entidades HTML que `search.list` sempre devolve (contrato §3). */
+function escapeEntities(text: string): string {
+  return text.replace(/&/gu, '&amp;').replace(/'/gu, '&#39;').replace(/"/gu, '&quot;');
+}
+
+/**
+ * Busca de texto livre no catálogo de vídeo: sem qualificadores de campo, é
+ * assim que `search.list` se comporta (research §7). A consulta casa quando
+ * **todos** os termos aparecem no título ou no canal.
+ */
+function matchVideos(query: string, limit: number): MockVideo[] {
+  const terms = normalize(query).split(/\s+/u).filter((term) => term !== '');
+  if (terms.length === 0) return [];
+
+  return state.ytCatalog
+    .filter((video) => {
+      const haystack = `${normalize(video.title)} ${normalize(video.channel)}`;
+      return terms.every((term) => haystack.includes(term));
+    })
+    .slice(0, limit);
 }
 
 // ---------------------------------------------------------------------------
@@ -403,9 +535,147 @@ export const handlers: HttpHandler[] = [
     },
   ),
 
-  // Capas de álbum — único host de imagem autorizado.
+  // Capas de álbum — único host de imagem autorizado do Spotify.
   http.get('https://i.scdn.co/image/*', async ({ request }) => {
     await record('image', request);
+    return new HttpResponse(null, { status: 200, headers: { 'Content-Type': 'image/jpeg' } });
+  }),
+
+  // -------------------------------------------------------------------------
+  // YouTube Data API v3 — contracts/youtube-api.md
+  // -------------------------------------------------------------------------
+
+  // §2 Identificação da conta (custo 1)
+  http.get('https://www.googleapis.com/youtube/v3/channels', async ({ request }) => {
+    await record('ytChannels', request);
+    const programmed = takeProgrammed('ytChannels');
+    if (programmed !== undefined) return respondProgrammed(programmed);
+
+    return HttpResponse.json({
+      items: [{ id: state.ytChannel.id, snippet: { title: state.ytChannel.title } }],
+    });
+  }),
+
+  // §3 Buscar candidatos (custo 100)
+  http.get('https://www.googleapis.com/youtube/v3/search', async ({ request }) => {
+    await record('ytSearch', request);
+    const programmed = takeProgrammed('ytSearch');
+    if (programmed !== undefined) return respondProgrammed(programmed);
+
+    const url = new URL(request.url);
+    const query = url.searchParams.get('q') ?? '';
+    const maxResults = Number.parseInt(url.searchParams.get('maxResults') ?? '5', 10);
+    const items = matchVideos(query, maxResults).map((video) => ({
+      id: { kind: 'youtube#video', videoId: video.id },
+      snippet: {
+        // A API devolve o título com entidades HTML — decodificá-lo é obrigação
+        // do adaptador (contrato §3).
+        title: escapeEntities(video.title),
+        channelTitle: video.channel,
+        thumbnails: { default: { url: `https://i.ytimg.com/vi/${video.id}/default.jpg` } },
+      },
+    }));
+
+    return HttpResponse.json({ items, pageInfo: { totalResults: items.length } });
+  }),
+
+  // §4 Enriquecer com duração e canal (custo 1 por chamada, até 50 ids)
+  http.get('https://www.googleapis.com/youtube/v3/videos', async ({ request }) => {
+    await record('ytVideos', request);
+    const programmed = takeProgrammed('ytVideos');
+    if (programmed !== undefined) return respondProgrammed(programmed);
+
+    const url = new URL(request.url);
+    const ids = (url.searchParams.get('id') ?? '').split(',').filter((id) => id !== '');
+    if (ids.length > 50) {
+      return respondProgrammed(YT_RESPONSES.forbidden());
+    }
+
+    const items = ids
+      .map((id) => state.ytCatalog.find((video) => video.id === id))
+      .filter((video): video is MockVideo => video !== undefined)
+      .map((video) => ({
+        id: video.id,
+        snippet: {
+          title: escapeEntities(video.title),
+          channelTitle: video.channel,
+          thumbnails: { default: { url: `https://i.ytimg.com/vi/${video.id}/default.jpg` } },
+        },
+        contentDetails: { duration: video.duration },
+      }));
+
+    return HttpResponse.json({ items });
+  }),
+
+  // §5 Listar playlists do usuário (custo 1 por página, paginado)
+  http.get('https://www.googleapis.com/youtube/v3/playlists', async ({ request }) => {
+    await record('ytPlaylists', request);
+    const programmed = takeProgrammed('ytPlaylists');
+    if (programmed !== undefined) return respondProgrammed(programmed);
+
+    const url = new URL(request.url);
+    const limit = Number.parseInt(url.searchParams.get('maxResults') ?? '50', 10);
+    const pageSize = Math.min(limit, state.ytPageSize);
+    const offset = Number.parseInt(url.searchParams.get('pageToken') ?? '0', 10);
+    const slice = state.ytPlaylists.slice(offset, offset + pageSize);
+    const nextOffset = offset + pageSize;
+
+    return HttpResponse.json({
+      items: slice.map((playlist) => ({ id: playlist.id, snippet: { title: playlist.title } })),
+      pageInfo: { totalResults: state.ytPlaylists.length, resultsPerPage: pageSize },
+      ...(nextOffset < state.ytPlaylists.length ? { nextPageToken: String(nextOffset) } : {}),
+    });
+  }),
+
+  // §6 Criar playlist (custo 50)
+  http.post('https://www.googleapis.com/youtube/v3/playlists', async ({ request }) => {
+    await record('ytCreatePlaylist', request);
+    const programmed = takeProgrammed('ytCreatePlaylist');
+    if (programmed !== undefined) return respondProgrammed(programmed);
+
+    const body = (await request.json()) as {
+      snippet?: { title?: string; description?: string };
+      status?: { privacyStatus?: string };
+    };
+    const id = `PL_teste_${state.ytCreatedPlaylists.size + 1}`;
+    const title = body.snippet?.title ?? '';
+    state.ytCreatedPlaylists.set(id, {
+      title,
+      videoIds: [],
+      privacy: body.status?.privacyStatus ?? 'private',
+    });
+    state.ytPlaylists.push({ id, title });
+
+    return HttpResponse.json({ id, snippet: { title }, status: body.status }, { status: 200 });
+  }),
+
+  // §7 Adicionar **um** vídeo (custo 50) — não existe endpoint de lote
+  http.post('https://www.googleapis.com/youtube/v3/playlistItems', async ({ request }) => {
+    await record('ytPlaylistItems', request);
+    const programmed = takeProgrammed('ytPlaylistItems');
+    if (programmed !== undefined) return respondProgrammed(programmed);
+
+    const body = (await request.json()) as {
+      snippet?: { playlistId?: string; resourceId?: { videoId?: string } };
+    };
+    const playlistId = body.snippet?.playlistId ?? '';
+    const videoId = body.snippet?.resourceId?.videoId ?? '';
+
+    const playlist = state.ytCreatedPlaylists.get(playlistId);
+    if (playlist === undefined) {
+      return respondProgrammed(youTubeError(404, 'playlistNotFound', 'Playlist not found'));
+    }
+    playlist.videoIds.push(videoId);
+
+    return HttpResponse.json({
+      id: `PLI_${playlist.videoIds.length}`,
+      snippet: { playlistId, position: playlist.videoIds.length - 1, resourceId: { videoId } },
+    });
+  }),
+
+  // Miniaturas — único host de imagem autorizado do YouTube.
+  http.get('https://i.ytimg.com/vi/*', async ({ request }) => {
+    await record('ytImage', request);
     return new HttpResponse(null, { status: 200, headers: { 'Content-Type': 'image/jpeg' } });
   }),
 ];
