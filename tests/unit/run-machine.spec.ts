@@ -245,6 +245,39 @@ describe('FR-016, FR-021 — a fila', () => {
     expect(advanceQueue(fila, []).currentIndex).toBe(1);
   });
 
+  it('inicia o serviço que entra, sem deixá-lo em pending', () => {
+    let fila = buildQueue(['spotify', 'youtube'], ['l0']);
+    fila = { ...fila, currentIndex: 0 };
+    fila = replaceRun(fila, {
+      ...(fila.runs.spotify as ServiceRun),
+      phase: 'done',
+      outcome: 'completed',
+    });
+
+    const avancada = advanceQueue(fila, []);
+
+    // `pending` não corresponde a nenhuma fase da interface: um serviço que
+    // entrasse assim renderizaria uma tela vazia entre um destino e o seguinte.
+    expect(avancada.runs.youtube?.phase).not.toBe('pending');
+    expect(avancada.runs.youtube?.phase).toBe('connect');
+  });
+
+  it('avançar além do último serviço não quebra nem reinicia nada', () => {
+    let fila = buildQueue(['spotify'], ['l0']);
+    fila = { ...fila, currentIndex: 0 };
+    fila = replaceRun(fila, {
+      ...(fila.runs.spotify as ServiceRun),
+      phase: 'done',
+      outcome: 'completed',
+    });
+
+    const avancada = advanceQueue(fila, []);
+
+    expect(avancada.currentIndex).toBe(1);
+    expect(avancada.runs.spotify?.outcome).toBe('completed');
+    expect(avancada.runs.spotify?.phase).toBe('done');
+  });
+
   it('congela as linhas usadas na conclusão (FR-037, SC-018)', () => {
     const lines = [makeLine({ index: 0 }), makeLine({ index: 1 })];
     let fila = buildQueue(['spotify', 'youtube'], ['l0', 'l1']);

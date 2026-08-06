@@ -15,7 +15,7 @@
 import { orderSelection, type ProviderId } from '@/domain/providers';
 import type { ExecutionQueue, InputLine, ServiceRun } from '@/domain/types';
 
-import { emptyRun, isActive, isFinished } from './machine';
+import { emptyRun, isActive, isFinished, reduceRun } from './machine';
 
 export function buildQueue(
   selected: readonly ProviderId[],
@@ -69,6 +69,11 @@ export function replaceRun(queue: ExecutionQueue, run: ServiceRun): ExecutionQue
  * relato de quem já terminou (FR-037, invariante R2).
  *
  * Q2 em ação: se a execução corrente ainda não tem `outcome`, a fila não anda.
+ *
+ * O serviço que entra é **iniciado aqui**, e não pela tela: avançar a fila é o
+ * mesmo ato que começar o próximo ciclo. Deixar o run novo em `pending` para
+ * alguém iniciá-lo depois produz um estado que nenhuma fase da interface
+ * representa — na prática, uma tela vazia entre um serviço e o seguinte.
  */
 export function advanceQueue(queue: ExecutionQueue, lines: readonly InputLine[]): ExecutionQueue {
   const current = currentRun(queue);
@@ -89,7 +94,12 @@ export function advanceQueue(queue: ExecutionQueue, lines: readonly InputLine[])
   if (nextIndex >= next.order.length) {
     return { ...next, currentIndex: next.order.length };
   }
-  return { ...next, currentIndex: nextIndex };
+
+  const advanced: ExecutionQueue = { ...next, currentIndex: nextIndex };
+  const upcoming = currentRun(advanced);
+  if (upcoming === null) return advanced;
+
+  return replaceRun(advanced, reduceRun(upcoming, { type: 'started' }));
 }
 
 /**

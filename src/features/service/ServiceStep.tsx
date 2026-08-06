@@ -54,6 +54,15 @@ export function ServiceStep() {
 
     const store = useAppStore.getState();
 
+    // Rede de segurança: `pending` não tem tela. A fila já inicia o serviço que
+    // entra, mas um rascunho restaurado pode trazer a execução corrente parada
+    // aqui — e sem isto o usuário veria uma tela vazia sem saída.
+    if (run.phase === 'pending') {
+      startedFor.current = key;
+      store.dispatchRun({ type: 'started' }, provider);
+      return;
+    }
+
     if (run.phase === 'connect') {
       if (sessions[provider] !== null) {
         startedFor.current = key;
