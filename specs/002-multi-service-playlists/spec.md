@@ -2,11 +2,11 @@
 
 **Feature Directory**: `specs/002-multi-service-playlists`
 
-**Feature Branch**: `main` (nenhum hook de criação de branch configurado neste projeto)
+**Feature Branch**: `002-multi-service-playlists` (trabalho em `feat/youtube`)
 
 **Created**: 2026-08-05
 
-**Status**: Draft — esclarecimentos resolvidos; bloqueada por emenda constitucional antes de `/speckit-plan`
+**Status**: Planejada — emenda constitucional v1.1.0 ratificada, esclarecimentos resolvidos, `/speckit-plan` executado
 
 **Input**: User description: "Agora precisamos adicionar a funcionalidade de criar também uma playlist no youtube. Primeiro deve ser feito um seletor múltipla escolha (com apenas os serviços que tiveram ids cadastrados selecionados por default). Após isso, dependendo com quais serviços foram escolhidos, o fluxo deve seguir para esse serviços escolhidos. Primeiro deve ser criada a playlist do primeiro, depois pro segundo, seguindo o fluxo completo para ambos os serviços. A sessão inicial de configuração também deve pedir as credenciais no youtube como opcionais, liberando o seletor do youtube apenas se as credenciais estiverem adicionadas, igualmente como o spotify. O spotify deve ser selecionável apenas se o Client ID estiver 'cadastrado'"
 
@@ -14,28 +14,29 @@
 
 ---
 
-## ⚠️ Premissas Corrigidas e Gate Constitucional (ler antes de `/speckit-plan`)
+## ⚠️ Premissas Corrigidas e Gate Constitucional
 
-### Gate constitucional — exige emenda antes do planejamento
+### Gate constitucional — **satisfeito** pela emenda v1.1.0
 
-O Princípio II da [constituição](../../.specify/memory/constitution.md) fixa uma lista fechada de três destinos de rede (`accounts.spotify.com`, `api.spotify.com`, `i.scdn.co`) e diz textualmente: _"Ampliar essa lista é uma emenda a esta constituição, não uma decisão de implementação."_
+O Princípio II da [constituição](../../.specify/memory/constitution.md) fixava uma lista fechada de três destinos de rede (`accounts.spotify.com`, `api.spotify.com`, `i.scdn.co`) e diz textualmente: _"Ampliar essa lista é uma emenda a esta constituição, não uma decisão de implementação."_
 
-Esta feature **não é implementável** sem ampliar essa lista para incluir os destinos oficiais do serviço de vídeo (autorização, API de dados e miniaturas). Portanto:
+Esta feature não seria implementável sem ampliar essa lista para incluir os destinos oficiais do serviço de vídeo (autorização, API de dados e miniaturas). A emenda **MINOR v1.0.0 → v1.1.0 foi ratificada em 2026-08-05**, antes de `/speckit-plan`, e a lista passou a ser por provedor. O gate está cumprido.
 
-- **Ação requerida**: emenda MINOR da constituição (v1.0.0 → v1.1.0) via `/speckit-constitution`, ampliando a lista autorizada e generalizando o Princípio II de "Spotify" para "os provedores que o usuário selecionou".
-- **A emenda DEVE ser ratificada antes de `/speckit-plan`**, não depois. O Princípio II é NÃO NEGOCIÁVEL e a governança exige emenda ratificada _antes_ do código que a violaria.
 - O Princípio I (sem servidor próprio) **não** é violado por esta feature e permanece intacto.
+- O Princípio V **não foi emendado** — ver a seção seguinte.
 
-#### Segundo ponto para a mesma emenda: alcance do Princípio V
+#### Segundo ponto: alcance do Princípio V — resolvido **sem** emenda
 
-A decisão registrada em Clarifications — esgotamento de cota **não** gera trabalho retomável em outro dia — colide com dois trechos do Princípio V:
+A decisão registrada em Clarifications — esgotamento de cota **não** gera trabalho retomável em outro dia — colidia com dois trechos do Princípio V:
 
-| Trecho do Princípio V                                                                     | Colisão                                                                                                                                                                                              |
+| Trecho do Princípio V                                                                     | Colisão original                                                                                                                                                                                     |
 | ----------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | _"Falha parcial DEVE ser retomável sem duplicar nem perder faixas"_                       | O esgotamento de cota no meio da adição é uma falha parcial, e FR-031 encerra a execução sem oferecer retomada.                                                                                        |
-| _"O trabalho em andamento DEVE ser apagado apenas após sucesso ou por ação explícita"_     | FR-038 apaga o rascunho quando todos os serviços terminam, e uma execução encerrada por cota conta como terminada — logo o rascunho seria apagado sem sucesso e sem ação explícita do usuário.          |
+| _"O trabalho em andamento DEVE ser apagado apenas após sucesso ou por ação explícita"_     | A redação anterior de FR-038 apagava o rascunho quando todos os serviços terminavam, e uma execução encerrada por cota contava como terminada — logo o rascunho seria apagado sem sucesso e sem ação explícita. |
 
-A emenda DEVE resolver isso explicitamente, de uma das duas formas: **(a)** delimitar o alcance do Princípio V à retomada _dentro de uma execução_ (rede, limitação de requisições, reautorização), classificando o esgotamento de cota como desfecho terminal legítimo; ou **(b)** manter o rascunho após encerramento por cota e exigir descarte explícito, preservando a segunda cláusula ao custo de um rascunho que não retoma nada.
+**Resolução adotada**: a alternativa **(b)** — o rascunho é mantido após encerramento por cota e só sai por descarte explícito. O **Princípio V não foi emendado** e permanece literal; a correção foi feita nesta spec, em FR-038. A emenda constitucional v1.1.0 alterou apenas o Princípio II (superfície de rede) e registrou essa decisão.
+
+Quanto à primeira colisão: a retomada que o Princípio V exige continua garantida **dentro de uma execução** — rede, limitação de requisições e reautorização (FR-033, SC-010). O esgotamento de cota é desfecho terminal, e o rascunho preservado serve para relatar, não para retomar.
 
 O restante do Princípio V — nenhuma escrita sem confirmação humana explícita — permanece intacto e é reforçado por FR-019.
 
@@ -71,6 +72,11 @@ Três pontos da 001 são **alterados** por esta feature: `001/FR-010` (destinos 
 - **Q**: Um rascunho gravado pela versão anterior, sem informação de destinos, é restaurado ou descartado? → **A**: Restaurado como fluxo de destino único com o Spotify selecionado, retomando na etapa em que parou. Nenhum aviso adicional além do banner de recuperação já existente — para o usuário, é a mesma recuperação de sempre.
 - **Q**: O que separa "parcial" de "falhou" no resumo final? → **A**: A existência ou não de playlist na conta. **Falhou** = nenhuma playlist chegou a ser criada. **Parcial** = playlist criada, mas nem todas as faixas confirmadas entraram. **Concluído** = playlist criada com todas as faixas confirmadas dentro. Sem limiar percentual: o que muda o próximo passo do usuário é ter ou não uma playlist para conferir.
 - **Q**: Na revisão do YouTube, correspondências "Confiante" vêm marcadas por padrão como no Spotify? → **A**: Sim, mesmo comportamento nos dois serviços — "Confiante" marcado, "Incerta" desmarcado. A menor precisão do catálogo de vídeo é absorvida por um limiar de "Confiante" mais exigente no YouTube e pela sinalização de versão diferente, não por obrigar confirmação linha a linha.
+- **Q**: A interface avisa que a permissão mínima disponível no serviço de vídeo é mais ampla do que "criar playlists"? → **A**: Sim, **na etapa de configuração**, junto ao campo de credencial daquele serviço: um texto curto declara o que o consentimento concede, que a aplicação usa isso apenas para criar playlists e listar as existentes, e que o provedor não oferece permissão mais restrita. O aviso fica no contexto do provedor afetado, nunca diluído em nota genérica, e aparece **antes** de o usuário investir tempo no fluxo.
+- **Q**: Por onde o usuário encurta a lista para o segundo destino, se o fluxo linear não tem etapa para isso? → **A**: Por uma **ação opcional**, sem etapa nova no fluxo, alcançável de dois pontos de entrada: o resultado do serviço anterior ("ajustar a lista para o próximo destino") e a saída "reduzir a lista" da tela de bloqueio por cota. Os dois abrem a mesma lista de linhas em modo **somente remoção**, e o ajuste é aplicado **antes da busca** do destino seguinte — que é o momento em que reduzir ainda economiza cota. Quem não precisa reduzir nunca vê essa tela.
+- **Q**: Há uma segunda checagem de cota depois da revisão, quando o número real de faixas confirmadas já é conhecido? → **A**: Não. A estimativa é feita **uma única vez**, antes da busca, supondo que **todas** as linhas serão confirmadas — o cenário de maior custo. Depois disso não há novo bloqueio: se a cota acabar durante a adição, vale o tratamento já previsto (FR-031, FR-032), com a playlist ficando incompleta na conta. Consequência aceita: um caso previsível de playlist incompleta não é evitado, em troca de um fluxo com uma tela a menos e um único ponto de decisão sobre cota.
+- **Q**: O rascunho é apagado quando a execução termina por esgotamento de cota, como FR-038 dizia, ou preservado, como o Princípio V exige? → **A**: **Preservado até descarte explícito.** Ao reabrir, a aplicação exibe o relato final — o que entrou, o que faltou, a playlist incompleta na conta e a advertência de nome duplicado — e o único caminho adiante é descartar o rascunho. Não há botão de retomar, porque FR-031 já decidiu que não existe continuação em outro dia. O Princípio V **não foi emendado**; FR-038 é que foi corrigido.
+- **Q**: A tela de bloqueio prévio por cota oferece duas ou três saídas, já que FR-034 proíbe oferecer "ampliar o orçamento" ali e SC-008 exigia as três? → **A**: **Duas ações acionáveis** — reduzir a lista (informando quantas linhas cabem no saldo) e pular o destino — mais um **texto explicativo sem controle associado**, declarando que o cálculo parte do orçamento padrão do provedor e que ampliar a cota junto a ele não altera esse cálculo. Prevalece o par FR-029/FR-034, que é a regra mais específica e a única com justificativa registrada; SC-008 e o cenário 1 de US4 foram reescritos para acompanhar.
 - **Q**: Uma execução encerrada por cota no meio da adição deixa uma playlist incompleta na conta. Como isso é tratado? → **A**: A playlist incompleta **não** é removida pelo sistema. O relato de encerramento informa que ela existe, quais linhas entraram e quais faltaram, e adverte que uma nova tentativa com o mesmo nome será bloqueada pela checagem de nome duplicado — o usuário escolhe outro nome ou apaga a playlist parcial no aplicativo do provedor.
 
 ---
@@ -130,7 +136,7 @@ Com os dois destinos selecionados, o usuário cola a lista e informa nome e visi
 2. **Given** o ciclo do primeiro serviço em andamento, **When** o usuário observa a interface, **Then** o serviço atual e a posição dele na fila estão visíveis em todas as telas do ciclo.
 3. **Given** dois destinos selecionados, **When** o ciclo do primeiro começa, **Then** nenhuma autorização foi solicitada ao segundo serviço.
 4. **Given** o primeiro serviço concluído, **When** o ciclo do segundo começa, **Then** a revisão do segundo é obrigatória e independente — nada é escrito nele sem confirmação explícita.
-5. **Given** o primeiro serviço concluído, **When** o usuário decide encerrar sem fazer o segundo, **Then** o encerramento é permitido e a playlist já criada permanece intacta e reportada no resumo.
+5. **Given** o primeiro serviço concluído, **When** o usuário decide encerrar sem fazer o segundo, **Then** o segundo é registrado como **pulado**, e a playlist já criada permanece intacta e reportada no resumo.
 6. **Given** o segundo serviço falhar por completo, **When** o resumo final é exibido, **Then** o sucesso do primeiro é reportado como tal e a falha do segundo aparece com causa provável e próximo passo.
 7. **Given** o nome escolhido já existir em um dos serviços mas não no outro, **When** o ciclo do serviço em conflito começa, **Then** o sistema exige nome diferente apenas para aquele serviço, sem invalidar o que já foi criado.
 
@@ -138,15 +144,15 @@ Com os dois destinos selecionados, o usuário cola a lista e informa nome e visi
 
 ### User Story 4 — Saber de antemão o que não cabe, e não perder trabalho por expiração (Priority: P4)
 
-Antes de buscar qualquer coisa no YouTube, o usuário vê quanto do orçamento diário a lista deve consumir. Se não couber, o destino é **barrado** ali mesmo, com as saídas à mão: reduzir a lista, pular o YouTube ou ampliar o orçamento junto ao provedor. Nada é iniciado para falhar no meio. Já a autorização do YouTube, que não se renova em silêncio, pode expirar durante o uso — e aí nada do trabalho revisado é perdido: o sistema pede reautorização e retoma no mesmo ponto.
+Antes de buscar qualquer coisa no YouTube, o usuário vê quanto do orçamento diário a lista deve consumir. Se não couber, o destino é **barrado** ali mesmo, com as duas saídas à mão — reduzir a lista, que informa quantas linhas cabem, ou pular o YouTube — e a explicação de que a conta parte do orçamento padrão do provedor. Nada é iniciado para falhar no meio. Já a autorização do YouTube, que não se renova em silêncio, pode expirar durante o uso — e aí nada do trabalho revisado é perdido: o sistema pede reautorização e retoma no mesmo ponto.
 
 **Why this priority**: é a rede de segurança dos dois limites que o serviço de vídeo impõe e o Spotify não. Sem ela o produto quebra de forma opaca justamente no caso comum de listas maiores.
 
-**Independent Test**: com uma lista maior do que o orçamento disponível, verificar que o destino é barrado antes de qualquer requisição, com as três saídas oferecidas; separadamente, simular expiração da autorização durante a revisão e verificar que nenhuma decisão de revisão é perdida.
+**Independent Test**: com uma lista maior do que o orçamento disponível, verificar que o destino é barrado antes de qualquer requisição, com as duas saídas acionáveis e a declaração da premissa de cálculo; separadamente, simular expiração da autorização durante a revisão e verificar que nenhuma decisão de revisão é perdida.
 
 **Acceptance Scenarios**:
 
-1. **Given** a lista estimada excede o orçamento diário disponível, **When** a estimativa é exibida antes da busca, **Then** o destino é bloqueado com o motivo, e as saídas oferecidas são reduzir a lista, pular o destino ou ampliar o orçamento junto ao provedor.
+1. **Given** a lista estimada excede o orçamento diário disponível, **When** a estimativa é exibida antes da busca, **Then** o destino é bloqueado com o motivo, as duas ações oferecidas são reduzir a lista — com a quantidade de linhas que cabe no saldo — e pular o destino, e um texto sem controle associado declara que o cálculo parte do orçamento padrão e que ampliar a cota junto ao provedor não altera esse cálculo.
 2. **Given** a lista cabe no orçamento, **When** a estimativa é exibida, **Then** ela informa o consumo previsto e o quanto isso representa do orçamento, e a busca só começa após o usuário prosseguir.
 3. **Given** a cota se esgota durante a adição de faixas apesar da estimativa, **When** o sistema detecta o esgotamento, **Then** ele encerra a execução daquele serviço sem tentar de novo em laço e relata quais linhas entraram e quais faltaram.
 4. **Given** uma execução encerrada por cota deixou playlist incompleta na conta, **When** o relato é exibido, **Then** ele informa que a playlist existe incompleta e adverte que uma nova tentativa com o mesmo nome será bloqueada pela checagem de nome duplicado.
@@ -167,10 +173,11 @@ Antes de buscar qualquer coisa no YouTube, o usuário vê quanto do orçamento d
 - **Nome duplicado em um serviço e livre no outro**: resolução local ao serviço em conflito.
 - **Zero faixas selecionadas na revisão de um serviço**: criação bloqueada naquele serviço, com explicação; o outro serviço não é afetado.
 - **Linha inválida ou não encontrada em um serviço e encontrada no outro**: normal e esperado; os resultados por serviço divergem e o resumo mostra isso sem sugerir erro.
-- **Cota insuficiente antes de começar**: o destino é bloqueado na estimativa, com as saídas de reduzir a lista, pular o destino ou ampliar o orçamento — nunca iniciado para falhar no meio.
+- **Cota insuficiente antes de começar**: o destino é bloqueado na estimativa, com as ações de reduzir a lista ou pular o destino, mais a declaração de que o cálculo parte do orçamento padrão — nunca iniciado para falhar no meio.
 - **Cota esgota na fase de busca** (antes de qualquer escrita): nada foi criado na conta; a execução daquele serviço encerra relatando até onde a busca chegou, sem promessa de retomada em outro dia.
 - **Cota esgota no meio da adição**: a playlist fica incompleta na conta e não é removida. O relato precisa dizer quais linhas entraram, quais faltaram, e que repetir com o mesmo nome será bloqueado pela checagem de nome duplicado.
-- **Cota esgota mesmo tendo passado pela estimativa**: possível e esperado, porque o Registro de Consumo Diário só conhece o consumo desta aplicação neste dispositivo — cota gasta em outro navegador, outro dispositivo ou outra aplicação do mesmo projeto do usuário é invisível para o cálculo. É tratado como o caso acima, não como defeito.
+- **Reabrir depois de uma execução encerrada por cota**: o rascunho continua lá — encerramento por cota não é sucesso nem descarte. A reabertura mostra o relato final daquela execução e oferece apenas o descarte explícito; não há retomada, nem no dia seguinte.
+- **Cota esgota mesmo tendo passado pela estimativa**: possível e esperado, e não há segunda checagem depois da revisão que pudesse barrar a criação (FR-029). Também porque o Registro de Consumo Diário só conhece o consumo desta aplicação neste dispositivo — cota gasta em outro navegador, outro dispositivo ou outra aplicação do mesmo projeto do usuário é invisível para o cálculo. É tratado como o caso acima, não como defeito.
 - **Usuário ampliou a cota junto ao provedor**: a aplicação continua calculando pelo orçamento padrão, então o bloqueio prévio permanece conservador. A mensagem de bloqueio precisa declarar essa premissa para que o usuário entenda por que foi barrado.
 - **Registro de Consumo Diário ausente ou corrompido**: tratado como consumo zero no dia, o que torna a estimativa otimista; o esgotamento durante a execução continua sendo a rede de proteção.
 - **Correção de texto propagada gera correspondência pior no segundo serviço**: a revisão do segundo serviço é independente e sempre editável, então a correção herdada nunca é definitiva.
@@ -209,14 +216,14 @@ Antes de buscar qualquer coisa no YouTube, o usuário vê quanto do orçamento d
 
 #### Fluxo sequencial por serviço
 
-- **FR-013**: O texto de entrada, o nome, a descrição e a visibilidade da playlist DEVEM ser informados uma única vez e aplicados a todos os serviços selecionados. Depois de um serviço já ter criado sua playlist, o texto DEVE permanecer editável apenas por **remoção de linhas** para os serviços seguintes: a lista de um destino posterior DEVE ser sempre um subconjunto da lista usada pelos anteriores, e o sistema NÃO DEVE permitir acrescentar nem alterar linhas nesse ponto. Nome, descrição e visibilidade permanecem compartilhados e imutáveis, salvo a resolução de nome duplicado (FR-022).
+- **FR-013**: O texto de entrada, o nome, a descrição e a visibilidade da playlist DEVEM ser informados uma única vez e aplicados a todos os serviços selecionados. Depois de um serviço já ter criado sua playlist, o texto DEVE permanecer editável apenas por **remoção de linhas** para os serviços seguintes: a lista de um destino posterior DEVE ser sempre um subconjunto da lista usada pelos anteriores, e o sistema NÃO DEVE permitir acrescentar nem alterar linhas nesse ponto. Essa redução DEVE ser uma **ação opcional**, sem etapa própria no fluxo linear (FR-043), alcançável a partir do resultado do serviço anterior e da saída "reduzir a lista" do bloqueio por cota (FR-029); ambos os caminhos DEVEM abrir a mesma lista em modo somente remoção e aplicar o ajuste **antes da busca** do destino seguinte. Nome, descrição e visibilidade permanecem compartilhados e imutáveis, salvo a resolução de nome duplicado (FR-022).
 - **FR-014**: As correções de **texto** de uma linha feitas na revisão de um serviço DEVEM se propagar para a busca dos serviços seguintes, de modo que o usuário nunca corrija a mesma grafia duas vezes. As escolhas de candidata (qual faixa ou vídeo usar), a seleção e a exclusão de itens NÃO DEVEM se propagar, por serem específicas do catálogo de cada serviço.
 - **FR-015**: A ordem de execução DEVE ser fixa e definida pelo produto — **Spotify primeiro, YouTube depois** — e o sistema NÃO DEVE oferecer controle de ordenação na interface. Serviços sem limite diário de cota DEVEM vir antes dos que têm, para que um bloqueio de cota não comprometa o resultado dos demais.
-- **FR-016**: O sistema DEVE executar o ciclo completo de um serviço por vez — autorizar, buscar, revisar, criar, apresentar resultado — começando o ciclo do próximo apenas depois de o anterior ter sido concluído, pulado ou encerrado pelo usuário.
+- **FR-016**: O sistema DEVE executar o ciclo completo de um serviço por vez — autorizar, buscar, revisar, criar, apresentar resultado — começando o ciclo do próximo apenas depois de o anterior ter sido concluído ou pulado.
 - **FR-017**: O sistema DEVE solicitar a autorização de um serviço apenas quando o ciclo dele começar, e NÃO DEVE pedir autorização de serviço que o usuário talvez não chegue a usar.
 - **FR-018**: O sistema DEVE indicar, em todas as telas do ciclo, qual serviço está em andamento e a posição dele na fila (por exemplo, "Spotify — 1 de 2"), omitindo essa indicação quando houver apenas um destino selecionado.
 - **FR-019**: A etapa de revisão DEVE ser obrigatória e independente **por serviço**: nada é escrito em um serviço sem confirmação explícita da revisão daquele serviço (`001/FR-031`).
-- **FR-020**: O sistema DEVE permitir pular ou encerrar um serviço pendente sem desfazer, invalidar ou ocultar o que já foi criado em outro.
+- **FR-020**: O sistema DEVE permitir pular um serviço pendente sem desfazer, invalidar ou ocultar o que já foi criado em outro.
 - **FR-021**: Falha total em um serviço NÃO DEVE impedir, cancelar ou degradar o ciclo de outro serviço.
 - **FR-022**: O sistema DEVE resolver a checagem de nome duplicado (`001/FR-029`) localmente a cada serviço, exigindo nome diferente apenas onde houver conflito.
 
@@ -231,7 +238,7 @@ Antes de buscar qualquer coisa no YouTube, o usuário vê quanto do orçamento d
 
 #### Orçamento diário de cota
 
-- **FR-029**: Antes de iniciar a busca no serviço de vídeo, o sistema DEVE estimar o consumo previsto do orçamento diário e exibi-lo ao usuário. O saldo usado na comparação DEVE ser o **orçamento padrão do provedor** menos o consumo que a própria aplicação registrou naquele dia no dispositivo. O sistema NÃO DEVE pedir ao usuário que informe o orçamento dele. Quando a estimativa exceder esse saldo, o sistema DEVE **bloquear** o início daquele destino, oferecendo como saídas reduzir a lista ou pular o destino, e DEVE declarar na mensagem que o cálculo parte do orçamento padrão.
+- **FR-029**: Antes de iniciar a busca no serviço de vídeo, o sistema DEVE estimar o consumo previsto do orçamento diário e exibi-lo ao usuário. A estimativa DEVE ser calculada **uma única vez por execução**, supondo que **todas** as linhas serão confirmadas na revisão — o cenário de maior custo —, e o sistema NÃO DEVE reavaliar a cota depois da revisão nem bloquear a criação por saldo insuficiente naquele momento. O saldo usado na comparação DEVE ser o **orçamento padrão do provedor** menos o consumo que a própria aplicação registrou naquele dia no dispositivo. O sistema NÃO DEVE pedir ao usuário que informe o orçamento dele. Quando a estimativa exceder esse saldo, o sistema DEVE **bloquear** o início daquele destino, oferecendo exatamente duas ações acionáveis — reduzir a lista, informando quantas linhas cabem no saldo, e pular o destino —, e DEVE declarar na mensagem que o cálculo parte do orçamento padrão e que ampliar a cota junto ao provedor não altera esse cálculo.
 - **FR-030**: O registro local de consumo DEVE ser zerado no mesmo instante em que o provedor renova a cota diária, e NÃO no fuso local do usuário, de modo que o saldo calculado não divirja do saldo real por diferença de fuso.
 - **FR-031**: Ao detectar o esgotamento do orçamento diário durante a execução, o sistema DEVE encerrar a execução daquele serviço de forma limpa — sem repetição em laço — relatando quais linhas entraram e quais faltaram. O sistema NÃO DEVE prometer nem oferecer retomada do trabalho em outro dia.
 - **FR-032**: Quando o encerramento por cota deixar uma playlist incompleta na conta do usuário, o sistema NÃO DEVE removê-la, DEVE informar que ela existe incompleta e DEVE advertir que uma nova tentativa com o mesmo nome será bloqueada pela checagem de nome duplicado (FR-022).
@@ -246,9 +253,9 @@ Antes de buscar qualquer coisa no YouTube, o usuário vê quanto do orçamento d
 #### Rascunho e resultado consolidado
 
 - **FR-037**: O rascunho DEVE registrar a seleção de destinos, o serviço em andamento, a etapa dentro do ciclo dele, a lista efetivamente usada por cada serviço e o desfecho de cada serviço já finalizado. O registro da lista usada por um serviço já concluído DEVE ser imutável, para que uma redução posterior não altere retroativamente o relato dele.
-- **FR-038**: O sistema DEVE apagar o rascunho somente quando todos os serviços selecionados tiverem terminado — concluídos, pulados ou encerrados — e DEVE manter a ação explícita de descartar rascunho (`001/FR-045`).
+- **FR-038**: O sistema DEVE apagar o rascunho somente após **sucesso** — todos os serviços selecionados concluídos ou pulados por decisão do usuário — ou por **ação explícita de descarte** (`001/FR-045`). Uma execução encerrada por esgotamento de cota NÃO conta como sucesso: nesse caso o rascunho DEVE ser preservado, e a reabertura DEVE apresentar o relato final daquela execução — o que entrou, o que faltou, a existência da playlist incompleta e a advertência de nome duplicado (FR-032) — tendo o descarte explícito como único caminho adiante. O sistema NÃO DEVE oferecer retomada daquele trabalho (FR-031).
 - **FR-039**: A recuperação do rascunho DEVE retomar no serviço e na etapa exatos em que o trabalho parou (`001/FR-044`).
-- **FR-040**: Ao final do fluxo, quando houver mais de um destino, o sistema DEVE exibir um resumo por serviço com estado, link da playlist, total adicionado, total ignorado e as linhas não encontradas. Os estados DEVEM ser atribuídos por estes critérios, sem limiar percentual: **concluído** quando a playlist foi criada com todas as faixas confirmadas dentro; **parcial** quando a playlist foi criada mas nem todas as faixas confirmadas entraram; **falhou** quando nenhuma playlist chegou a ser criada; **pulado** quando o usuário encerrou o serviço antes de confirmar a criação. Quando os destinos tiverem recebido listas diferentes, o resumo DEVE declarar isso explicitamente, informando quantas linhas cada serviço recebeu e quais foram removidas para os destinos posteriores.
+- **FR-040**: Ao final do fluxo, quando houver mais de um destino, o sistema DEVE exibir um resumo por serviço com estado, link da playlist, total adicionado, total ignorado e as linhas não encontradas. Os estados DEVEM ser atribuídos por estes critérios, sem limiar percentual: **concluído** quando a playlist foi criada com todas as faixas confirmadas dentro; **parcial** quando a playlist foi criada mas nem todas as faixas confirmadas entraram; **falhou** quando nenhuma playlist chegou a ser criada; **pulado** quando o usuário encerrou o serviço antes de confirmar a criação — é o termo canônico para esse desfecho em todo este documento, e "encerrar um serviço" na interface produz exatamente ele. Quando os destinos tiverem recebido listas diferentes, o resumo DEVE declarar isso explicitamente, informando quantas linhas cada serviço recebeu e quais foram removidas para os destinos posteriores.
 - **FR-041**: O sistema DEVE permitir copiar em bloco as linhas não encontradas de cada serviço separadamente (`001/FR-040`).
 - **FR-042**: O sistema DEVE ler rascunhos gravados por versões anteriores da aplicação como fluxo de destino único com o Spotify selecionado, retomando na etapa em que o trabalho parou, sem exibir aviso adicional além do banner de recuperação já existente (`001/FR-044`). O sistema NÃO DEVE descartá-los nem interpretá-los como fluxo multi-serviço.
 
@@ -256,9 +263,9 @@ Antes de buscar qualquer coisa no YouTube, o usuário vê quanto do orçamento d
 
 - **FR-043**: A interface DEVE seguir um fluxo linear atualizado: Configuração → Destinos → Entrada → (por serviço: Revisão → Resultado) → Resumo, substituindo o fluxo de quatro etapas de `001/FR-041`.
 - **FR-044**: O sistema NÃO DEVE transmitir credenciais, dados de sessão ou conteúdo do usuário a qualquer destino que não seja um serviço oficial de um dos provedores suportados, substituindo `001/FR-010`. A lista de destinos autorizados permanece fechada e verificável.
-- **FR-045**: O sistema DEVE solicitar de cada provedor apenas as permissões mínimas necessárias para criar playlists e ler a lista de playlists existentes do usuário (`001/FR-007`).
+- **FR-045**: O sistema DEVE solicitar de cada provedor apenas as permissões mínimas necessárias para criar playlists e ler a lista de playlists existentes do usuário (`001/FR-007`). Quando a permissão mínima disponível em um provedor for mais ampla do que essas duas capacidades, a etapa de configuração DEVE declarar isso junto ao campo de credencial daquele serviço — o que o consentimento concede, para que a aplicação usa, e que o provedor não oferece permissão mais restrita. O aviso NÃO DEVE ser diluído em nota genérica válida para todos os serviços.
 - **FR-046**: Toda mensagem de erro DEVE identificar o serviço a que se refere, a causa provável e o próximo passo (`001/FR-042`).
-- **FR-047**: Todas as telas novas — seletor de destinos, indicação de fila, estimativa de cota e resumo consolidado — DEVEM ser operáveis por teclado, ter rótulos acessíveis, permanecer utilizáveis em telas estreitas sem rolagem horizontal da página, e ter todo o texto em português do Brasil (`001/FR-046`–`001/FR-048`).
+- **FR-047**: Todas as telas novas — seletor de destinos, indicação de fila, estimativa de cota, ajuste de lista para destino posterior e resumo consolidado — DEVEM ser operáveis por teclado, ter rótulos acessíveis, permanecer utilizáveis em telas estreitas sem rolagem horizontal da página, e ter todo o texto em português do Brasil (`001/FR-046`–`001/FR-048`).
 
 ### Key Entities _(include if feature involves data)_
 
@@ -285,7 +292,7 @@ Antes de buscar qualquer coisa no YouTube, o usuário vê quanto do orçamento d
 - **SC-005**: Em 100% das execuções, nenhuma autorização é solicitada a um serviço não selecionado, e a autorização de um serviço selecionado só é pedida quando o ciclo dele começa.
 - **SC-006**: Para a mesma lista de referência de 50 faixas populares usada na 001, ao menos 75% recebem correspondência **Confiante** correta no serviço de vídeo sem intervenção manual. O patamar é inferior aos 90% do `001/SC-002` porque o catálogo é de vídeos e admite múltiplas versões da mesma faixa.
 - **SC-007**: Em 100% dos casos, a falha total de um serviço não impede a conclusão do outro, e o resumo final reporta os dois desfechos sem ambiguidade.
-- **SC-008**: Em 100% dos casos em que a lista não cabe no orçamento diário disponível, o destino é bloqueado antes de qualquer requisição, e as três saídas — reduzir a lista, pular o destino, ampliar o orçamento — estão visíveis na mesma tela.
+- **SC-008**: Em 100% dos casos em que a lista não cabe no orçamento diário disponível, o destino é bloqueado antes de qualquer requisição, e na mesma tela estão visíveis as duas ações acionáveis — reduzir a lista, com a quantidade de linhas que cabe no saldo, e pular o destino — mais a declaração de que o cálculo parte do orçamento padrão do provedor.
 - **SC-009**: Ao esgotar o orçamento diário no meio da adição, o sistema encerra em uma única mensagem que identifica exatamente quais linhas entraram e quais faltaram, sem repetições em laço, e informa que a playlist ficou incompleta na conta.
 - **SC-010**: Uma retomada após reautorização, erro de rede ou limitação de requisições, dentro da mesma execução, conclui a playlist sem nenhuma faixa duplicada nem faltante, em 100% das simulações.
 - **SC-011**: A estimativa de consumo do orçamento diário é exibida antes de qualquer requisição de busca ao serviço de vídeo, em 100% das execuções que o incluem.
@@ -302,6 +309,7 @@ Antes de buscar qualquer coisa no YouTube, o usuário vê quanto do orçamento d
 ## Assumptions
 
 - O usuário possui conta nos serviços que pretende usar e é capaz de registrar um app próprio em cada provedor para obter o Client ID e cadastrar o Redirect URI. Isso já era verdade para o Spotify e passa a valer também para o serviço de vídeo.
+- A permissão mínima que o serviço de vídeo oferece para criar uma playlist abrange o gerenciamento da conta naquele serviço — não existe escopo restrito apenas a playlists, como há no serviço de música. É limitação do provedor, declarada ao usuário na configuração (FR-045), não escolha do produto.
 - O usuário do serviço de vídeo precisa habilitar a API de dados no projeto dele e, enquanto o app estiver em modo de teste, incluir a própria conta como testadora — a tela de consentimento exibirá aviso de app não verificado. O produto orienta, não contorna.
 - O orçamento diário de cota é **por projeto do usuário**, não compartilhado entre usuários da aplicação. Cada pessoa administra o seu e pode solicitar ampliação ao provedor.
 - Os números de cota usados nas estimativas (10.000 unidades/dia, 100 por busca, 50 por faixa adicionada) são o orçamento padrão do provedor na data desta spec. A estimativa é uma previsão informativa, não uma garantia: o provedor é a fonte da verdade e pode alterar os valores.
@@ -316,9 +324,9 @@ Antes de buscar qualquer coisa no YouTube, o usuário vê quanto do orçamento d
 - As três classes de confiança já existem; esta feature exige que os limiares sejam calibrados separadamente por serviço, com o de **Confiante** do catálogo de vídeo mais exigente que o do catálogo musical (FR-023). Os valores são fixados no planejamento, e SC-006 é o critério que os valida.
 - O caso de uso real continua girando em torno de listas de até 50 linhas. Para o serviço de vídeo, essa é também a fronteira prática imposta pelo orçamento diário padrão.
 
-### Dependência de governança (não é requisito)
+### Dependência de governança (não é requisito) — resolvida
 
-- Esta feature depende de uma emenda MINOR da constituição, com **dois** pontos: ampliar a lista fechada de destinos de rede do Princípio II, e delimitar o alcance da retomabilidade do Princípio V diante do encerramento por cota. Ambos estão detalhados no topo deste documento. Registrado aqui para rastreabilidade; a emenda é pré-requisito de `/speckit-plan`, não deste documento.
+- Esta feature dependia de uma emenda MINOR da constituição. A emenda **v1.1.0 foi ratificada em 2026-08-05** e ampliou a lista fechada de destinos de rede do Princípio II para cobrir os dois provedores. O segundo ponto — o alcance da retomabilidade diante do encerramento por cota — foi resolvido **nesta spec**, em FR-038, sem alterar o Princípio V. Ambos estão detalhados no topo deste documento. Registrado aqui para rastreabilidade.
 
 ---
 
