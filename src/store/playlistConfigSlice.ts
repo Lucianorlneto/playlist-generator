@@ -2,16 +2,22 @@ import { emptyPlaylistConfig } from '@/domain/types';
 
 import type { PlaylistConfigSlice, SliceCreator } from './types';
 
+/**
+ * Configuração da playlist — informada **uma vez** e válida para todos os
+ * destinos (FR-014).
+ *
+ * `existingNames` é a única coisa aqui que é local a um serviço: a checagem de
+ * nome duplicado vale por conta, e o nome usado em outro destino não interfere
+ * (FR-022). Por isso a lista é zerada a cada troca de serviço, não acumulada.
+ */
 export const createPlaylistConfigSlice: SliceCreator<PlaylistConfigSlice> = (set) => ({
   playlistConfig: emptyPlaylistConfig(),
   existingNames: null,
   nameCheckError: null,
   nameCheckRunning: false,
 
-  creation: null,
   creating: false,
   creationError: null,
-  result: null,
 
   setPlaylistName: (name) =>
     set((state) => ({ playlistConfig: { ...state.playlistConfig, name } })),
@@ -26,8 +32,6 @@ export const createPlaylistConfigSlice: SliceCreator<PlaylistConfigSlice> = (set
   setNameCheckError: (nameCheckError) => set({ nameCheckError, nameCheckRunning: false }),
   setNameCheckRunning: (nameCheckRunning) => set({ nameCheckRunning }),
 
-  setCreation: (creation) => set({ creation }),
   setCreating: (creating) => set({ creating }),
   setCreationError: (creationError) => set({ creationError, creating: false }),
-  setResult: (result) => set({ result }),
 });

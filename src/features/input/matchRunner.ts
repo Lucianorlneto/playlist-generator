@@ -1,93 +1,55 @@
 /**
- * Orquestração da busca: limitador → busca → pontuação → deduplicação.
+ * Orquestração da busca do serviço corrente.
  *
- * Duas garantias que este módulo existe para sustentar:
- * - **a falha de uma linha não aborta as demais** (contrato §6): cada busca é
- *   capturada individualmente e vira `error` naquele item;
+ * O runner deixou de conhecer o provedor: ele chama `provider.search`, que já
+ * devolve os itens pontuados e classificados com os limiares e os indícios
+ * daquele catálogo. O que sobra aqui é o que é comum aos dois — deduplicação,
+ * progresso e cancelamento.
+ *
+ * Duas garantias mantidas da 001:
+ * - **a falha de uma linha não aborta as demais** (isolada no `searchRunner`);
  * - **cancelar funciona em qualquer momento**, inclusive durante a espera por
  *   limitação, porque o mesmo `AbortSignal` atravessa o limitador e o backoff do
- *   cliente HTTP (FR-026, SC-011).
+ *   cliente HTTP.
  */
 
 import { markDuplicates } from '@/domain/dedupe';
-import { classify, scoreCandidate } from '@/domain/scoring';
-import { pendingItem, type InputLine, type MatchItem, type TrackCandidate } from '@/domain/types';
-import { t } from '@/i18n/pt-BR';
-import { isAbortError, limiter as sharedLimiter, type Limiter } from '@/services/rate-limiter';
-import { AppError } from '@/services/spotify/errors';
-import { searchTrack } from '@/services/spotify/search';
+import type { ProviderId } from '@/domain/providers';
+import { pendingItem, type InputLine, type MatchItem } from '@/domain/types';
+import { providerFor } from '@/services/providers/registry';
 
 export interface RunMatchOptions {
   signal: AbortSignal;
   /** Chamado a cada linha concluída, com a contagem acumulada. */
   onProgress?: (done: number, total: number) => void;
-  /** Chamado a cada item resolvido, para atualização incremental da tela. */
-  onItem?: (item: MatchItem) => void;
-  limiter?: Limiter;
 }
 
-/** Resolve uma única linha. Usada tanto no lote quanto na re-busca por linha (FR-017). */
+/** Resolve uma única linha — usada na re-busca por linha da revisão. */
 export async function matchLine(
+  provider: ProviderId,
   line: InputLine,
   signal: AbortSignal,
-  limiter: Limiter = sharedLimiter,
 ): Promise<MatchItem> {
-  const base = pendingItem(line);
-
-  if (line.parseStatus === 'unparsed') return base;
-
-  try {
-    const raw = await limiter.run(() => searchTrack(line, signal), signal);
-
-    const candidates: TrackCandidate[] = raw
-      .map((track) => ({ ...track, score: scoreCandidate(line, track) }))
-      .sort((a, b) => b.score - a.score);
-
-    const best = candidates[0];
-    if (best === undefined) {
-      return { ...base, status: 'not_found', candidates: [] };
-    }
-
-    const status = classify(best.score);
-
-    return {
-      ...base,
-      status,
-      candidates,
-      selectedUri: status === 'not_found' ? null : best.uri,
-      // Só Confiante entra marcada; Incerta espera confirmação visual (FR-025).
-      included: status === 'confident',
-    };
-  } catch (error) {
-    if (isAbortError(error)) throw error;
-    const message = error instanceof AppError ? error.info.title : t.errors.searchLineFailed.title;
-    return { ...base, status: 'not_found', error: message };
-  }
+  if (line.parseStatus === 'unparsed') return pendingItem(line);
+  const [item] = await providerFor(provider).search([line], { signal });
+  return item ?? pendingItem(line);
 }
 
 /**
- * Resolve a lista inteira. Os itens saem na ordem original — a concorrência está
- * na execução, não no resultado (FR-019).
+ * Resolve a lista inteira. Os itens saem na ordem original — a concorrência
+ * está na execução, não no resultado.
  */
 export async function runMatching(
+  provider: ProviderId,
   lines: InputLine[],
   options: RunMatchOptions,
 ): Promise<MatchItem[]> {
-  const { signal, onProgress, onItem, limiter = sharedLimiter } = options;
-  // Pré-preenchido: se o usuário cancelar no meio, as linhas ainda não buscadas
-  // voltam como `pending` e o que já foi encontrado é preservado (SC-011).
-  const results = lines.map((line) => pendingItem(line));
-  let done = 0;
+  const { signal, onProgress } = options;
 
-  await Promise.allSettled(
-    lines.map(async (line, index) => {
-      const item = await matchLine(line, signal, limiter);
-      results[index] = item;
-      done += 1;
-      onItem?.(item);
-      onProgress?.(done, lines.length);
-    }),
-  );
+  const items = await providerFor(provider).search(lines, {
+    signal,
+    ...(onProgress === undefined ? {} : { onProgress }),
+  });
 
-  return markDuplicates(results);
+  return markDuplicates(items);
 }

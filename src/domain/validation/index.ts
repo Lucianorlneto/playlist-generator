@@ -7,9 +7,73 @@
  * produziria a playlist duplicada que o requisito existe para evitar.
  */
 
-import type { MatchItem, PlaylistConfig, ValidationResult } from '@/domain/types';
+import type { ProviderId } from '@/domain/providers';
+import { isSubsetOf } from '@/domain/run/lines';
+import { providersWithCredential } from '@/domain/run/selection';
+import type {
+  Credential,
+  DestinationSelection,
+  MatchItem,
+  PlaylistConfig,
+  QuotaEstimate,
+  ValidationResult,
+} from '@/domain/types';
 
 const OK: ValidationResult = { ok: true };
+
+// ---------------------------------------------------------------------------
+// Configuração e destinos (FR-002, FR-011, FR-012, FR-013)
+// ---------------------------------------------------------------------------
+
+/**
+ * FR-002: ao menos **uma** credencial cadastrada para sair da configuração.
+ *
+ * Nenhum serviço é obrigatório isoladamente — é o que separa esta feature da
+ * 001, onde o Spotify era a única saída.
+ */
+export function validateAtLeastOneCredential(
+  credentials: Record<ProviderId, Credential | null>,
+): ValidationResult {
+  if (providersWithCredential(credentials).length === 0) {
+    return { ok: false, reason: 'no_credential', messageKey: 'credential.noneSaved' };
+  }
+  return OK;
+}
+
+/** FR-011: ao menos um destino selecionado para avançar. */
+export function validateSelection(selection: DestinationSelection): ValidationResult {
+  if (selection.selected.length === 0) {
+    return { ok: false, reason: 'no_destination', messageKey: 'destinations.noneSelected' };
+  }
+  return OK;
+}
+
+/** FR-012: a seleção trava quando a primeira criação começa. */
+export function validateSelectionEditable(selection: DestinationSelection): ValidationResult {
+  if (selection.locked) {
+    return { ok: false, reason: 'selection_locked', messageKey: 'destinations.lockedNotice' };
+  }
+  return OK;
+}
+
+/** FR-013: redução válida — subconjunto ordenado, nunca acréscimo ou alteração. */
+export function validateReduction(
+  previous: readonly string[],
+  next: readonly string[],
+): ValidationResult {
+  if (!isSubsetOf(previous, next)) {
+    return { ok: false, reason: 'not_a_subset', messageKey: 'reduction.notASubset' };
+  }
+  return OK;
+}
+
+/** FR-029: a estimativa que excede o saldo bloqueia o destino antes de buscar. */
+export function validateQuota(estimate: QuotaEstimate | null): ValidationResult {
+  if (estimate !== null && estimate.blocked) {
+    return { ok: false, reason: 'quota_blocked', messageKey: 'quota.blockedHeading' };
+  }
+  return OK;
+}
 
 /** Comparação de FR-029: ignora caixa e espaços de borda. */
 export function normalizePlaylistName(name: string): string {

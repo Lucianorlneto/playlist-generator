@@ -1,26 +1,64 @@
+/**
+ * Tela de revisão (US2, FR-019, FR-023 a FR-025).
+ *
+ * A revisão passou a ser **por serviço**: os itens vivem na execução daquele
+ * provedor, não em um estado global. O que não mudou é o contrato com o usuário
+ * — Confiante marcado, Incerta desmarcada, ordem original preservada, e uma
+ * re-busca de linha que não encosta nas demais.
+ */
+
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it } from 'vitest';
 
+import type { MatchItem } from '@/domain/types';
 import { ReviewScreen } from '@/features/review/ReviewScreen';
 import { t } from '@/i18n/pt-BR';
-import { createRefresher } from '@/services/spotify/auth';
-import { configureSpotifyClient } from '@/services/spotify/client';
+import { configureProviderClient } from '@/services/providers/http';
+import { createRefresher } from '@/services/providers/spotify/auth';
 import { useAppStore } from '@/store';
 
-import { makeCandidate, makeItem, makeLine, makeSession } from '../fixtures/factories';
+import {
+  makeCandidate,
+  makeItem,
+  makeLine,
+  makeQueue,
+  makeRun,
+  makeSession,
+  makeSessions,
+} from '../fixtures/factories';
 import { requestLog, setCatalog } from '../msw/handlers';
 
 const CLIENT_ID = 'a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6';
 
 beforeEach(() => {
-  configureSpotifyClient({
-    getSession: () => makeSession(),
+  configureProviderClient('spotify', {
+    getSession: () => makeSession('spotify'),
     saveSession: () => undefined,
     clearSession: () => undefined,
     refresh: createRefresher(() => CLIENT_ID),
   });
 });
+
+/** Instala os itens na execução do Spotify, em fase de revisão. */
+function seedRun(items: MatchItem[]) {
+  const lines = items.map((item) => item.line);
+  useAppStore.setState({
+    sessions: makeSessions({ spotify: makeSession('spotify') }),
+    lines,
+    destinations: { selected: ['spotify'], locked: false },
+    queue: makeQueue(['spotify'], {
+      currentIndex: 0,
+      runs: {
+        spotify: makeRun('spotify', {
+          phase: 'review',
+          lineIds: lines.map((line) => line.id),
+          items,
+        }),
+      },
+    }),
+  });
+}
 
 function seedItems() {
   const confident = makeItem({
@@ -65,7 +103,16 @@ function seedItems() {
     included: false,
   });
 
-  useAppStore.setState({ items: [confident, uncertain, unparsed] });
+  seedRun([confident, uncertain, unparsed]);
+}
+
+/** Itens da execução corrente — a leitura derivada que a tela também usa. */
+function items(): MatchItem[] {
+  return useAppStore.getState().items();
+}
+
+function itemById(id: string): MatchItem | undefined {
+  return items().find((entry) => entry.line.id === id);
 }
 
 function searchRequests() {
@@ -75,16 +122,16 @@ function searchRequests() {
 describe('Tela de revisão (US2)', () => {
   it('exibe os três status', () => {
     seedItems();
-    render(<ReviewScreen />);
+    render(<ReviewScreen provider="spotify" />);
 
     expect(screen.getByText(t.review.status.confident)).toBeInTheDocument();
     expect(screen.getByText(t.review.status.uncertain)).toBeInTheDocument();
     expect(screen.getByText(t.review.status.unparsed)).toBeInTheDocument();
   });
 
-  it('marca Confiantes e deixa Incertas desmarcadas (FR-025)', () => {
+  it('marca Confiantes e deixa Incertas desmarcadas (FR-023)', () => {
     seedItems();
-    render(<ReviewScreen />);
+    render(<ReviewScreen provider="spotify" />);
 
     const caixas = screen.getAllByRole('checkbox');
     expect(caixas[0]).toBeChecked();
@@ -92,11 +139,20 @@ describe('Tela de revisão (US2)', () => {
     expect(caixas[2]).toBeDisabled();
   });
 
-  it('mantém a ordem original das linhas (FR-019)', () => {
+  it('mantém a ordem original das linhas', () => {
     seedItems();
-    // Store fora de ordem de propósito: a tela precisa reordenar por índice.
-    useAppStore.setState((state) => ({ items: [...state.items].reverse() }));
-    render(<ReviewScreen />);
+    // Execução fora de ordem de propósito: a tela precisa reordenar por índice.
+    useAppStore.setState((state) => {
+      const run = state.queue.runs.spotify;
+      if (run === undefined) return state;
+      return {
+        queue: {
+          ...state.queue,
+          runs: { ...state.queue.runs, spotify: { ...run, items: [...run.items].reverse() } },
+        },
+      };
+    });
+    render(<ReviewScreen provider="spotify" />);
 
     const linhas = within(screen.getByRole('list', { name: t.review.listLabel })).getAllByRole(
       'listitem',
@@ -108,7 +164,7 @@ describe('Tela de revisão (US2)', () => {
   it('mostra no máximo 5 candidatas alternativas (FR-023)', async () => {
     const user = userEvent.setup();
     seedItems();
-    render(<ReviewScreen />);
+    render(<ReviewScreen provider="spotify" />);
 
     const alternativas = screen.getAllByRole('button', { name: t.review.alternatives });
     await user.click(alternativas[1]!);
@@ -118,37 +174,35 @@ describe('Tela de revisão (US2)', () => {
     expect(escolher.length).toBeGreaterThan(0);
   });
 
-  it('escolher uma alternativa marca o item e o torna Confiante (FR-024)', async () => {
+  it('escolher uma alternativa marca o item e o torna Confiante', async () => {
     const user = userEvent.setup();
     seedItems();
-    render(<ReviewScreen />);
+    render(<ReviewScreen provider="spotify" />);
 
     await user.click(screen.getAllByRole('button', { name: t.review.alternatives })[1]!);
     await user.click(screen.getAllByRole('button', { name: t.review.chooseCandidate })[0]!);
 
-    const item = useAppStore.getState().items.find((entry) => entry.line.id === 'l1');
+    const item = itemById('l1');
     expect(item?.status).toBe('confident');
     expect(item?.included).toBe(true);
   });
 
-  it('descartar remove o item da playlist e permite reincluir (FR-024)', async () => {
+  it('descartar remove o item da playlist e permite reincluir', async () => {
     const user = userEvent.setup();
     seedItems();
-    render(<ReviewScreen />);
+    render(<ReviewScreen provider="spotify" />);
 
     await user.click(screen.getAllByRole('button', { name: t.review.alternatives })[0]!);
     await user.click(screen.getByRole('button', { name: t.review.discardItem }));
 
-    let item = useAppStore.getState().items.find((entry) => entry.line.id === 'l0');
-    expect(item?.status).toBe('discarded');
-    expect(item?.included).toBe(false);
+    expect(itemById('l0')?.status).toBe('discarded');
+    expect(itemById('l0')?.included).toBe(false);
 
     await user.click(screen.getByRole('button', { name: t.review.restoreItem }));
-    item = useAppStore.getState().items.find((entry) => entry.line.id === 'l0');
-    expect(item?.status).toBe('confident');
+    expect(itemById('l0')?.status).toBe('confident');
   });
 
-  it('editar uma linha só busca de novo na confirmação (FR-017)', async () => {
+  it('editar uma linha só busca de novo na confirmação', async () => {
     const user = userEvent.setup();
     setCatalog([
       {
@@ -160,7 +214,7 @@ describe('Tela de revisão (US2)', () => {
       },
     ]);
     seedItems();
-    render(<ReviewScreen />);
+    render(<ReviewScreen provider="spotify" />);
 
     await user.click(screen.getAllByRole('button', { name: t.review.editLine })[2]!);
 
@@ -174,16 +228,14 @@ describe('Tela de revisão (US2)', () => {
     await user.keyboard('{Enter}');
 
     await waitFor(() => {
-      const editado = useAppStore.getState().items.find((entry) => entry.line.id === 'l2');
-      expect(editado?.status).toBe('confident');
+      expect(itemById('l2')?.status).toBe('confident');
     });
 
     expect(searchRequests().length).toBeGreaterThan(0);
-    const editado = useAppStore.getState().items.find((entry) => entry.line.id === 'l2');
-    expect(editado?.line.title).toBe('Wonderwall');
+    expect(itemById('l2')?.line.title).toBe('Wonderwall');
   });
 
-  it('a re-busca de uma linha não altera as demais (FR-017)', async () => {
+  it('a re-busca de uma linha não altera as demais', async () => {
     const user = userEvent.setup();
     setCatalog([
       {
@@ -195,8 +247,8 @@ describe('Tela de revisão (US2)', () => {
       },
     ]);
     seedItems();
-    const antes = useAppStore.getState().items;
-    render(<ReviewScreen />);
+    const antes = items();
+    render(<ReviewScreen provider="spotify" />);
 
     await user.click(screen.getAllByRole('button', { name: t.review.editLine })[2]!);
     const campo = screen.getByLabelText(t.review.editLineLabel);
@@ -204,11 +256,10 @@ describe('Tela de revisão (US2)', () => {
     await user.type(campo, 'Wonderwall - Oasis{Enter}');
 
     await waitFor(() => {
-      const editado = useAppStore.getState().items.find((entry) => entry.line.id === 'l2');
-      expect(editado?.status).toBe('confident');
+      expect(itemById('l2')?.status).toBe('confident');
     });
 
-    const depois = useAppStore.getState().items;
+    const depois = items();
     // Identidade preservada: os outros itens são literalmente os mesmos objetos.
     expect(depois.find((item) => item.line.id === 'l0')).toBe(
       antes.find((item) => item.line.id === 'l0'),
@@ -227,9 +278,9 @@ describe('Tela de revisão (US2)', () => {
       duplicateOf: 'l0',
       included: false,
     });
-    useAppStore.setState({ items: [base, duplicata] });
+    seedRun([base, duplicata]);
 
-    render(<ReviewScreen />);
+    render(<ReviewScreen provider="spotify" />);
 
     expect(screen.getByText(t.review.status.duplicate)).toBeInTheDocument();
     expect(screen.getByText(t.review.statusHint.duplicate)).toBeInTheDocument();

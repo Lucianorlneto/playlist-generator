@@ -1,25 +1,31 @@
 /**
- * Retorno do consentimento (research §2).
+ * Retorno do consentimento, roteado por provedor (research §1 e §2).
  *
- * A aplicação não tem rota `/callback`: o retorno cai na própria raiz com
- * `?code=` ou `?error=` na query. Este módulo detecta isso no carregamento,
- * valida o `state`, consome o registro PKCE e **limpa a query** com
- * `history.replaceState` — sem a limpeza, um F5 tentaria reusar um código que já
- * foi consumido, e o usuário veria um erro que não cometeu.
+ * A aplicação não tem rota `/callback`: o retorno cai na própria raiz. O que
+ * muda entre os serviços é **onde** a resposta vem:
+ *
+ * - Spotify (authorization code): na **query** — `?code=…&state=…`;
+ * - YouTube (implicit): no **fragmento** — `#access_token=…&state=…`.
+ *
+ * Nos dois casos os parâmetros saem da barra de endereço **antes de qualquer
+ * `await`**. No Spotify porque um F5 tentaria reusar um código já consumido; no
+ * YouTube porque um token no fragmento sobrevive no histórico e pode vazar no
+ * `Referer` — e essa é a razão mais forte das duas.
  */
 
-import type { Session } from '@/domain/types';
+import { PROVIDER_ORDER, type ProviderId } from '@/domain/providers';
+import type { ProviderSession } from '@/domain/types';
 import { computeRedirectUri } from '@/features/credential/redirectUri';
-import { buildSession, exchangeCode } from '@/services/spotify/auth';
-import { AppError, fromAuthorizeError, toAppError } from '@/services/spotify/errors';
-import { getProfileWithToken } from '@/services/spotify/profile';
-import { takePkce } from '@/services/storage/pkceRepo';
+import { AppError, toAppError } from '@/services/providers/errors';
+import { providerFor } from '@/services/providers/registry';
 
 export type CallbackOutcome =
-  { kind: 'none' } | { kind: 'connected'; session: Session } | { kind: 'error'; error: AppError };
+  | { kind: 'none' }
+  | { kind: 'connected'; session: ProviderSession }
+  | { kind: 'error'; provider: ProviderId; error: AppError };
 
-/** Remove `code`, `state` e `error` da barra de endereço, preservando o resto. */
-export function stripAuthParams(): void {
+/** Remove `code`, `state` e `error` da query, preservando o resto. */
+export function stripQueryParams(): void {
   if (typeof window === 'undefined') return;
   const url = new URL(window.location.href);
   let touched = false;
@@ -38,43 +44,61 @@ export function stripAuthParams(): void {
   );
 }
 
-export async function handleAuthCallback(clientId: string | null): Promise<CallbackOutcome> {
+/** Lê o fragmento e o apaga do histórico na mesma operação. */
+export function takeFragmentParams(): URLSearchParams {
+  if (typeof window === 'undefined') return new URLSearchParams();
+
+  const raw = window.location.hash.startsWith('#')
+    ? window.location.hash.slice(1)
+    : window.location.hash;
+  const params = new URLSearchParams(raw);
+
+  if (params.has('access_token') || params.has('error')) {
+    const { pathname, search } = window.location;
+    window.history.replaceState(null, '', `${pathname}${search}`);
+  }
+
+  return params;
+}
+
+/** Qual provedor está voltando, se algum. `null` quando não há retorno. */
+function detectProvider(query: URLSearchParams, fragment: URLSearchParams): ProviderId | null {
+  if (fragment.has('access_token') || fragment.has('error')) return 'youtube';
+  if (query.has('code') || query.has('error')) return 'spotify';
+  return null;
+}
+
+export async function handleAuthCallback(
+  credentials: Partial<Record<ProviderId, string | null>>,
+): Promise<CallbackOutcome> {
   if (typeof window === 'undefined') return { kind: 'none' };
 
-  const params = new URLSearchParams(window.location.search);
-  const code = params.get('code');
-  const errorCode = params.get('error');
-  const state = params.get('state');
+  const query = new URLSearchParams(window.location.search);
+  const fragment = takeFragmentParams();
+  const provider = detectProvider(query, fragment);
 
-  if (code === null && errorCode === null) return { kind: 'none' };
+  if (provider === null) return { kind: 'none' };
 
-  // A query sai da URL antes de qualquer await: o código é de uso único.
-  stripAuthParams();
+  // A query sai da URL antes de qualquer await, pelo mesmo motivo do fragmento.
+  if (provider === 'spotify') stripQueryParams();
 
-  const pkce = takePkce();
-
-  if (errorCode !== null) {
-    return { kind: 'error', error: fromAuthorizeError(errorCode) };
-  }
-
-  if (pkce === null || state === null || state !== pkce.state) {
-    return { kind: 'error', error: new AppError('auth_state_mismatch') };
-  }
-
+  const clientId = credentials[provider] ?? null;
   if (clientId === null) {
-    return { kind: 'error', error: new AppError('auth_invalid_client') };
+    return { kind: 'error', provider, error: new AppError('auth_invalid_client', { provider }) };
   }
 
   try {
-    const tokens = await exchangeCode({
+    const session = await providerFor(provider).completeAuthorization({
+      provider,
       clientId,
-      code: code as string,
       redirectUri: computeRedirectUri(),
-      codeVerifier: pkce.codeVerifier,
+      params: provider === 'youtube' ? fragment : query,
     });
-    const user = await getProfileWithToken(tokens.accessToken);
-    return { kind: 'connected', session: buildSession(tokens, user) };
+    return { kind: 'connected', session };
   } catch (error) {
-    return { kind: 'error', error: toAppError(error) };
+    return { kind: 'error', provider, error: toAppError(error, provider) };
   }
 }
+
+/** Ordem fixa — usada para varrer credenciais na inicialização. */
+export const CALLBACK_PROVIDERS = PROVIDER_ORDER;

@@ -1,28 +1,50 @@
 /**
- * Repositório do rascunho de trabalho (`tp.v1.draft`).
+ * Repositório do rascunho de trabalho (`tp.v2.draft`).
  *
  * A serialização é explícita campo a campo. Isso não é cerimônia: é o que
- * garante que nenhum token ou Client ID possa vazar para o rascunho, mesmo que
- * alguém acidentalmente coloque um objeto de sessão dentro do estado do store
- * (invariante 2 de contracts/storage.md).
+ * garante que nenhum token ou Client ID vaze para o rascunho, mesmo que alguém
+ * acidentalmente coloque um objeto de sessão dentro do estado do store
+ * (invariante 2 de contracts/storage.md, invariante W1).
  *
- * Em `QuotaExceededError` a gravação degrada em dois passos (research §8):
- * primeiro descarta as candidatas alternativas e mantém só a escolhida; se ainda
- * assim não couber, devolve `failed` para que a interface avise o usuário — nunca
- * falha em silêncio.
+ * **Degradação por cota de armazenamento.** O rascunho agora guarda itens de
+ * dois serviços (pior caso previsto ≈ 800 KB), com menos folga que na 001. A
+ * gravação degrada em três passos antes de desistir:
+ *
+ * 1. íntegro;
+ * 2. sem as candidatas alternativas das execuções **já concluídas** — o
+ *    resultado delas está congelado e as alternativas são peso morto;
+ * 3. sem as candidatas alternativas de nenhuma execução;
+ * 4. `failed`, e a interface avisa — nunca falha em silêncio.
+ *
+ * A ordem dos passos 2 e 3 é o inverso da listagem de contracts/storage.md §5.
+ * A do contrato não é progressiva: descartar "as alternativas" (passo 1 de lá)
+ * já engloba as das execuções concluídas, de modo que o passo seguinte não
+ * liberaria byte algum. Esta ordem preserva a intenção — sacrificar primeiro o
+ * que já não pode mais ser usado — e é estritamente monotônica.
  */
 
+import type { ProviderId } from '@/domain/providers';
+import { PROVIDER_ORDER, isProviderId } from '@/domain/providers';
 import type {
+  AppErrorInfo,
   CreationProgress,
+  CreationResult,
+  DestinationSelection,
+  ExecutionQueue,
   InputLine,
   MatchItem,
   MatchStatus,
   PlaylistConfig,
+  QuotaEstimate,
+  RunOutcome,
+  RunPhase,
+  ServiceRun,
   TrackCandidate,
+  VersionHint,
   WizardStep,
   WorkDraft,
 } from '@/domain/types';
-import { BATCH_SIZE, WIZARD_STEPS } from '@/domain/types';
+import { WIZARD_STEPS } from '@/domain/types';
 
 import {
   asBoolean,
@@ -49,6 +71,41 @@ const MATCH_STATUSES: readonly MatchStatus[] = [
   'discarded',
 ];
 
+const RUN_PHASES: readonly RunPhase[] = [
+  'pending',
+  'connect',
+  'estimate',
+  'search',
+  'review',
+  'creating',
+  'done',
+  'skipped',
+  'failed',
+];
+
+const RUN_OUTCOMES: readonly RunOutcome[] = ['completed', 'partial', 'failed', 'skipped'];
+
+const VERSION_HINTS: readonly VersionHint[] = [
+  'live',
+  'cover',
+  'remix',
+  'acoustic',
+  'karaoke',
+  'instrumental',
+  'sped_up',
+  'slowed',
+  'nightcore',
+  'mashup',
+  'tribute',
+  'remaster',
+  'excerpt',
+  'reaction',
+  'duration_outlier',
+];
+
+/** Quais execuções perdem as candidatas alternativas nesta tentativa. */
+type Trim = 'none' | 'finished' | 'all';
+
 // ---------------------------------------------------------------------------
 // Serialização
 // ---------------------------------------------------------------------------
@@ -64,6 +121,8 @@ function serializeCandidate(candidate: TrackCandidate) {
     coverUrl: candidate.coverUrl,
     externalUrl: candidate.externalUrl,
     score: candidate.score,
+    ...(candidate.channel === undefined ? {} : { channel: candidate.channel }),
+    ...(candidate.versionHints === undefined ? {} : { versionHints: candidate.versionHints }),
   };
 }
 
@@ -96,28 +155,97 @@ function serializeItem(item: MatchItem, keepAlternatives: boolean) {
   };
 }
 
-function serializeDraft(draft: WorkDraft, keepAlternatives: boolean): Record<string, unknown> {
+function serializeEstimate(estimate: QuotaEstimate) {
+  return {
+    provider: estimate.provider,
+    lineCount: estimate.lineCount,
+    selectedCount: estimate.selectedCount,
+    estimatedUnits: estimate.estimatedUnits,
+    availableUnits: estimate.availableUnits,
+    blocked: estimate.blocked,
+    maxLinesThatFit: estimate.maxLinesThatFit,
+  };
+}
+
+function serializeCreation(creation: CreationProgress) {
+  return {
+    playlistId: creation.playlistId,
+    playlistUrl: creation.playlistUrl,
+    orderedUris: creation.orderedUris,
+    batchSize: creation.batchSize,
+    committedItems: creation.committedItems,
+    failedAt: creation.failedAt,
+  };
+}
+
+function serializeResult(result: CreationResult) {
+  return {
+    provider: result.provider,
+    playlistId: result.playlistId,
+    playlistUrl: result.playlistUrl,
+    playlistName: result.playlistName,
+    effectivePath: result.effectivePath,
+    addedCount: result.addedCount,
+    skippedCount: result.skippedCount,
+    failedLines: result.failedLines,
+    incompleteByQuota: result.incompleteByQuota,
+  };
+}
+
+function serializeErrorInfo(error: AppErrorInfo) {
+  return {
+    provider: error.provider,
+    kind: error.kind,
+    title: error.title,
+    cause: error.cause,
+    nextStep: error.nextStep,
+  };
+}
+
+function serializeRun(run: ServiceRun, trim: Trim) {
+  const finished = run.outcome !== null;
+  const keepAlternatives = trim === 'none' || (trim === 'finished' && !finished);
+
+  return {
+    provider: run.provider,
+    phase: run.phase,
+    lineIds: run.lineIds,
+    items: run.items.map((item) => serializeItem(item, keepAlternatives)),
+    frozenLines: run.frozenLines === null ? null : run.frozenLines.map(serializeLine),
+    estimate: run.estimate === null ? null : serializeEstimate(run.estimate),
+    creation: run.creation === null ? null : serializeCreation(run.creation),
+    result: run.result === null ? null : serializeResult(run.result),
+    outcome: run.outcome,
+    error: run.error === null ? null : serializeErrorInfo(run.error),
+  };
+}
+
+function serializeDraft(draft: WorkDraft, trim: Trim): Record<string, unknown> {
+  const runs: Record<string, unknown> = {};
+  for (const provider of PROVIDER_ORDER) {
+    const run = draft.queue.runs[provider];
+    if (run !== undefined) runs[provider] = serializeRun(run, trim);
+  }
+
   return {
     savedAt: draft.savedAt,
     step: draft.step,
     rawText: draft.rawText,
+    lines: draft.lines.map(serializeLine),
     playlistConfig: {
       name: draft.playlistConfig.name,
       description: draft.playlistConfig.description,
       isPublic: draft.playlistConfig.isPublic,
     },
-    items: draft.items.map((item) => serializeItem(item, keepAlternatives)),
-    creation:
-      draft.creation === null
-        ? null
-        : {
-            playlistId: draft.creation.playlistId,
-            playlistUrl: draft.creation.playlistUrl,
-            orderedUris: draft.creation.orderedUris,
-            batchSize: draft.creation.batchSize,
-            committedBatches: draft.creation.committedBatches,
-            failedAt: draft.creation.failedAt,
-          },
+    destinations: {
+      selected: draft.destinations.selected,
+      locked: draft.destinations.locked,
+    },
+    queue: {
+      order: draft.queue.order,
+      currentIndex: draft.queue.currentIndex,
+      runs,
+    },
   };
 }
 
@@ -153,7 +281,25 @@ function validateCandidate(raw: unknown): TrackCandidate | null {
     return null;
   }
 
-  return { uri, id, title, artists, album, durationMs, coverUrl, externalUrl, score };
+  const channel = asString(obj['channel']);
+  const hintsRaw = obj['versionHints'];
+  const versionHints = Array.isArray(hintsRaw)
+    ? hintsRaw.filter((hint): hint is VersionHint => VERSION_HINTS.includes(hint as VersionHint))
+    : null;
+
+  return {
+    uri,
+    id,
+    title,
+    artists,
+    album,
+    durationMs,
+    coverUrl,
+    externalUrl,
+    score,
+    ...(channel === null ? {} : { channel }),
+    ...(versionHints === null ? {} : { versionHints }),
+  };
 }
 
 function validateLine(raw: unknown): InputLine | null {
@@ -183,7 +329,18 @@ function validateLine(raw: unknown): InputLine | null {
   return { id, index, raw: rawText, title, artist, featuredArtists, parseStatus };
 }
 
-function validateItem(raw: unknown): MatchItem | null {
+function validateLines(raw: unknown): InputLine[] | null {
+  if (!Array.isArray(raw)) return null;
+  const lines: InputLine[] = [];
+  for (const entry of raw) {
+    const line = validateLine(entry);
+    if (line === null) return null;
+    lines.push(line);
+  }
+  return lines;
+}
+
+export function validateItem(raw: unknown): MatchItem | null {
   const obj = asObject(raw);
   if (obj === null) return null;
 
@@ -236,22 +393,23 @@ function validateConfig(raw: unknown): PlaylistConfig | null {
   return { name, description, isPublic };
 }
 
-function validateCreation(raw: unknown): CreationProgress | null {
+export function validateCreation(raw: unknown): CreationProgress | null {
   const obj = asObject(raw);
   if (obj === null) return null;
 
   const playlistId = asNonEmptyString(obj['playlistId']);
   const playlistUrl = asString(obj['playlistUrl']);
   const orderedUris = asStringArray(obj['orderedUris']);
-  const committedBatches = asFiniteNumber(obj['committedBatches']);
-  const batchSize = asFiniteNumber(obj['batchSize']) ?? BATCH_SIZE;
+  const committedItems = asFiniteNumber(obj['committedItems']);
+  const batchSize = asFiniteNumber(obj['batchSize']);
   const failedAt = obj['failedAt'] === null ? null : asFiniteNumber(obj['failedAt']);
 
   if (
     playlistId === null ||
     playlistUrl === null ||
     orderedUris === null ||
-    committedBatches === null
+    committedItems === null ||
+    batchSize === null
   ) {
     return null;
   }
@@ -261,27 +419,108 @@ function validateCreation(raw: unknown): CreationProgress | null {
     playlistUrl,
     orderedUris,
     batchSize,
-    committedBatches,
+    committedItems,
     failedAt: failedAt ?? null,
   };
 }
 
-function validate(raw: Record<string, unknown>): WorkDraft | null {
-  const savedAt = asFiniteNumber(raw['savedAt']);
-  const step = raw['step'];
-  const rawText = asString(raw['rawText']);
-  const playlistConfig = validateConfig(raw['playlistConfig']);
+function validateEstimate(raw: unknown): QuotaEstimate | null {
+  const obj = asObject(raw);
+  if (obj === null) return null;
+  const provider = obj['provider'];
+  const lineCount = asFiniteNumber(obj['lineCount']);
+  const selectedCount = asFiniteNumber(obj['selectedCount']);
+  const estimatedUnits = asFiniteNumber(obj['estimatedUnits']);
+  const availableUnits = asFiniteNumber(obj['availableUnits']);
+  const blocked = asBoolean(obj['blocked']);
+  const maxLinesThatFit = asFiniteNumber(obj['maxLinesThatFit']);
 
   if (
-    savedAt === null ||
-    !WIZARD_STEPS.includes(step as WizardStep) ||
-    rawText === null ||
-    playlistConfig === null
+    !isProviderId(provider) ||
+    lineCount === null ||
+    selectedCount === null ||
+    estimatedUnits === null ||
+    availableUnits === null ||
+    blocked === null ||
+    maxLinesThatFit === null
   ) {
     return null;
   }
 
-  const itemsRaw = raw['items'];
+  return {
+    provider,
+    lineCount,
+    selectedCount,
+    estimatedUnits,
+    availableUnits,
+    blocked,
+    maxLinesThatFit,
+  };
+}
+
+function validateResult(raw: unknown): CreationResult | null {
+  const obj = asObject(raw);
+  if (obj === null) return null;
+
+  const provider = obj['provider'];
+  const playlistId = asNonEmptyString(obj['playlistId']);
+  const playlistUrl = asString(obj['playlistUrl']);
+  const playlistName = asString(obj['playlistName']);
+  const effectivePath = asString(obj['effectivePath']);
+  const addedCount = asFiniteNumber(obj['addedCount']);
+  const skippedCount = asFiniteNumber(obj['skippedCount']);
+  const failedLines = asStringArray(obj['failedLines']);
+  const incompleteByQuota = asBoolean(obj['incompleteByQuota']);
+
+  if (
+    !isProviderId(provider) ||
+    playlistId === null ||
+    playlistUrl === null ||
+    playlistName === null ||
+    effectivePath === null ||
+    addedCount === null ||
+    skippedCount === null ||
+    failedLines === null
+  ) {
+    return null;
+  }
+
+  return {
+    provider,
+    playlistId,
+    playlistUrl,
+    playlistName,
+    effectivePath,
+    addedCount,
+    skippedCount,
+    failedLines,
+    incompleteByQuota: incompleteByQuota ?? false,
+  };
+}
+
+function validateErrorInfo(raw: unknown): AppErrorInfo | null {
+  const obj = asObject(raw);
+  if (obj === null) return null;
+  const provider = obj['provider'];
+  const kind = asNonEmptyString(obj['kind']);
+  const title = asString(obj['title']);
+  const cause = asString(obj['cause']);
+  const nextStep = asString(obj['nextStep']);
+  if (!isProviderId(provider) || kind === null || title === null || cause === null || nextStep === null) {
+    return null;
+  }
+  return { provider, kind, title, cause, nextStep };
+}
+
+function validateRun(raw: unknown, provider: ProviderId): ServiceRun | null {
+  const obj = asObject(raw);
+  if (obj === null) return null;
+
+  const phase = obj['phase'];
+  const lineIds = asStringArray(obj['lineIds']);
+  if (!RUN_PHASES.includes(phase as RunPhase) || lineIds === null) return null;
+
+  const itemsRaw = obj['items'];
   if (!Array.isArray(itemsRaw)) return null;
   const items: MatchItem[] = [];
   for (const entry of itemsRaw) {
@@ -290,16 +529,100 @@ function validate(raw: Record<string, unknown>): WorkDraft | null {
     items.push(item);
   }
 
-  const creation = raw['creation'] === null ? null : validateCreation(raw['creation']);
+  const frozenLines = obj['frozenLines'] === null ? null : validateLines(obj['frozenLines']);
+  const outcomeRaw = obj['outcome'];
+  const outcome =
+    outcomeRaw === null || outcomeRaw === undefined
+      ? null
+      : RUN_OUTCOMES.includes(outcomeRaw as RunOutcome)
+        ? (outcomeRaw as RunOutcome)
+        : null;
 
   return {
-    schemaVersion: asFiniteNumber(raw['schemaVersion']) ?? 1,
+    provider,
+    phase: phase as RunPhase,
+    lineIds,
+    items,
+    frozenLines,
+    estimate: obj['estimate'] === null ? null : validateEstimate(obj['estimate']),
+    creation: obj['creation'] === null ? null : validateCreation(obj['creation']),
+    result: obj['result'] === null ? null : validateResult(obj['result']),
+    outcome,
+    error: obj['error'] === null ? null : validateErrorInfo(obj['error']),
+  };
+}
+
+function validateSelection(raw: unknown): DestinationSelection | null {
+  const obj = asObject(raw);
+  if (obj === null) return null;
+  const selectedRaw = asStringArray(obj['selected']);
+  const locked = asBoolean(obj['locked']);
+  if (selectedRaw === null || locked === null) return null;
+  if (!selectedRaw.every(isProviderId)) return null;
+  // A ordem fixa é sempre reimposta na leitura (invariante P1).
+  const selected = PROVIDER_ORDER.filter((provider) => selectedRaw.includes(provider));
+  return { selected, locked };
+}
+
+function validateQueue(raw: unknown): ExecutionQueue | null {
+  const obj = asObject(raw);
+  if (obj === null) return null;
+
+  const orderRaw = asStringArray(obj['order']);
+  const currentIndex = asFiniteNumber(obj['currentIndex']);
+  if (orderRaw === null || currentIndex === null || !orderRaw.every(isProviderId)) return null;
+  const order = PROVIDER_ORDER.filter((provider) => orderRaw.includes(provider));
+
+  const runsRaw = asObject(obj['runs']);
+  if (runsRaw === null) return null;
+
+  const runs = {} as Record<ProviderId, ServiceRun>;
+  for (const provider of PROVIDER_ORDER) {
+    const entry = runsRaw[provider];
+    if (entry === undefined) continue;
+    const run = validateRun(entry, provider);
+    if (run === null) return null;
+    runs[provider] = run;
+  }
+
+  // Toda execução da ordem precisa existir, ou a fila não é navegável.
+  for (const provider of order) {
+    if (runs[provider] === undefined) return null;
+  }
+
+  return { order, currentIndex, runs };
+}
+
+function validate(raw: Record<string, unknown>): WorkDraft | null {
+  const savedAt = asFiniteNumber(raw['savedAt']);
+  const step = raw['step'];
+  const rawText = asString(raw['rawText']);
+  const playlistConfig = validateConfig(raw['playlistConfig']);
+  const lines = validateLines(raw['lines']);
+  const destinations = validateSelection(raw['destinations']);
+  const queue = validateQueue(raw['queue']);
+
+  if (
+    savedAt === null ||
+    !WIZARD_STEPS.includes(step as WizardStep) ||
+    rawText === null ||
+    playlistConfig === null ||
+    lines === null ||
+    destinations === null ||
+    queue === null
+  ) {
+    return null;
+  }
+
+  return {
+    schemaVersion: asFiniteNumber(raw['schemaVersion']) ?? 2,
     savedAt,
     step: step as WizardStep,
     rawText,
+    lines,
     playlistConfig,
-    items,
-    creation,
+    destinations,
+    queue,
   };
 }
 
@@ -312,22 +635,34 @@ export function loadDraft(): WorkDraft | null {
 }
 
 /**
- * Grava o rascunho, degradando em dois passos se o armazenamento encher.
+ * Grava o rascunho, degradando em três passos se o armazenamento encher.
  *
  * - `ok`: gravado íntegro.
- * - `degraded`: gravado sem as candidatas alternativas (só a escolhida).
- * - `failed`: não coube; quem chama deve avisar o usuário (research §8).
+ * - `degraded`: gravado sem parte das candidatas alternativas.
+ * - `failed`: não coube; quem chama **deve** avisar o usuário.
  */
 export function saveDraft(draft: WorkDraft): SaveDraftOutcome {
-  const full = writeVersioned('local', STORAGE_KEYS.draft, serializeDraft(draft, true));
+  const full = writeVersioned('local', STORAGE_KEYS.draft, serializeDraft(draft, 'none'));
   if (full === 'ok') return 'ok';
   if (full === 'unavailable') return 'failed';
 
-  const trimmed = writeVersioned('local', STORAGE_KEYS.draft, serializeDraft(draft, false));
-  return trimmed === 'ok' ? 'degraded' : 'failed';
+  const withoutFinished = writeVersioned(
+    'local',
+    STORAGE_KEYS.draft,
+    serializeDraft(draft, 'finished'),
+  );
+  if (withoutFinished === 'ok') return 'degraded';
+  if (withoutFinished === 'unavailable') return 'failed';
+
+  const withoutAny = writeVersioned('local', STORAGE_KEYS.draft, serializeDraft(draft, 'all'));
+  return withoutAny === 'ok' ? 'degraded' : 'failed';
 }
 
-/** Apagado após criação bem-sucedida (FR-045) ou por "descartar rascunho". */
+/**
+ * Apagado após **sucesso** de todos os serviços ou por ação explícita de
+ * descarte — e por nada mais (Princípio V, invariante W2). Encerramento por
+ * esgotamento de cota **preserva** o rascunho.
+ */
 export function clearDraft(): void {
   discard('local', STORAGE_KEYS.draft);
 }

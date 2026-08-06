@@ -1,14 +1,18 @@
 /**
- * Particionamento da adição de faixas (FR-032, FR-033).
+ * Particionamento da adição de itens (FR-033, research §9).
  *
- * `remainingBatches` é a função que sustenta SC-009: ela devolve **apenas** os
- * lotes a partir de `committedBatches`, de modo que uma retomada nunca reenvia
- * um lote já confirmado — sem duplicar e sem faltar.
+ * `remainingItems` é a função que sustenta SC-010: devolve **apenas** os lotes a
+ * partir de `committedItems`, de modo que uma retomada nunca reenvie um item já
+ * confirmado — sem duplicar e sem faltar.
+ *
+ * A contagem é em **itens**, não em lotes. É o que mantém a retomada exata
+ * quando `batchSize` vale 100 (Spotify) ou 1 (YouTube): com lotes, mudar o
+ * tamanho reinterpretaria um índice gravado e reenviaria ou puliria faixas.
  */
 
-import { BATCH_SIZE, type CreationProgress, type MatchItem } from '@/domain/types';
+import type { CreationProgress, MatchItem } from '@/domain/types';
 
-/** URIs das faixas incluídas, na ordem original das linhas (FR-019). */
+/** URIs dos itens incluídos, na ordem original das linhas. */
 export function buildOrderedUris(items: MatchItem[]): string[] {
   return [...items]
     .sort((a, b) => a.line.index - b.line.index)
@@ -17,7 +21,7 @@ export function buildOrderedUris(items: MatchItem[]): string[] {
 }
 
 export function chunk<T>(items: T[], size: number): T[][] {
-  if (size <= 0) return [items];
+  if (size <= 0) return items.length === 0 ? [] : [items];
   const result: T[][] = [];
   for (let start = 0; start < items.length; start += size) {
     result.push(items.slice(start, start + size));
@@ -25,19 +29,25 @@ export function chunk<T>(items: T[], size: number): T[][] {
   return result;
 }
 
+/** Parte uma lista de URIs em lotes do tamanho que o provedor aceita. */
+export function partition(uris: string[], batchSize: number): string[][] {
+  return chunk(uris, batchSize);
+}
+
+function sizeOf(progress: CreationProgress): number {
+  return progress.batchSize > 0 ? progress.batchSize : 1;
+}
+
+/** Itens confirmados, saturado ao total — nunca maior que a lista. */
+export function committedItemCount(progress: CreationProgress): number {
+  return Math.min(progress.orderedUris.length, Math.max(0, progress.committedItems));
+}
+
 export function totalBatches(progress: CreationProgress): number {
-  const size = progress.batchSize > 0 ? progress.batchSize : BATCH_SIZE;
-  return Math.ceil(progress.orderedUris.length / size);
+  return Math.ceil(progress.orderedUris.length / sizeOf(progress));
 }
 
-export function remainingBatches(progress: CreationProgress): string[][] {
-  const size = progress.batchSize > 0 ? progress.batchSize : BATCH_SIZE;
-  const committed = Math.max(0, progress.committedBatches);
-  return chunk(progress.orderedUris.slice(committed * size), size);
-}
-
-/** Faixas já confirmadas — é o número exibido no resumo de falha parcial. */
-export function committedTrackCount(progress: CreationProgress): number {
-  const size = progress.batchSize > 0 ? progress.batchSize : BATCH_SIZE;
-  return Math.min(progress.orderedUris.length, progress.committedBatches * size);
+/** Lotes ainda não confirmados, a partir de `committedItems`. */
+export function remainingItems(progress: CreationProgress): string[][] {
+  return chunk(progress.orderedUris.slice(committedItemCount(progress)), sizeOf(progress));
 }

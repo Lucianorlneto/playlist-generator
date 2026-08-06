@@ -1,25 +1,33 @@
+import { capabilitiesOf, type ProviderId } from '@/domain/providers';
 import type { MatchItem } from '@/domain/types';
 import { format, t } from '@/i18n/pt-BR';
 import { useAppStore } from '@/store';
 import { Button } from '@/ui/Button';
+import { VersionHintBadge } from '@/ui/VersionHintBadge';
 
 import { formatDuration } from './formatDuration';
 
 export interface AlternativesProps {
   item: MatchItem;
+  provider: ProviderId;
 }
 
 /**
  * Até cinco candidatas por item (FR-023), com troca da escolhida ou descarte do
- * item inteiro (FR-024). A lista já vem ordenada por pontuação decrescente do
- * `matchRunner` — a ordem devolvida pela plataforma não é usada como verdade.
+ * item inteiro. A lista já vem ordenada por pontuação decrescente do adaptador —
+ * a ordem devolvida pela plataforma não é usada como verdade.
+ *
+ * Cada candidata carrega seu próprio marcador de versão (FR-025): é aqui que a
+ * escolha entre "a oficial" e "a ao vivo" acontece, então é aqui que o indício
+ * precisa estar visível.
  */
-export function Alternatives({ item }: AlternativesProps) {
+export function Alternatives({ item, provider }: AlternativesProps) {
   const chooseCandidate = useAppStore((state) => state.chooseCandidate);
   const discardItem = useAppStore((state) => state.discardItem);
   const restoreItem = useAppStore((state) => state.restoreItem);
 
   const discarded = item.status === 'discarded';
+  const showsAlbum = capabilitiesOf(provider).showsAlbum;
 
   return (
     <div className="border-border bg-surface-muted mt-2 rounded-lg border p-2">
@@ -41,9 +49,11 @@ export function Alternatives({ item }: AlternativesProps) {
                 <div className="min-w-0 text-sm">
                   <p className="text-ink font-semibold">{candidate.title}</p>
                   <p className="text-ink-muted">
-                    {candidate.artists.join(', ')} · {candidate.album} ·{' '}
-                    {formatDuration(candidate.durationMs)}
+                    {showsAlbum
+                      ? `${candidate.artists.join(', ')} · ${candidate.album} · ${formatDuration(candidate.durationMs)}`
+                      : `${t.review.channel}: ${candidate.channel ?? candidate.artists.join(', ')} · ${formatDuration(candidate.durationMs)}`}
                   </p>
+                  <VersionHintBadge hints={candidate.versionHints ?? []} />
                 </div>
                 {chosen ? (
                   <span className="text-status-confident text-xs font-semibold">

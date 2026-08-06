@@ -1,18 +1,35 @@
+/**
+ * Retomada após falha parcial, no serviço corrente (FR-033, SC-010).
+ *
+ * O invariante que estes testes protegem sobreviveu à generalização multi-provedor:
+ * `committedItems` só avança após resposta de sucesso e é gravado de forma
+ * síncrona, de modo que a retomada não duplica nem omite item — agora com
+ * `batchSize` vindo do provedor (100 no Spotify, 1 no YouTube).
+ */
+
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { retryRemaining, startCreation } from '@/features/result/creationRunner';
-import { createRefresher } from '@/services/spotify/auth';
-import { configureSpotifyClient } from '@/services/spotify/client';
+import { configureProviderClient } from '@/services/providers/http';
+import { createRefresher } from '@/services/providers/spotify/auth';
 import { loadDraft } from '@/services/storage/draftRepo';
 import { useAppStore } from '@/store';
 import { attachDraftPersistence } from '@/store/draftPersistence';
 
-import { makeCandidate, makeItem, makeLine, makeSession } from '../fixtures/factories';
+import {
+  makeCandidate,
+  makeItem,
+  makeLine,
+  makeQueue,
+  makeRun,
+  makeSessions,
+  makeSession,
+} from '../fixtures/factories';
 import { createdPlaylist, PASS_THROUGH, program, requestLog } from '../msw/handlers';
 
 const CLIENT_ID = 'a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6';
 
-/** 250 faixas = 3 lotes (100 + 100 + 50). */
+/** 250 faixas = 3 lotes de 100 no Spotify (100 + 100 + 50). */
 const TOTAL = 250;
 
 /** Erro não recuperável: falha na hora, sem backoff, mantendo o teste rápido. */
@@ -21,10 +38,18 @@ const naoRecuperavel = {
   body: { error: { status: 400, message: 'Bad request' } },
 };
 
+/**
+ * Monta a fila com o Spotify já em `creating` — a fase que `startCreation`
+ * exige. Chegar aqui por evento é o que os testes de `run-machine` cobrem; aqui
+ * o alvo é o envio em lotes.
+ */
 function seedStore() {
-  const items = Array.from({ length: TOTAL }, (_, index) =>
+  const lines = Array.from({ length: TOTAL }, (_, index) =>
+    makeLine({ id: `l${index}`, index, raw: `Faixa ${index} - Artista` }),
+  );
+  const items = lines.map((line, index) =>
     makeItem({
-      line: makeLine({ id: `l${index}`, index, raw: `Faixa ${index} - Artista` }),
+      line,
       candidates: [makeCandidate({ id: `t${index}` })],
       selectedUri: `spotify:track:t${index}`,
       included: true,
@@ -32,10 +57,23 @@ function seedStore() {
   );
 
   useAppStore.setState({
-    session: makeSession(),
-    items,
+    sessions: makeSessions({ spotify: makeSession('spotify') }),
+    lines,
+    destinations: { selected: ['spotify'], locked: false },
+    queue: makeQueue(['spotify'], {
+      currentIndex: 0,
+      runs: {
+        spotify: makeRun('spotify', {
+          phase: 'creating',
+          lineIds: lines.map((line) => line.id),
+          items,
+        }),
+      },
+    }),
     playlistConfig: { name: 'Retomada', description: '', isPublic: false },
     existingNames: [],
+    creating: false,
+    creationError: null,
   });
 
   return items.map((item) => item.selectedUri as string);
@@ -45,16 +83,22 @@ function requests(endpoint: 'createPlaylist' | 'addTracks') {
   return requestLog.filter((entry) => entry.endpoint === endpoint);
 }
 
+function spotifyRun() {
+  return useAppStore.getState().runFor('spotify');
+}
+
 beforeEach(() => {
-  configureSpotifyClient({
-    getSession: () => useAppStore.getState().session,
-    saveSession: (session) => useAppStore.setState({ session }),
-    clearSession: () => useAppStore.setState({ session: null }),
+  configureProviderClient('spotify', {
+    getSession: () => useAppStore.getState().sessions.spotify,
+    saveSession: (session) =>
+      useAppStore.setState((state) => ({ sessions: { ...state.sessions, spotify: session } })),
+    clearSession: () =>
+      useAppStore.setState((state) => ({ sessions: { ...state.sessions, spotify: null } })),
     refresh: createRefresher(() => CLIENT_ID),
   });
 });
 
-describe('SC-009 — falha no meio da adição e retomada', () => {
+describe('SC-010 — falha no meio da adição e retomada', () => {
   it('a retomada completa a playlist sem duplicar nem faltar faixa', async () => {
     const uris = seedStore();
     // O primeiro lote passa; o segundo falha.
@@ -62,22 +106,22 @@ describe('SC-009 — falha no meio da adição e retomada', () => {
 
     await startCreation();
 
-    const parcial = useAppStore.getState();
-    expect(parcial.creation).not.toBeNull();
-    expect(parcial.creation?.committedBatches).toBe(1);
-    expect(parcial.creation?.failedAt).toBe(1);
-    expect(parcial.creationError).not.toBeNull();
-    expect(parcial.result).toBeNull();
+    const parcial = spotifyRun();
+    expect(parcial?.creation).not.toBeNull();
+    expect(parcial?.creation?.committedItems).toBe(100);
+    expect(parcial?.creation?.failedAt).toBe(100);
+    expect(useAppStore.getState().creationError).not.toBeNull();
+    expect(parcial?.result).toBeNull();
 
-    const playlistId = parcial.creation?.playlistId as string;
+    const playlistId = parcial?.creation?.playlistId as string;
     expect(createdPlaylist(playlistId)?.uris).toEqual(uris.slice(0, 100));
 
     await retryRemaining();
 
-    const final = useAppStore.getState();
-    expect(final.result).not.toBeNull();
-    expect(final.result?.addedCount).toBe(TOTAL);
-    expect(final.creationError).toBeNull();
+    const final = spotifyRun();
+    expect(final?.result).not.toBeNull();
+    expect(final?.result?.addedCount).toBe(TOTAL);
+    expect(useAppStore.getState().creationError).toBeNull();
 
     const enviadas = createdPlaylist(playlistId)?.uris ?? [];
     // Sem faltantes, sem duplicatas, na ordem original.
@@ -90,14 +134,14 @@ describe('SC-009 — falha no meio da adição e retomada', () => {
     program('addTracks', PASS_THROUGH, naoRecuperavel);
 
     await startCreation();
-    const playlistId = useAppStore.getState().creation?.playlistId;
+    const playlistId = spotifyRun()?.creation?.playlistId;
     await retryRemaining();
 
     expect(requests('createPlaylist')).toHaveLength(1);
-    expect(useAppStore.getState().result?.playlistId).toBe(playlistId);
+    expect(spotifyRun()?.result?.playlistId).toBe(playlistId);
   });
 
-  it('nenhum lote confirmado é reenviado', async () => {
+  it('nenhum item confirmado é reenviado', async () => {
     seedStore();
     program('addTracks', PASS_THROUGH, naoRecuperavel);
 
@@ -110,7 +154,7 @@ describe('SC-009 — falha no meio da adição e retomada', () => {
     expect(requests('addTracks')).toHaveLength(4);
   });
 
-  it('grava committedBatches no rascunho de forma síncrona, sem debounce', async () => {
+  it('grava committedItems no rascunho de forma síncrona, sem debounce', async () => {
     seedStore();
     const detach = attachDraftPersistence();
     program('addTracks', PASS_THROUGH, naoRecuperavel);
@@ -119,18 +163,21 @@ describe('SC-009 — falha no meio da adição e retomada', () => {
 
     // Sem esperar os 500 ms do debounce: o lote confirmado já está no disco.
     const draft = loadDraft();
-    expect(draft?.creation?.committedBatches).toBe(1);
-    expect(draft?.creation?.playlistId).toBe(useAppStore.getState().creation?.playlistId);
+    expect(draft?.queue.runs.spotify?.creation?.committedItems).toBe(100);
+    expect(draft?.queue.runs.spotify?.creation?.playlistId).toBe(
+      spotifyRun()?.creation?.playlistId,
+    );
     detach();
   });
 
-  it('a criação bem-sucedida apaga o rascunho (FR-045)', async () => {
+  it('a criação bem-sucedida de todos os serviços apaga o rascunho (Princípio V)', async () => {
     seedStore();
     const detach = attachDraftPersistence();
 
     await startCreation();
 
-    expect(useAppStore.getState().result).not.toBeNull();
+    expect(spotifyRun()?.result).not.toBeNull();
+    expect(spotifyRun()?.outcome).toBe('completed');
     expect(loadDraft()).toBeNull();
     detach();
   });
@@ -141,10 +188,9 @@ describe('SC-009 — falha no meio da adição e retomada', () => {
 
     await startCreation();
 
-    const state = useAppStore.getState();
-    expect(state.creationError).not.toBeNull();
-    expect(state.creation).toBeNull();
-    expect(state.result).toBeNull();
+    expect(useAppStore.getState().creationError).not.toBeNull();
+    expect(spotifyRun()?.creation).toBeNull();
+    expect(spotifyRun()?.result).toBeNull();
     expect(requests('addTracks')).toHaveLength(0);
   });
 });

@@ -8,12 +8,14 @@
  */
 
 import { normalizeText, tokenize } from '@/domain/normalize';
-import type { InputLine, ScoredStatus, TrackCandidateRaw } from '@/domain/types';
+import type { InputLine, ScoredStatus, TrackCandidateRaw, VersionHint } from '@/domain/types';
 
 import {
   ARTIST_WEIGHT,
-  CONFIDENT_THRESHOLD,
+  CHANNEL_TOPIC_BONUS,
+  CHANNEL_VEVO_BONUS,
   FEATURED_BONUS,
+  SPOTIFY_CONFIDENT_THRESHOLD,
   TITLE_WEIGHT,
   UNCERTAIN_THRESHOLD,
 } from './thresholds';
@@ -87,10 +89,47 @@ export function scoreCandidate(line: InputLine, track: TrackCandidateRaw): numbe
   return Math.min(1, Math.max(0, score));
 }
 
-export function classify(score: number): ScoredStatus {
-  if (score >= CONFIDENT_THRESHOLD) return 'confident';
-  if (score >= UNCERTAIN_THRESHOLD) return 'uncertain';
+/**
+ * Bônus de canal canônico (research §7).
+ *
+ * A comparação ignora caixa e espaços de borda: canais escrevem ` - Topic` e
+ * `VEVO` de forma razoavelmente consistente, mas não perfeitamente.
+ */
+export function channelBonus(channelTitle: string): number {
+  const normalized = channelTitle.trim().toLowerCase();
+  if (normalized.endsWith('- topic') || normalized.endsWith('-topic')) return CHANNEL_TOPIC_BONUS;
+  if (normalized.endsWith('vevo')) return CHANNEL_VEVO_BONUS;
+  return 0;
+}
+
+/**
+ * Classificação com os limiares do provedor.
+ *
+ * **Invariante K2**: qualquer indício de versão diferente rebaixa `confident`
+ * para `uncertain`, independentemente da pontuação (FR-025). Uma gravação ao
+ * vivo do artista certo pontua alto justamente porque é do artista certo — a
+ * pontuação sozinha não distingue "é a faixa" de "é outra versão da faixa".
+ */
+export function classifyFor(
+  score: number,
+  thresholds: { confident: number; uncertain: number },
+  hints: readonly VersionHint[] = [],
+): ScoredStatus {
+  if (score >= thresholds.confident) return hints.length > 0 ? 'uncertain' : 'confident';
+  if (score >= thresholds.uncertain) return 'uncertain';
   return 'not_found';
 }
 
-export { CONFIDENT_THRESHOLD, UNCERTAIN_THRESHOLD } from './thresholds';
+/** Classificação com os limiares do Spotify — mantida para os testes da 001. */
+export function classify(score: number): ScoredStatus {
+  return classifyFor(score, {
+    confident: SPOTIFY_CONFIDENT_THRESHOLD,
+    uncertain: UNCERTAIN_THRESHOLD,
+  });
+}
+
+export {
+  SPOTIFY_CONFIDENT_THRESHOLD,
+  YOUTUBE_CONFIDENT_THRESHOLD,
+  UNCERTAIN_THRESHOLD,
+} from './thresholds';

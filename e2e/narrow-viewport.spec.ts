@@ -1,13 +1,30 @@
 import { expect, test, type Page } from '@playwright/test';
 
 import { t } from '../src/i18n/pt-BR';
-import { mockSpotify, seedCredential } from './support/spotify-mock';
+import {
+  botaoConectar,
+  botaoCriar,
+  fmt,
+  incluirPendentes,
+  SPOTIFY,
+  tituloResultado,
+  tituloRevisao,
+  YOUTUBE,
+} from './support/flow';
+import { CLIENT_ID, mockSpotify, seedCredential } from './support/spotify-mock';
+import { catalogoDe, mockYouTube, YT_CHANNEL_NAME, YT_CLIENT_ID } from './support/youtube-mock';
 
 /**
- * SC-012: o fluxo completo cabe em 375 px sem rolagem horizontal da página e sem
- * controle inacessível. Roda no projeto `narrow-375` do playwright.config.ts.
+ * SC-016: o fluxo completo cabe em 375 px sem rolagem horizontal da página e sem
+ * controle inacessível — agora com **cinco** etapas e dois destinos.
  */
 test.use({ viewport: { width: 375, height: 667 } });
+
+const LISTA = [
+  'Bohemian Rhapsody - Queen',
+  'Uma Faixa Com Um Titulo Bem Longo Para Testar Quebra De Linha - Um Artista De Nome Igualmente Longo',
+  'Imagine - John Lennon',
+].join('\n');
 
 async function semRolagemHorizontal(page: Page): Promise<void> {
   const overflow = await page.evaluate(() => {
@@ -18,47 +35,68 @@ async function semRolagemHorizontal(page: Page): Promise<void> {
   expect(overflow.scrollWidth).toBeLessThanOrEqual(overflow.clientWidth + 1);
 }
 
-test.describe('SC-012 — tela de 375 px', () => {
-  test('as quatro etapas cabem na largura, sem rolagem horizontal', async ({ page }) => {
+test.describe('SC-016 — tela de 375 px', () => {
+  test('as cinco etapas cabem na largura, sem rolagem horizontal', async ({ page }) => {
     await mockSpotify(page);
-    await seedCredential(page);
+    await mockYouTube(page, { tracks: catalogoDe(LISTA) });
+    await seedCredential(page, CLIENT_ID, 'spotify');
+    await seedCredential(page, YT_CLIENT_ID, 'youtube');
     await page.goto('/');
 
-    // Etapa 1 — credencial
-    await expect(page.getByLabel(t.credential.maskedLabel)).toBeVisible();
+    // Etapa 1 — configuração, com um bloco de credencial por serviço.
+    await expect(page.getByLabel(fmt(t.credential.maskedLabel, { service: SPOTIFY }))).toBeVisible();
     await semRolagemHorizontal(page);
+    await page.getByRole('button', { name: t.common.next, exact: true }).click();
 
-    await page.getByRole('button', { name: t.connect.connect }).click();
+    // Etapa 2 — destinos.
+    await expect(page.getByRole('heading', { name: t.destinations.heading })).toBeVisible();
+    await semRolagemHorizontal(page);
+    await page.getByRole('button', { name: t.common.next, exact: true }).click();
 
-    // Etapa 2 — entrada
+    // Etapa 3 — entrada.
     await expect(page.getByRole('heading', { name: t.input.heading })).toBeVisible();
-    await page
-      .getByLabel(t.input.textareaLabel)
-      .fill(
-        [
-          'Bohemian Rhapsody - Queen',
-          'Uma Faixa Com Um Titulo Bem Longo Para Testar Quebra De Linha - Um Artista De Nome Igualmente Longo',
-          'Imagine - John Lennon',
-        ].join('\n'),
-      );
+    await page.getByLabel(t.input.textareaLabel).fill(LISTA);
+    await semRolagemHorizontal(page);
+    await page.getByRole('button', { name: t.input.start }).click();
+
+    // Etapa 4 — ciclo do Spotify: conexão, revisão e resultado.
+    await botaoConectar(page, SPOTIFY).click();
+    await expect(tituloRevisao(page, SPOTIFY)).toBeVisible();
     await semRolagemHorizontal(page);
 
-    await page.getByRole('button', { name: t.input.search }).click();
-
-    // Etapa 3 — revisão (cartões empilhados por padrão, research §12)
-    await expect(page.getByRole('heading', { name: t.review.heading })).toBeVisible();
-    await semRolagemHorizontal(page);
+    // A fila é mais um elemento na largura: precisa caber junto do resto.
+    await expect(page.getByLabel(t.queue.label)).toBeVisible();
 
     await page.getByRole('button', { name: t.review.alternatives }).first().click();
     await semRolagemHorizontal(page);
 
     await page.getByLabel(t.playlistConfig.nameLabel).fill('Lista Estreita');
     await semRolagemHorizontal(page);
+    await botaoCriar(page, SPOTIFY).click();
 
-    await page.getByRole('button', { name: t.playlistConfig.create }).click();
+    await expect(tituloResultado(page, SPOTIFY)).toBeVisible();
+    await semRolagemHorizontal(page);
 
-    // Etapa 4 — resultado
-    await expect(page.getByRole('heading', { name: t.result.heading })).toBeVisible();
+    // Etapa 4 de novo — ciclo do YouTube, com a estimativa de cota pelo meio.
+    await page
+      .getByRole('button', { name: fmt(t.result.continueNext, { service: YOUTUBE }) })
+      .click();
+    await botaoConectar(page, YOUTUBE).click();
+    await expect(page.getByText(YT_CHANNEL_NAME)).toBeVisible();
+    await expect(page.getByText(fmt(t.quota.heading, { service: YOUTUBE }))).toBeVisible();
+    await semRolagemHorizontal(page);
+    await page.getByRole('button', { name: t.quota.proceed }).click();
+
+    await expect(tituloRevisao(page, YOUTUBE)).toBeVisible();
+    await semRolagemHorizontal(page);
+    await incluirPendentes(page);
+    await botaoCriar(page, YOUTUBE).click();
+    await expect(tituloResultado(page, YOUTUBE)).toBeVisible();
+    await semRolagemHorizontal(page);
+
+    // Etapa 5 — resumo consolidado.
+    await page.getByRole('button', { name: t.common.next, exact: true }).click();
+    await expect(page.getByRole('heading', { name: t.summary.heading })).toBeVisible();
     await semRolagemHorizontal(page);
   });
 
@@ -67,18 +105,24 @@ test.describe('SC-012 — tela de 375 px', () => {
     await seedCredential(page);
     await page.goto('/');
 
-    await page.getByRole('button', { name: t.connect.connect }).click();
+    await page.getByRole('button', { name: t.common.next, exact: true }).click();
+    await page.getByRole('button', { name: t.common.next, exact: true }).click();
     await page.getByLabel(t.input.textareaLabel).fill('Bohemian Rhapsody - Queen');
-    await page.getByRole('button', { name: t.input.search }).click();
-    await expect(page.getByRole('heading', { name: t.review.heading })).toBeVisible();
+    await page.getByRole('button', { name: t.input.start }).click();
+    await botaoConectar(page, SPOTIFY).click();
+    await expect(tituloRevisao(page, SPOTIFY)).toBeVisible();
 
     for (const nome of [t.review.alternatives, t.review.editLine]) {
       const botao = page.getByRole('button', { name: nome }).first();
       await expect(botao).toBeVisible();
-      await expect(botao).toBeInViewport({ ratio: 0 });
+      // Rolagem **vertical** sempre foi legítima; o que SC-016 proíbe é a
+      // horizontal. O controle precisa estar alcançável e inteiro na largura.
+      await botao.scrollIntoViewIfNeeded();
+      await expect(botao).toBeInViewport({ ratio: 1 });
+      await semRolagemHorizontal(page);
     }
 
-    const caixa = page.getByRole('checkbox').first();
+    const caixa = page.getByRole('list', { name: t.review.listLabel }).getByRole('checkbox').first();
     await caixa.uncheck();
     await expect(caixa).not.toBeChecked();
   });

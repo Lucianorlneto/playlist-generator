@@ -1,12 +1,13 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import type { Session } from '@/domain/types';
-import { createRefresher, refreshSession } from '@/services/spotify/auth';
-import { configureSpotifyClient, ensureFreshSession } from '@/services/spotify/client';
-import { AppError } from '@/services/spotify/errors';
+import type { ProviderSession } from '@/domain/types';
+import { createRefresher, refreshSession } from '@/services/providers/spotify/auth';
+import { configureProviderClient, ensureFreshSession } from '@/services/providers/http';
+import { AppError } from '@/services/providers/errors';
 
 import { makeSession } from '../fixtures/factories';
 import { requestLog, setRefreshBehaviour } from '../msw/handlers';
+
 
 const CLIENT_ID = 'a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6';
 
@@ -15,8 +16,8 @@ function tokenRequests() {
 }
 
 /** Sessão vencida: força a renovação proativa (research §9). */
-function expiredSession(): Session {
-  return makeSession({ expiresAt: Date.now() - 1000 });
+function expiredSession(): ProviderSession {
+  return makeSession('spotify', { expiresAt: Date.now() - 1000 });
 }
 
 describe('Renovação (contrato §3)', () => {
@@ -65,11 +66,11 @@ describe('Renovação (contrato §3)', () => {
 });
 
 describe('Coalescência de renovações (research §9)', () => {
-  let sessions: Session[];
+  let sessions: ProviderSession[];
 
   beforeEach(() => {
     sessions = [expiredSession()];
-    configureSpotifyClient({
+    configureProviderClient('spotify', {
       getSession: () => sessions.at(-1) ?? null,
       saveSession: (session) => sessions.push(session),
       clearSession: () => sessions.push(),
@@ -79,10 +80,10 @@ describe('Coalescência de renovações (research §9)', () => {
 
   it('quatro chamadas concorrentes disparam uma única renovação', async () => {
     const results = await Promise.all([
-      ensureFreshSession(),
-      ensureFreshSession(),
-      ensureFreshSession(),
-      ensureFreshSession(),
+      ensureFreshSession('spotify'),
+      ensureFreshSession('spotify'),
+      ensureFreshSession('spotify'),
+      ensureFreshSession('spotify'),
     ]);
 
     expect(tokenRequests()).toHaveLength(1);
@@ -91,24 +92,24 @@ describe('Coalescência de renovações (research §9)', () => {
   });
 
   it('renova de novo depois que a primeira renovação termina', async () => {
-    await ensureFreshSession();
+    await ensureFreshSession('spotify');
     expect(tokenRequests()).toHaveLength(1);
 
     // A sessão renovada tem validade longa: só uma renovação forçada dispara outra.
-    await ensureFreshSession(true);
+    await ensureFreshSession('spotify', true);
     expect(tokenRequests()).toHaveLength(2);
   });
 
   it('não renova quando a sessão ainda está longe de expirar', async () => {
-    sessions.push(makeSession({ expiresAt: Date.now() + 3_600_000 }));
-    await ensureFreshSession();
+    sessions.push(makeSession('spotify', { expiresAt: Date.now() + 3_600_000 }));
+    await ensureFreshSession('spotify');
     expect(tokenRequests()).toHaveLength(0);
   });
 
   it('falha de renovação limpa a sessão e propaga erro acionável', async () => {
     setRefreshBehaviour({ works: false });
     let cleared = false;
-    configureSpotifyClient({
+    configureProviderClient('spotify', {
       getSession: () => expiredSession(),
       saveSession: () => undefined,
       clearSession: () => {
@@ -117,7 +118,7 @@ describe('Coalescência de renovações (research §9)', () => {
       refresh: createRefresher(() => CLIENT_ID),
     });
 
-    await expect(ensureFreshSession()).rejects.toBeInstanceOf(AppError);
+    await expect(ensureFreshSession('spotify')).rejects.toBeInstanceOf(AppError);
     expect(cleared).toBe(true);
   });
 });

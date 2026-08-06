@@ -1,19 +1,23 @@
 import { useMemo } from 'react';
 
 import { parseInput } from '@/domain/parser';
-import { pendingItem } from '@/domain/types';
 import { format, plural, t } from '@/i18n/pt-BR';
 import { useAppStore } from '@/store';
 import { Button } from '@/ui/Button';
 import { StepHeading } from '@/ui/StepHeading';
 import { TextArea } from '@/ui/TextArea';
 
-import { runMatching } from './matchRunner';
-
-/** Acima disso o aviso de duração aparece (edge case da spec). */
+/** Acima disso o aviso de duração aparece (caso de borda da spec). */
 export const LARGE_LIST_THRESHOLD = 500;
 
-/** Etapa 2: colar a lista e disparar a busca (FR-012, FR-026). */
+/**
+ * Etapa 3: colar a lista (FR-014).
+ *
+ * O texto, o nome e a visibilidade são informados **uma vez** e valem para todos
+ * os destinos. Sair daqui monta a fila e entrega o controle ao ciclo do primeiro
+ * serviço — a busca não começa nesta tela, porque no YouTube ela precisa passar
+ * antes pela estimativa de cota (FR-029, SC-011).
+ */
 export function InputScreen() {
   const stepToken = useAppStore((state) => state.stepToken);
   const rawText = useAppStore((state) => state.rawText);
@@ -27,29 +31,15 @@ export function InputScreen() {
 
   const empty = rawText.trim() === '';
 
-  async function startSearch(): Promise<void> {
+  function start(): void {
     const store = useAppStore.getState();
     const lines = parseInput(store.rawText);
     if (lines.length === 0) return;
 
-    const controller = new AbortController();
-    store.setItems(lines.map((line) => pendingItem(line)));
-    store.startSearch(lines.length, controller);
-    store.goToStep('review');
-
-    const items = await runMatching(lines, {
-      signal: controller.signal,
-      onProgress: (done) => {
-        useAppStore.getState().reportSearchProgress(done);
-      },
-      onItem: (item) => {
-        useAppStore.getState().patchItem(item.line.id, item);
-      },
-    });
-
-    const current = useAppStore.getState();
-    if (!controller.signal.aborted) current.setItems(items);
-    current.finishSearch(controller.signal.aborted);
+    store.setLines(lines);
+    store.buildQueue();
+    store.startQueue();
+    store.goToStep('service');
   }
 
   return (
@@ -81,13 +71,13 @@ export function InputScreen() {
       {empty && <p className="field-message">{t.input.emptyHint}</p>}
 
       <div className="flex flex-wrap gap-2">
-        <Button variant="primary" disabled={empty || running} onClick={() => void startSearch()}>
-          {running ? t.input.searching : t.input.search}
+        <Button variant="primary" disabled={empty || running} onClick={start}>
+          {t.input.start}
         </Button>
         <Button
           variant="ghost"
           onClick={() => {
-            useAppStore.getState().goToStep('credential');
+            useAppStore.getState().goToStep('destinations');
           }}
         >
           {t.common.back}

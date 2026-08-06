@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
+import type { ProviderId } from '@/domain/providers';
 import { canCreate } from '@/domain/validation';
-import { startCreation } from '@/features/result/creationRunner';
+import { nameOf } from '@/features/credential/providerText';
 import { effectivePath } from '@/features/result/effectivePath';
 import { format, t } from '@/i18n/pt-BR';
 import { useAppStore } from '@/store';
@@ -11,28 +12,39 @@ import { Toggle } from '@/ui/Toggle';
 
 import { refreshExistingNames } from './nameCheck';
 
-const MESSAGE_BY_REASON = {
+export interface PlaylistConfigFormProps {
+  provider: ProviderId;
+}
+
+const MESSAGE_BY_REASON: Partial<Record<string, string>> = {
   name_empty: t.playlistConfig.nameRequired,
   name_duplicate: t.playlistConfig.nameDuplicate,
   no_tracks_selected: t.playlistConfig.noTracksSelected,
   name_check_incomplete: t.errors.playlistListFailed.nextStep,
-} as const;
+};
 
 /**
- * Dados da playlist e confirmação da criação (FR-028 a FR-031).
+ * Dados da playlist e **confirmação da criação naquele serviço** (FR-019,
+ * FR-022, FR-026).
  *
- * Não há campo de pasta aqui nem em lugar nenhum: a plataforma não expõe pastas,
- * e simular o campo seria prometer o que não se pode cumprir (FR-038).
+ * O botão de criar é o único caminho para a fase `creating`: ele emite
+ * `review_confirmed` para *este* provedor. Confirmar aqui não diz nada sobre o
+ * próximo destino — que terá sua própria revisão e sua própria confirmação.
+ *
+ * Não há campo de pasta aqui nem em lugar nenhum: nenhuma das plataformas expõe
+ * pastas a aplicativos de terceiros, e simular o campo seria prometer o que não
+ * se pode cumprir.
  */
-export function PlaylistConfigForm() {
+export function PlaylistConfigForm({ provider }: PlaylistConfigFormProps) {
   const config = useAppStore((state) => state.playlistConfig);
-  const items = useAppStore((state) => state.items);
+  const run = useAppStore((state) => state.queue.runs[provider] ?? null);
   const existingNames = useAppStore((state) => state.existingNames);
   const nameCheckRunning = useAppStore((state) => state.nameCheckRunning);
   const nameCheckError = useAppStore((state) => state.nameCheckError);
-  const session = useAppStore((state) => state.session);
+  const session = useAppStore((state) => state.sessions[provider]);
   const creating = useAppStore((state) => state.creating);
   const searchRunning = useAppStore((state) => state.search.running);
+  const dispatchRun = useAppStore((state) => state.dispatchRun);
 
   const setPlaylistName = useAppStore((state) => state.setPlaylistName);
   const setPlaylistDescription = useAppStore((state) => state.setPlaylistDescription);
@@ -40,20 +52,16 @@ export function PlaylistConfigForm() {
 
   const [touched, setTouched] = useState(false);
 
-  // A lista de nomes é buscada uma vez ao entrar na revisão; sem ela a criação
-  // fica bloqueada com opção de repetir (FR-029).
-  useEffect(() => {
-    if (session !== null && existingNames === null && nameCheckError === null) {
-      void refreshExistingNames();
-    }
-  }, [session, existingNames, nameCheckError]);
+  const items = run?.items ?? [];
+  const service = nameOf(provider);
 
   const validation = canCreate(items, config, existingNames);
-  const blockingMessage = validation.ok ? null : MESSAGE_BY_REASON[validation.reason];
+  const rawMessage = validation.ok ? null : (MESSAGE_BY_REASON[validation.reason] ?? null);
+  const blockingMessage = rawMessage === null ? null : format(rawMessage, { service });
   const showNameError = touched && !validation.ok && validation.reason !== 'no_tracks_selected';
 
   const previewPath =
-    session === null ? null : effectivePath(session.user.displayName, config.name);
+    session === null ? null : effectivePath(provider, session.user.displayName, config.name);
 
   return (
     <section className="border-border flex flex-col gap-3 border-t pt-4">
@@ -72,6 +80,7 @@ export function PlaylistConfigForm() {
           setTouched(true);
         }}
       />
+      <p className="field-message">{t.playlistConfig.nameDuplicateScope}</p>
 
       <TextField
         label={t.playlistConfig.descriptionLabel}
@@ -98,7 +107,9 @@ export function PlaylistConfigForm() {
         </p>
       )}
 
-      {nameCheckRunning && <p className="field-message">{t.playlistConfig.checkingNames}</p>}
+      {nameCheckRunning && (
+        <p className="field-message">{format(t.playlistConfig.checkingNames, { service })}</p>
+      )}
 
       {nameCheckError !== null && (
         <div role="alert" className="border-danger bg-danger-soft rounded-lg border p-2 text-sm">
@@ -109,7 +120,7 @@ export function PlaylistConfigForm() {
             size="sm"
             className="mt-2"
             onClick={() => {
-              void refreshExistingNames();
+              void refreshExistingNames(provider);
             }}
           >
             {t.common.retry}
@@ -127,10 +138,11 @@ export function PlaylistConfigForm() {
           disabled={!validation.ok || creating || searchRunning}
           onClick={() => {
             setTouched(true);
-            void startCreation();
+            // **O** ponto de confirmação daquele serviço (FR-019, Princípio V).
+            dispatchRun({ type: 'review_confirmed' }, provider);
           }}
         >
-          {creating ? t.playlistConfig.creating : t.playlistConfig.create}
+          {format(creating ? t.playlistConfig.creating : t.playlistConfig.create, { service })}
         </Button>
         {validation.ok && (
           <p className="field-message">

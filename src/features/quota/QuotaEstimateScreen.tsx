@@ -1,0 +1,160 @@
+import { useState } from 'react';
+
+import { linesFor } from '@/domain/run/lines';
+import type { ProviderId } from '@/domain/providers';
+import { nameOf } from '@/features/credential/providerText';
+import { ListReduction } from '@/features/input/ListReduction';
+import { format, t } from '@/i18n/pt-BR';
+import { useAppStore } from '@/store';
+import { Button } from '@/ui/Button';
+
+export interface QuotaEstimateScreenProps {
+  provider: ProviderId;
+}
+
+/**
+ * Estimativa de consumo, exibida **antes de qualquer requisição de busca**
+ * (FR-029, SC-011).
+ *
+ * Quando a estimativa cabe, a tela é informativa e o usuário segue. Quando não
+ * cabe, ela **bloqueia** e oferece exatamente duas ações (FR-029, FR-034,
+ * SC-008):
+ *
+ * 1. **reduzir a lista**, informando quantas linhas cabem;
+ * 2. **pular o destino**.
+ *
+ * E mais um texto **sem ação associada**, declarando a premissa do cálculo: o
+ * saldo parte sempre do orçamento padrão do provedor menos o que este app já
+ * consumiu hoje neste dispositivo. Ampliar a cota junto ao provedor não altera
+ * esse cálculo — por isso "ampliar o orçamento" não é oferecido como saída aqui.
+ * Ela aparece só no esgotamento **durante** a execução, onde de fato ajuda.
+ */
+export function QuotaEstimateScreen({ provider }: QuotaEstimateScreenProps) {
+  const run = useAppStore((state) => state.queue.runs[provider] ?? null);
+  const lines = useAppStore((state) => state.lines);
+  const dispatchRun = useAppStore((state) => state.dispatchRun);
+  const reduceUpcoming = useAppStore((state) => state.reduceUpcoming);
+  const [reducing, setReducing] = useState(false);
+
+  const service = nameOf(provider);
+  const estimate = run?.estimate ?? null;
+
+  if (run === null || estimate === null) return null;
+
+  if (reducing) {
+    return (
+      <ListReduction
+        provider={provider}
+        lines={linesFor(lines, run.lineIds)}
+        lineIds={run.lineIds}
+        maxLinesThatFit={estimate.maxLinesThatFit}
+        onConfirm={(lineIds) => {
+          // O ajuste é aplicado **antes** da busca daquele destino (FR-013).
+          reduceUpcoming(provider, lineIds);
+          dispatchRun({ type: 'lines_reduced', lineIds }, provider);
+          setReducing(false);
+        }}
+        onCancel={() => {
+          setReducing(false);
+        }}
+      />
+    );
+  }
+
+  const percent = Math.round(
+    (estimate.estimatedUnits / Math.max(1, estimate.estimatedUnits + estimate.availableUnits)) * 100,
+  );
+
+  return (
+    <section className="flex flex-col gap-3">
+      <h3 className="text-ink text-base font-bold">{format(t.quota.heading, { service })}</h3>
+      <p className="field-message">{format(t.quota.intro, { service })}</p>
+
+      <dl className="border-border bg-surface-muted grid grid-cols-1 gap-2 rounded-lg border p-3 text-sm sm:grid-cols-2">
+        <div>
+          <dt className="text-ink-muted">{t.quota.estimateLabel}</dt>
+          <dd className="text-ink font-semibold">
+            {estimate.estimatedUnits} {t.quota.unit}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-ink-muted">{t.quota.availableLabel}</dt>
+          <dd className="text-ink font-semibold">
+            {estimate.availableUnits} {t.quota.unit}
+          </dd>
+        </div>
+      </dl>
+
+      {!estimate.blocked && (
+        <p className="field-message">{format(t.quota.fractionLabel, { percent })}</p>
+      )}
+
+      {estimate.blocked ? (
+        <div
+          role="alert"
+          className="border-danger bg-danger-soft text-ink flex flex-col gap-2 rounded-lg border p-3 text-sm"
+        >
+          <p className="font-bold">{t.quota.blockedHeading}</p>
+          <p>
+            {format(t.quota.blockedBody, {
+              estimated: estimate.estimatedUnits,
+              available: estimate.availableUnits,
+              service,
+            })}
+          </p>
+          <p>
+            {estimate.maxLinesThatFit > 0
+              ? format(t.quota.blockedFits, { count: estimate.maxLinesThatFit })
+              : t.quota.blockedFitsNone}
+          </p>
+
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="primary"
+              size="sm"
+              disabled={estimate.maxLinesThatFit === 0}
+              onClick={() => {
+                setReducing(true);
+              }}
+            >
+              {t.quota.reduceList}
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                dispatchRun({ type: 'skipped' }, provider);
+              }}
+            >
+              {format(t.quota.skipDestination, { service })}
+            </Button>
+          </div>
+
+          {/* Declaração da premissa — texto, não ação (FR-034). */}
+          <p className="field-message">{format(t.quota.premise, { service })}</p>
+        </div>
+      ) : (
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="primary"
+            onClick={() => {
+              dispatchRun({ type: 'estimate_ok' }, provider);
+            }}
+          >
+            {t.quota.proceed}
+          </Button>
+          <Button
+            variant="ghost"
+            onClick={() => {
+              dispatchRun({ type: 'skipped' }, provider);
+            }}
+          >
+            {format(t.quota.skipDestination, { service })}
+          </Button>
+        </div>
+      )}
+
+      <p className="field-message">{t.quota.resetNotice}</p>
+    </section>
+  );
+}

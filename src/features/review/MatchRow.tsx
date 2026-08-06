@@ -1,9 +1,12 @@
 import { useState } from 'react';
 
+import { capabilitiesOf, type ProviderId } from '@/domain/providers';
 import type { MatchItem } from '@/domain/types';
+import { nameOf } from '@/features/credential/providerText';
 import { format, t } from '@/i18n/pt-BR';
 import { useAppStore } from '@/store';
 import { Button } from '@/ui/Button';
+import { VersionHintBadge } from '@/ui/VersionHintBadge';
 
 import { Alternatives } from './Alternatives';
 import { formatDuration } from './formatDuration';
@@ -13,18 +16,23 @@ import { StatusBadge, statusHint } from './StatusBadge';
 
 export interface MatchRowProps {
   item: MatchItem;
+  provider: ProviderId;
 }
 
 /**
  * Um item da revisão: linha original, faixa escolhida e ações.
  *
- * Layout **mobile-first** (research §12): cartão empilhado por padrão, virando
- * colunas alinhadas a partir de `sm:` (640 px). A inversão é o que garante
- * SC-012 — o caso estreito é o comportamento padrão, não uma exceção que alguém
- * precisa lembrar de escrever. Nenhuma largura fixa em pixels: as colunas usam
- * `minmax(0, …)`, o que permite o conteúdo encolher em vez de estourar a página.
+ * **Álbum ou canal, nunca os dois, e nunca álbum vazio** (FR-024, invariante
+ * K1): a segunda linha lê `capabilities.showsAlbum` para decidir. No catálogo de
+ * vídeo não existe álbum, e exibir um campo vazio rotulado "Álbum" prometeria um
+ * dado que a plataforma não tem.
+ *
+ * Layout **mobile-first**: cartão empilhado por padrão, virando colunas
+ * alinhadas a partir de `sm:` (640 px). Nenhuma largura fixa em pixels — as
+ * colunas usam `minmax(0, …)`, o que permite o conteúdo encolher em vez de
+ * estourar a página.
  */
-export function MatchRow({ item }: MatchRowProps) {
+export function MatchRow({ item, provider }: MatchRowProps) {
   const toggleIncluded = useAppStore((state) => state.toggleIncluded);
   const [showAlternatives, setShowAlternatives] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -32,6 +40,9 @@ export function MatchRow({ item }: MatchRowProps) {
   const selected = item.candidates.find((candidate) => candidate.uri === item.selectedUri) ?? null;
   const duplicate = item.duplicateOf !== null;
   const hint = statusHint(item.status, duplicate);
+  const showsAlbum = capabilitiesOf(provider).showsAlbum;
+  const service = nameOf(provider);
+  const hints = selected?.versionHints ?? [];
 
   if (editing) {
     return (
@@ -39,6 +50,7 @@ export function MatchRow({ item }: MatchRowProps) {
         <p className="text-ink-muted font-mono text-sm break-words">{item.line.raw}</p>
         <LineEditor
           item={item}
+          provider={provider}
           onDone={() => {
             setEditing(false);
           }}
@@ -80,7 +92,11 @@ export function MatchRow({ item }: MatchRowProps) {
               ) : (
                 <img
                   src={selected.coverUrl}
-                  alt={format(t.review.coverAlt, { album: selected.album })}
+                  alt={
+                    showsAlbum
+                      ? format(t.review.coverAlt, { album: selected.album })
+                      : format(t.review.thumbnailAlt, { title: selected.title })
+                  }
                   className="border-border size-10 shrink-0 rounded border object-cover"
                   loading="lazy"
                 />
@@ -88,8 +104,9 @@ export function MatchRow({ item }: MatchRowProps) {
               <div className="min-w-0 text-sm">
                 <p className="text-ink truncate font-semibold">{selected.title}</p>
                 <p className="text-ink-muted truncate">
-                  {selected.artists.join(', ')} · {selected.album} ·{' '}
-                  {formatDuration(selected.durationMs)}
+                  {showsAlbum
+                    ? `${selected.artists.join(', ')} · ${selected.album} · ${formatDuration(selected.durationMs)}`
+                    : `${t.review.channel}: ${selected.channel ?? selected.artists.join(', ')} · ${formatDuration(selected.durationMs)}`}
                 </p>
               </div>
             </div>
@@ -98,9 +115,11 @@ export function MatchRow({ item }: MatchRowProps) {
 
         <div className="flex flex-col items-start gap-1 sm:items-end">
           <StatusBadge status={item.status} duplicate={duplicate} errored={item.error !== null} />
+          <VersionHintBadge hints={hints} />
         </div>
       </div>
 
+      {hints.length > 0 && <p className="field-message">{t.review.statusHint.versionHint}</p>}
       {hint !== null && <p className="field-message">{hint}</p>}
       {item.error !== null && <p className="field-message text-status-not-found">{item.error}</p>}
 
@@ -131,12 +150,12 @@ export function MatchRow({ item }: MatchRowProps) {
             rel="noopener noreferrer"
             className="focus-ring self-center text-sm underline"
           >
-            {t.review.openInSpotify}
+            {format(t.review.openExternal, { service })}
           </a>
         )}
       </div>
 
-      {showAlternatives && <Alternatives item={item} />}
+      {showAlternatives && <Alternatives item={item} provider={provider} />}
     </li>
   );
 }

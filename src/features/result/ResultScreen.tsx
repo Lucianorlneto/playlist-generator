@@ -1,42 +1,77 @@
+import { useState } from 'react';
+
 import { totalBatches } from '@/domain/batching';
+import type { ProviderId } from '@/domain/providers';
+import { linesFor } from '@/domain/run/lines';
+import { nameOf, textFor } from '@/features/credential/providerText';
+import { ListReduction } from '@/features/input/ListReduction';
 import { format, t } from '@/i18n/pt-BR';
 import { useAppStore } from '@/store';
 import { Button } from '@/ui/Button';
 import { StepHeading } from '@/ui/StepHeading';
 
-import { failedLines } from './creationRunner';
+import { committedItemCount } from './creationRunner';
 import { FailedLines } from './FailedLines';
 import { FolderNotice } from './FolderNotice';
 import { RetryRemaining } from './RetryRemaining';
 
+export interface ResultScreenProps {
+  provider: ProviderId;
+}
+
 /**
- * Etapa 4: resultado (FR-036, FR-037, FR-039, FR-040).
+ * Resultado de **um** serviço (FR-020, FR-021, FR-027, FR-028, FR-032).
  *
- * A mesma tela cobre três estados — criação em andamento, falha parcial e
- * conclusão — porque para o usuário é um lugar só: onde ele descobre o que
- * aconteceu com a lista dele.
+ * A mesma tela cobre criação em andamento, falha parcial e conclusão — para o
+ * usuário é um lugar só: onde ele descobre o que aconteceu com a lista dele
+ * naquele destino.
+ *
+ * É também o segundo ponto de entrada do ajuste de lista (FR-013): daqui o
+ * usuário pode remover linhas antes de o próximo destino começar.
  */
-export function ResultScreen() {
+export function ResultScreen({ provider }: ResultScreenProps) {
   const stepToken = useAppStore((state) => state.stepToken);
-  const result = useAppStore((state) => state.result);
-  const creation = useAppStore((state) => state.creation);
+  const queue = useAppStore((state) => state.queue);
+  const run = useAppStore((state) => state.queue.runs[provider] ?? null);
+  const lines = useAppStore((state) => state.lines);
+  const sessions = useAppStore((state) => state.sessions);
   const creating = useAppStore((state) => state.creating);
   const creationError = useAppStore((state) => state.creationError);
-  const items = useAppStore((state) => state.items);
-  const resetWork = useAppStore((state) => state.resetWork);
+  const advance = useAppStore((state) => state.advance);
+  const reduceUpcoming = useAppStore((state) => state.reduceUpcoming);
   const goToStep = useAppStore((state) => state.goToStep);
+  const resetWork = useAppStore((state) => state.resetWork);
+
+  const [reducing, setReducing] = useState(false);
+
+  if (run === null) return null;
+
+  const service = nameOf(provider);
+  const text = textFor(provider);
+  const result = run.result;
+  const creation = run.creation;
+
+  const nextProvider = queue.order[queue.currentIndex + 1] ?? null;
+  const isLast = nextProvider === null;
+  const nextRun = nextProvider === null ? null : (queue.runs[nextProvider] ?? null);
+
+  // --- Criação em andamento ou interrompida -------------------------------
 
   if (result === null) {
     return (
       <section className="flex flex-col gap-4">
-        <StepHeading title={t.playlistConfig.creating} focusToken={stepToken} />
+        <StepHeading
+          title={format(t.playlistConfig.creating, { service })}
+          focusToken={stepToken}
+        />
 
         {creating && creation !== null && (
           <p role="status" className="text-ink-muted text-sm">
             {format(t.result.creationProgress, {
-              current: creation.committedBatches + 1,
-              total: totalBatches(creation),
+              current: Math.min(creation.orderedUris.length, committedItemCount(creation) + 1),
+              total: creation.orderedUris.length,
             })}
+            {creation.batchSize > 1 && ` · ${String(totalBatches(creation))}`}
           </p>
         )}
 
@@ -48,25 +83,61 @@ export function ResultScreen() {
           </div>
         )}
 
-        {creationError !== null && <RetryRemaining />}
+        {creationError !== null && <RetryRemaining provider={provider} />}
 
-        <div>
-          <Button
-            variant="ghost"
-            onClick={() => {
-              goToStep('review');
-            }}
-          >
-            {t.common.back}
-          </Button>
-        </div>
+        {run.error !== null && (
+          <div role="alert" className="border-danger bg-danger-soft rounded-lg border p-3 text-sm">
+            <p className="font-bold">{run.error.title}</p>
+            <p>{run.error.cause}</p>
+            <p>{run.error.nextStep}</p>
+          </div>
+        )}
+
+        {run.outcome !== null && (
+          <div>
+            <Button
+              variant="primary"
+              onClick={() => {
+                advance();
+                if (isLast) goToStep(queue.order.length > 1 ? 'summary' : 'service');
+              }}
+            >
+              {isLast
+                ? t.result.startOver
+                : format(t.result.continueNext, { service: nameOf(nextProvider) })}
+            </Button>
+          </div>
+        )}
       </section>
     );
   }
 
+  // --- Ajuste da lista para o próximo destino ------------------------------
+
+  if (reducing && nextProvider !== null && nextRun !== null) {
+    return (
+      <ListReduction
+        provider={nextProvider}
+        lines={linesFor(lines, nextRun.lineIds)}
+        lineIds={nextRun.lineIds}
+        onConfirm={(lineIds) => {
+          reduceUpcoming(nextProvider, lineIds);
+          setReducing(false);
+        }}
+        onCancel={() => {
+          setReducing(false);
+        }}
+      />
+    );
+  }
+
+  // --- Concluído ----------------------------------------------------------
+
+  const account = sessions[provider]?.user.displayName ?? '';
+
   return (
     <section className="flex flex-col gap-4">
-      <StepHeading title={t.result.heading} focusToken={stepToken} />
+      <StepHeading title={format(t.result.heading, { service })} focusToken={stepToken} />
 
       <dl className="grid gap-2 text-sm sm:grid-cols-2">
         <div>
@@ -88,6 +159,28 @@ export function ResultScreen() {
       </dl>
 
       <p className="field-message">{t.result.skippedHint}</p>
+      {account !== '' && (
+        <p className="field-message">{format(t.result.accountNotice, { account })}</p>
+      )}
+
+      {result.incompleteByQuota && (
+        <div
+          role="alert"
+          className="border-status-uncertain bg-status-uncertain-soft rounded-lg border p-3 text-sm"
+        >
+          <p className="font-bold">{format(t.quota.exhaustedHeading, { service })}</p>
+          <p>
+            {format(t.quota.exhaustedBody, {
+              name: result.playlistName,
+              added: result.addedCount,
+              total: (creation?.orderedUris.length ?? result.addedCount).toString(),
+            })}
+          </p>
+          <p className="mt-1">{t.quota.incompleteWarning}</p>
+          <p className="mt-1">{t.quota.exhaustedNextStep}</p>
+          <p className="field-message">{t.draft.keptAfterQuota}</p>
+        </div>
+      )}
 
       <div>
         <a
@@ -96,19 +189,57 @@ export function ResultScreen() {
           rel="noopener noreferrer"
           className="focus-ring bg-accent text-ink-inverse inline-flex rounded-lg px-4 py-2 text-sm font-semibold"
         >
-          {t.result.openPlaylist}
+          {text.openPlaylist}
         </a>
       </div>
 
-      <FolderNotice />
-      <FailedLines
-        lines={result.failedLines.length > 0 ? result.failedLines : failedLines(items)}
-      />
+      <FolderNotice provider={provider} />
+      <FailedLines provider={provider} lines={result.failedLines} />
 
-      <div>
-        <Button variant="secondary" onClick={resetWork}>
-          {t.result.startOver}
-        </Button>
+      <div className="flex flex-wrap gap-2">
+        {isLast ? (
+          <Button
+            variant="primary"
+            onClick={() => {
+              advance();
+              if (queue.order.length > 1) goToStep('summary');
+              else resetWork();
+            }}
+          >
+            {queue.order.length > 1 ? t.common.next : t.result.startOver}
+          </Button>
+        ) : (
+          <>
+            <Button
+              variant="primary"
+              onClick={() => {
+                advance();
+              }}
+            >
+              {format(t.result.continueNext, { service: nameOf(nextProvider) })}
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setReducing(true);
+              }}
+            >
+              {t.result.adjustList}
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                // Pular o destino seguinte **não** desfaz nem oculta o que já foi
+                // criado neste (FR-020).
+                useAppStore.getState().dispatchRun({ type: 'skipped' }, nextProvider);
+                advance();
+                goToStep('summary');
+              }}
+            >
+              {format(t.queue.skipService, { service: nameOf(nextProvider) })}
+            </Button>
+          </>
+        )}
       </div>
     </section>
   );

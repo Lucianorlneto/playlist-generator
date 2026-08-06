@@ -2,18 +2,12 @@ import { beforeEach, describe, expect, it } from 'vitest';
 
 import { parseLine } from '@/domain/parser';
 import { runMatching } from '@/features/input/matchRunner';
-import { createRefresher } from '@/services/spotify/auth';
-import { configureSpotifyClient } from '@/services/spotify/client';
-import { searchTrack } from '@/services/spotify/search';
-import { createLimiter } from '@/services/rate-limiter';
+import { searchTrack } from '@/services/providers/spotify/search';
+import { limiterFor } from '@/services/rate-limiter';
 
-import { makeSession } from '../fixtures/factories';
 import { program, requestLog, RESPONSES, setCatalog, type MockTrack } from '../msw/handlers';
 
-const CLIENT_ID = 'a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6';
-
-/** Limitador sem espera: as políticas de vazão têm testes próprios. */
-const fastLimiter = () => createLimiter({ ratePerSecond: 1000, burst: 1000, concurrency: 4 });
+import { useFastLimiters, wireSpotify } from './support/clients';
 
 function searchRequests() {
   return requestLog.filter((entry) => entry.endpoint === 'search');
@@ -31,12 +25,8 @@ function catalogTrack(overrides: Partial<MockTrack> = {}): MockTrack {
 }
 
 beforeEach(() => {
-  configureSpotifyClient({
-    getSession: () => makeSession(),
-    saveSession: () => undefined,
-    clearSession: () => undefined,
-    refresh: createRefresher(() => CLIENT_ID),
-  });
+  wireSpotify();
+  useFastLimiters();
 });
 
 describe('Busca por campos (contrato §6, FR-020)', () => {
@@ -146,10 +136,9 @@ describe('Falha de uma linha não aborta as demais (contrato §6)', () => {
       parseLine('Imagine - John Lennon', 1, 'l1'),
     ];
 
-    const items = await runMatching(lines, {
-      signal: new AbortController().signal,
-      limiter: createLimiter({ ratePerSecond: 1000, burst: 1000, concurrency: 1 }),
-    });
+    // Concorrência 1: as três falhas seguidas caem todas na primeira linha.
+    limiterFor('spotify').configure({ concurrency: 1 });
+    const items = await runMatching('spotify', lines, { signal: new AbortController().signal });
 
     expect(items).toHaveLength(2);
     expect(items[0]?.error).not.toBeNull();
@@ -171,10 +160,7 @@ describe('Falha de uma linha não aborta as demais (contrato §6)', () => {
       parseLine('Hey Jude by The Beatles', 2, 'l2'),
     ];
 
-    const items = await runMatching(lines, {
-      signal: new AbortController().signal,
-      limiter: fastLimiter(),
-    });
+    const items = await runMatching('spotify', lines, { signal: new AbortController().signal });
 
     expect(items.map((item) => item.line.id)).toEqual(['l0', 'l1', 'l2']);
     expect(items.map((item) => item.status)).toEqual(['confident', 'confident', 'confident']);
@@ -183,10 +169,7 @@ describe('Falha de uma linha não aborta as demais (contrato §6)', () => {
   it('linha sem separador nem chega a consultar o catálogo', async () => {
     setCatalog([catalogTrack()]);
 
-    const items = await runMatching([parseLine('linha sem separador', 0, 'l0')], {
-      signal: new AbortController().signal,
-      limiter: fastLimiter(),
-    });
+    const items = await runMatching('spotify', [parseLine('linha sem separador', 0, 'l0')], { signal: new AbortController().signal });
 
     expect(items[0]?.status).toBe('unparsed');
     expect(searchRequests()).toHaveLength(0);
@@ -195,10 +178,7 @@ describe('Falha de uma linha não aborta as demais (contrato §6)', () => {
   it('zero resultados nas duas tentativas resulta em não encontrada', async () => {
     setCatalog([]);
 
-    const items = await runMatching([parseLine('Faixa Inexistente - Ninguém', 0, 'l0')], {
-      signal: new AbortController().signal,
-      limiter: fastLimiter(),
-    });
+    const items = await runMatching('spotify', [parseLine('Faixa Inexistente - Ninguém', 0, 'l0')], { signal: new AbortController().signal });
 
     expect(items[0]?.status).toBe('not_found');
     expect(items[0]?.included).toBe(false);
@@ -210,13 +190,10 @@ describe('Falha de uma linha não aborta as demais (contrato §6)', () => {
     // o título casa, o artista não — exatamente o caso que precisa de olho humano.
     setCatalog([catalogTrack()]);
 
-    const items = await runMatching(
-      [
+    const items = await runMatching('spotify', [
         parseLine('Bohemian Rhapsody - Queen', 0, 'l0'),
         parseLine('Bohemian Rhapsody - Panic At The Disco', 1, 'l1'),
-      ],
-      { signal: new AbortController().signal, limiter: fastLimiter() },
-    );
+      ], { signal: new AbortController().signal });
 
     expect(items[0]?.status).toBe('confident');
     expect(items[0]?.included).toBe(true);
@@ -229,9 +206,8 @@ describe('Falha de uma linha não aborta as demais (contrato §6)', () => {
     const controller = new AbortController();
     controller.abort();
 
-    const items = await runMatching([parseLine('Bohemian Rhapsody - Queen', 0, 'l0')], {
+    const items = await runMatching('spotify', [parseLine('Bohemian Rhapsody - Queen', 0, 'l0')], {
       signal: controller.signal,
-      limiter: fastLimiter(),
     });
 
     expect(items).toHaveLength(1);

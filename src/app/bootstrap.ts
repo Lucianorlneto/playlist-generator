@@ -1,39 +1,72 @@
 /**
  * Inicialização da aplicação.
  *
- * Ordem importa: credencial e sessão saem do disco **antes** do tratamento do
- * retorno de autorização (que precisa do Client ID) e antes da restauração do
- * rascunho (que decide a etapa inicial).
+ * Ordem importa, e cada passo depende do anterior:
+ *
+ * 1. **migração v1 → v2** (FR-042) — antes de qualquer leitura de estado, ou o
+ *    conteúdo antigo seria lido como se fosse novo, que é o que o Princípio de
+ *    armazenamento proíbe;
+ * 2. credenciais e sessões saem do disco — o tratamento do retorno de
+ *    autorização precisa do Client ID do provedor que está voltando;
+ * 3. restauração do rascunho, que decide a etapa e o serviço iniciais;
+ * 4. tratamento do retorno de autorização.
  */
 
 import { useEffect, useRef } from 'react';
 
+import { PROVIDER_ORDER, type ProviderId } from '@/domain/providers';
 import { handleAuthCallback } from '@/features/connect/callback';
 import { handleSessionLoss } from '@/features/connect/reconnect';
-import { createRefresher } from '@/services/spotify/auth';
-import { configureSpotifyClient } from '@/services/spotify/client';
-import { loadCredential } from '@/services/storage/credentialRepo';
+import { createRefresher } from '@/services/providers/spotify/auth';
+import { configureProviderClient } from '@/services/providers/http';
+import { providerFor } from '@/services/providers/registry';
+import { loadAllCredentials } from '@/services/storage/credentialRepo';
+import { migrateToV2 } from '@/services/storage/migrations';
 import { onStorageWarning } from '@/services/storage/schema';
-import { clearSession, loadSession, saveSession } from '@/services/storage/sessionRepo';
+import { classifyYouTubeError } from '@/services/providers/youtube/errors';
+import { clearSession, loadAllSessions, saveSession } from '@/services/storage/sessionRepo';
 import { useAppStore } from '@/store';
 import { attachDraftPersistence } from '@/store/draftPersistence';
 import { restoreDraft } from '@/store/restoreDraft';
 
-function wireSpotifyClient(): void {
-  configureSpotifyClient({
-    getSession: () => useAppStore.getState().session,
-    saveSession: (session) => {
-      saveSession(session);
-      useAppStore.setState({ session });
-    },
-    clearSession: () => {
-      clearSession();
-      // A perda de sessão é tratada em um lugar só: grava o rascunho, limpa a
-      // sessão e pede reconexão preservando a etapa (US4 cenário 2).
-      handleSessionLoss();
-    },
-    refresh: createRefresher(() => useAppStore.getState().credential?.clientId ?? null),
-  });
+/**
+ * Liga um cliente HTTP por provedor. A renovação só é injetada onde a capacidade
+ * declara que ela existe — no YouTube não há o que injetar, e a expiração cai no
+ * caminho de reautorização explícita (FR-035).
+ */
+function wireProviderClients(): void {
+  for (const provider of PROVIDER_ORDER) {
+    const adapter = providerFor(provider);
+
+    configureProviderClient(provider, {
+      getSession: () => useAppStore.getState().sessions[provider],
+      saveSession: (session) => {
+        saveSession(session);
+        useAppStore.setState((state) => ({
+          sessions: { ...state.sessions, [provider]: session },
+        }));
+      },
+      clearSession: () => {
+        clearSession(provider);
+        // A perda de sessão é tratada em um lugar só: grava o rascunho, limpa
+        // **aquela** sessão e pede reautorização preservando a fase.
+        handleSessionLoss(provider);
+      },
+      ...(provider === 'spotify'
+        ? {
+            refresh: createRefresher(
+              () => useAppStore.getState().credentials.spotify?.clientId ?? null,
+            ),
+          }
+        : {}),
+      ...(adapter.recordConsumption === undefined
+        ? {}
+        : { recordConsumption: adapter.recordConsumption }),
+      // A desambiguação do `403` é injetada, não importada pelo cliente: é o que
+      // mantém `http.ts` genérico, sem nenhuma referência a provedor (contrato §3).
+      ...(provider === 'youtube' ? { classifyError: classifyYouTubeError } : {}),
+    });
+  }
 }
 
 /**
@@ -53,28 +86,34 @@ export function useBootstrap(): void {
     if (done.current) return;
     done.current = true;
 
-    wireSpotifyClient();
+    // 1. Migração antes de qualquer restauração de estado (FR-042).
+    const migration = migrateToV2();
 
-    const store = useAppStore.getState();
+    wireProviderClients();
 
-    const credential = loadCredential();
-    if (credential !== null) useAppStore.setState({ credential });
+    const credentials = loadAllCredentials();
+    const sessions = loadAllSessions();
+    useAppStore.setState({ credentials, sessions });
+    useAppStore.getState().reconcileDestinations();
 
-    const session = loadSession();
-    if (session !== null) useAppStore.setState({ session });
+    const restored = restoreDraft(migration.draft);
 
-    const restored = restoreDraft();
+    const clientIds: Partial<Record<ProviderId, string | null>> = {};
+    for (const provider of PROVIDER_ORDER) {
+      clientIds[provider] = credentials[provider]?.clientId ?? null;
+    }
 
-    void handleAuthCallback(credential?.clientId ?? null).then((outcome) => {
+    void handleAuthCallback(clientIds).then((outcome) => {
+      const store = useAppStore.getState();
+
       if (outcome.kind === 'connected') {
-        store.setSession(outcome.session);
-        // Sem rascunho recuperado, conectar leva direto à etapa de entrada.
-        if (!restored) useAppStore.getState().goToStep('input');
+        store.setSession(outcome.session.provider, outcome.session);
+        // O ciclo do serviço retoma sozinho a partir da fase `connect`.
+        if (!restored.restored) store.goToStep('destinations');
         return;
       }
       if (outcome.kind === 'error') {
         store.setAuthError(outcome.error);
-        useAppStore.getState().goToStep('credential');
       }
     });
   }, []);

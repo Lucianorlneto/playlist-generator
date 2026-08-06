@@ -1,21 +1,23 @@
 /**
- * Fluxo OAuth 2.0 Authorization Code + PKCE (research §1, contrato §1 a §3).
+ * Fluxo OAuth 2.0 Authorization Code + PKCE do Spotify (research §1 da 001).
  *
  * Duas propriedades que os testes cobrem diretamente:
  * - as requisições a `/api/token` vão em `x-www-form-urlencoded` e **sem** header
  *   `Authorization` — o fluxo PKCE não usa segredo de cliente;
  * - a renovação é coalescida no cliente HTTP, de modo que quatro buscas
- *   paralelas recebendo `401` disparem uma única renovação (research §9).
+ *   paralelas recebendo `401` disparem uma única renovação.
  */
 
-import type { PkceRecord, Session, SpotifyUser } from '@/domain/types';
-import { savePkce } from '@/services/storage/pkceRepo';
+import type { AuthRequest, ProviderSession, ProviderUser } from '@/domain/types';
+import { AppError, fromNetworkError, fromTokenError } from '@/services/providers/errors';
+import { SPOTIFY_AUTHORIZE_URL, SPOTIFY_TOKEN_URL } from '@/services/providers/hosts';
+import { saveAuthRequest } from '@/services/storage/authRequestRepo';
 
-import { AppError, fromNetworkError, fromTokenError } from './errors';
-import { AUTHORIZE_URL, TOKEN_URL } from './hosts';
 import { createCodeChallenge, createCodeVerifier, createState } from './pkce';
 
-/** Permissões mínimas (FR-007, research §3). `user-read-private` fica de fora. */
+const PROVIDER = 'spotify' as const;
+
+/** Permissões mínimas (Princípio II). `user-read-private` fica de fora. */
 export const SCOPES = [
   'playlist-modify-private',
   'playlist-modify-public',
@@ -35,7 +37,7 @@ interface TokenResponse {
 async function postToken(body: URLSearchParams): Promise<TokenResponse> {
   let response: Response;
   try {
-    response = await fetch(TOKEN_URL, {
+    response = await fetch(SPOTIFY_TOKEN_URL, {
       method: 'POST',
       // Sem `Authorization`: é justamente o que distingue o PKCE dos fluxos que
       // exigem segredo de cliente.
@@ -43,38 +45,40 @@ async function postToken(body: URLSearchParams): Promise<TokenResponse> {
       body,
     });
   } catch (error) {
-    throw fromNetworkError(error);
+    throw fromNetworkError(error, PROVIDER);
   }
 
   const payload: unknown = await response.json().catch(() => null);
 
   if (!response.ok) {
-    throw fromTokenError(response.status, payload);
+    throw fromTokenError(response.status, payload, PROVIDER);
   }
 
   const token = payload as TokenResponse | null;
   if (token === null || typeof token.access_token !== 'string') {
-    throw new AppError('auth_generic', { status: response.status });
+    throw new AppError('auth_generic', { provider: PROVIDER, status: response.status });
   }
   return token;
 }
 
 /**
- * Monta a URL de consentimento e persiste o registro PKCE. Devolve a URL para
- * quem chama navegar — a navegação em si fica na camada de interface.
+ * Monta a URL de consentimento e persiste o registro de autorização. Devolve a
+ * URL para quem chama navegar — a navegação em si fica na camada de interface.
  */
-export async function buildAuthorizeUrl(
-  clientId: string,
-  redirectUri: string,
-): Promise<{ url: string; record: PkceRecord }> {
+export async function buildAuthorizeUrl(clientId: string, redirectUri: string): Promise<string> {
   const codeVerifier = createCodeVerifier();
   const state = createState();
   const codeChallenge = await createCodeChallenge(codeVerifier);
 
-  const record: PkceRecord = { codeVerifier, state, createdAt: Date.now() };
-  savePkce(record);
+  const record: AuthRequest = {
+    provider: PROVIDER,
+    state,
+    codeVerifier,
+    createdAt: Date.now(),
+  };
+  saveAuthRequest(record);
 
-  const url = new URL(AUTHORIZE_URL);
+  const url = new URL(SPOTIFY_AUTHORIZE_URL);
   url.searchParams.set('client_id', clientId);
   url.searchParams.set('response_type', 'code');
   url.searchParams.set('redirect_uri', redirectUri);
@@ -83,7 +87,7 @@ export async function buildAuthorizeUrl(
   url.searchParams.set('state', state);
   url.searchParams.set('scope', SCOPE_STRING);
 
-  return { url: url.toString(), record };
+  return url.toString();
 }
 
 export interface ExchangeParams {
@@ -112,9 +116,9 @@ export async function exchangeCode(params: ExchangeParams): Promise<ExchangedTok
   const token = await postToken(body);
 
   if (typeof token.refresh_token !== 'string') {
-    // Sem refresh token não há renovação silenciosa (FR-008): melhor falhar aqui
-    // do que descobrir na primeira expiração.
-    throw new AppError('auth_generic');
+    // O Spotify declara renovação silenciosa; sem refresh token o contrato foi
+    // quebrado. Melhor falhar aqui do que descobrir na primeira expiração.
+    throw new AppError('auth_generic', { provider: PROVIDER });
   }
 
   return {
@@ -127,10 +131,16 @@ export async function exchangeCode(params: ExchangeParams): Promise<ExchangedTok
 
 /**
  * Renova a sessão. A resposta **pode** não trazer um novo `refresh_token`; nesse
- * caso o anterior é mantido (research §1) — descartá-lo encerraria a sessão do
- * usuário sem motivo.
+ * caso o anterior é mantido — descartá-lo encerraria a sessão sem motivo.
  */
-export async function refreshSession(session: Session, clientId: string): Promise<Session> {
+export async function refreshSession(
+  session: ProviderSession,
+  clientId: string,
+): Promise<ProviderSession> {
+  if (session.refreshToken === null) {
+    throw new AppError('reauth_required', { provider: PROVIDER });
+  }
+
   const body = new URLSearchParams({
     grant_type: 'refresh_token',
     refresh_token: session.refreshToken,
@@ -150,15 +160,16 @@ export async function refreshSession(session: Session, clientId: string): Promis
 
 /** Fábrica do renovador injetado no cliente HTTP, que não conhece a credencial. */
 export function createRefresher(getClientId: () => string | null) {
-  return async (session: Session): Promise<Session> => {
+  return async (session: ProviderSession): Promise<ProviderSession> => {
     const clientId = getClientId();
-    if (clientId === null) throw new AppError('session_expired');
+    if (clientId === null) throw new AppError('session_expired', { provider: PROVIDER });
     return refreshSession(session, clientId);
   };
 }
 
-export function buildSession(tokens: ExchangedTokens, user: SpotifyUser): Session {
+export function buildSession(tokens: ExchangedTokens, user: ProviderUser): ProviderSession {
   return {
+    provider: PROVIDER,
     accessToken: tokens.accessToken,
     refreshToken: tokens.refreshToken,
     expiresAt: tokens.expiresAt,

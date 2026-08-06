@@ -154,13 +154,22 @@ export async function mockSpotify(page: Page, options: MockOptions = {}): Promis
   return state;
 }
 
-/** Grava a credencial antes do primeiro carregamento, pulando a digitação. */
-export async function seedCredential(page: Page, clientId = CLIENT_ID): Promise<void> {
+/**
+ * Grava a credencial antes do primeiro carregamento, pulando a digitação.
+ *
+ * Usa o esquema v2, com chave por provedor — a v1 tem caminho próprio de
+ * migração, exercitado por `tests/unit/storage-migration.spec.ts`.
+ */
+export async function seedCredential(
+  page: Page,
+  clientId = CLIENT_ID,
+  provider: 'spotify' | 'youtube' = 'spotify',
+): Promise<void> {
   await page.addInitScript(
     ([key, value]) => {
       window.localStorage.setItem(key!, value!);
     },
-    ['tp.v1.credential', JSON.stringify({ schemaVersion: 1, clientId })],
+    [`tp.v2.credential.${provider}`, JSON.stringify({ schemaVersion: 2, clientId })],
   );
 }
 

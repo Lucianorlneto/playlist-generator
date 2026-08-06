@@ -28,6 +28,59 @@ Follow-up TODOs: nenhum. Nenhum placeholder foi deferido.
 Reavaliação pendente: plan.md da feature 001 diz "se o projeto adotar uma
 constituição depois, este plano deve ser reavaliado contra ela". A reavaliação
 não foi feita por este comando (fora de escopo) e continua em aberto.
+
+==================================================================
+Sync Impact Report — emenda 1.1.0
+==================================================================
+Mudança de versão: 1.0.0 → 1.1.0 (MINOR)
+
+Justificativa do salto: ampliação material de uma regra existente
+(a lista fechada de destinos de rede do Princípio II passa a cobrir
+mais de um provedor). Nenhum princípio foi removido nem redefinido,
+e nenhuma regra marcada NÃO NEGOCIÁVEL foi afrouxada — o que
+excluiria MAJOR pela política da própria seção Governance.
+
+Origem: specs/002-multi-service-playlists exige destinos de rede de
+um segundo provedor, e o Princípio II diz textualmente que ampliar
+essa lista é emenda, não decisão de implementação.
+
+Princípios modificados (nenhum renomeado):
+- I. Sem Servidor Próprio — consequências generalizadas de "o fluxo
+  do Spotify" para "o fluxo de cada provedor", com a limitação de
+  sessão não renovável em silêncio aceita explicitamente.
+- II. Nenhum Segredo, Superfície de Rede Fechada — lista fechada
+  passa a ser por provedor, com tabela explícita; acrescentada a
+  regra de que provedor não selecionado não recebe requisição.
+- IV. Invariante Sem Teste Não É Invariante — verificação de hosts
+  descrita por provedor; mock de ponta a ponta deixa de citar só o
+  Spotify.
+
+Princípios intocados: III e V.
+
+Decisão registrada sobre o Princípio V: a spec 002 apontou colisão
+entre o encerramento por esgotamento de cota e a cláusula "o
+trabalho em andamento MUST ser apagado apenas após sucesso ou por
+ação explícita de descarte". A colisão foi resolvida **na spec, não
+na constituição**: a execução encerrada por cota preserva o
+rascunho até descarte explícito. O Princípio V permanece literal.
+
+Seções modificadas: Restrições de Plataforma e Produto (honestidade
+sobre limites passa a cobrir assimetria entre provedores; storage
+ganha regra de isolamento por provedor). Orientação de execução na
+Governance passa a listar as duas features.
+
+Seções adicionadas: nenhuma. Seções removidas: nenhuma.
+
+Follow-up obrigatório (fora do escopo deste comando):
+- specs/002-multi-service-playlists/spec.md — FR-038 precisa deixar
+  de apagar o rascunho quando a execução termina por cota, e o gate
+  constitucional no topo do documento precisa registrar que o
+  Princípio V não foi emendado. Ver Next Actions no relatório.
+-->
+
+<!--
+  Histórico: v1.0.0 (2026-08-05) ratificação inicial — relatório
+  logo acima. v1.1.0 (2026-08-05) ampliação da superfície de rede.
 -->
 
 # Importador de Playlist por Texto — Constituição
@@ -42,10 +95,16 @@ regra de rewrite. Nenhum endpoint próprio, banco de dados, proxy ou função
 serverless pode ser introduzido — nem "só para desenvolvimento", nem como
 conveniência para contornar uma limitação da plataforma.
 
-Consequências que MUST ser aceitas em vez de contornadas: o fluxo de autorização
-é OAuth 2.0 Authorization Code + PKCE, o único do Spotify que dispensa segredo
-de cliente; o retorno da autorização acontece na URL raiz, não em rota dedicada;
-e a persistência é o armazenamento do próprio navegador.
+Consequências que MUST ser aceitas em vez de contornadas: para cada provedor, o
+fluxo de autorização adotado MUST ser aquele que dispensa segredo de cliente e
+componente de servidor, mesmo quando for o menos confortável dos disponíveis; o
+retorno da autorização acontece na URL raiz, não em rota dedicada; e a
+persistência é o armazenamento do próprio navegador.
+
+Quando o fluxo sem segredo de um provedor não permitir renovar a sessão em
+silêncio, a reautorização explícita MUST ser tratada como comportamento previsto
+da interface — nunca como erro, e nunca como motivo para introduzir um backend
+que guardasse o segredo.
 
 _Razão_: é a restrição que define o produto. Ela é o que torna o app publicável
 por qualquer pessoa em qualquer hospedagem estática e o que garante que nenhum
@@ -54,16 +113,30 @@ próprio destruiria as duas propriedades de uma vez.
 
 ### II. Nenhum Segredo, Superfície de Rede Fechada (NÃO NEGOCIÁVEL)
 
-O Client Secret MUST NOT ser solicitado, aceito, transmitido ou armazenado em
-nenhuma circunstância. Nenhuma credencial pode ser lida de arquivo de ambiente —
-a entrada é sempre a interface, e o valor é exibido mascarado por padrão.
+O Client Secret de qualquer provedor MUST NOT ser solicitado, aceito, transmitido
+ou armazenado em nenhuma circunstância. Nenhuma credencial pode ser lida de
+arquivo de ambiente — a entrada é sempre a interface, e o valor é exibido
+mascarado por padrão.
 
-Todo destino de rede MUST constar da lista fechada em
-`src/services/spotify/hosts.ts` (`accounts.spotify.com`, `api.spotify.com`,
-`i.scdn.co`). Ampliar essa lista é uma emenda a esta constituição, não uma
-decisão de implementação. Não há telemetria, analytics, fonte remota, CDN ou
-relatório de erro para terceiros. Os escopos solicitados MUST ser o mínimo que
-o fluxo exige; adicionar escopo requer justificativa registrada na spec.
+Todo destino de rede MUST constar da lista fechada abaixo, mantida em um único
+módulo de hosts autorizados e verificada por teste:
+
+| Provedor | Destinos autorizados                                       |
+| -------- | ---------------------------------------------------------- |
+| Spotify  | `accounts.spotify.com`, `api.spotify.com`, `i.scdn.co`     |
+| YouTube  | `accounts.google.com`, `www.googleapis.com`, `i.ytimg.com` |
+
+A lista é exaustiva: cada entrada existe porque um fluxo de autorização, uma API
+de dados ou a exibição de capas exige exatamente aquele host. Acrescentar host,
+provedor ou entrada "por precaução" é emenda a esta constituição, não decisão de
+implementação — e vale igualmente para hosts do mesmo provedor que já figura na
+tabela.
+
+Nenhuma requisição MUST ser emitida a um provedor que o usuário não selecionou,
+nem a um provedor cuja credencial não esteja cadastrada. Não há telemetria,
+analytics, fonte remota, CDN ou relatório de erro para terceiros. Os escopos
+solicitados a cada provedor MUST ser o mínimo que o fluxo exige; adicionar escopo
+requer justificativa registrada na spec.
 
 Riscos aceitos MUST ser registrados por escrito com a mitigação adotada, como
 já está feito para o token de renovação no armazenamento local (README §6).
@@ -94,13 +167,18 @@ e não apenas prosa em documento. Convenção que só existe em revisão de cód
 ser convertida em regra de lint ou abandonada.
 
 O padrão já estabelecido MUST ser mantido: `tests/unit/no-secrets.spec.ts` falha se
-`src/` mencionar segredo de cliente ou se alguma URL escapar da lista de hosts;
-`tests/unit/throughput.spec.ts` mede a vazão contratada; `tests/a11y/` audita as
-etapas com axe-core; `eslint-rules/` impede literal de texto de interface fora de
-`src/i18n/` e `className` montado em tempo de execução.
+`src/` mencionar segredo de cliente de qualquer provedor ou se alguma URL escapar
+da tabela de hosts do Princípio II; `tests/unit/throughput.spec.ts` mede a vazão
+contratada; `tests/a11y/` audita as etapas com axe-core; `eslint-rules/` impede
+literal de texto de interface fora de `src/i18n/` e `className` montado em tempo
+de execução.
+
+A verificação de hosts MUST cobrir a tabela inteira, provedor a provedor, e MUST
+falhar tanto por host ausente quanto por host excedente — uma lista que aceita
+mais do que a constituição autoriza não é uma lista fechada.
 
 Nenhum teste MUST tocar a rede real. Integração usa MSW; ponta a ponta usa
-Playwright com o Spotify mockado.
+Playwright com todos os provedores mockados.
 
 _Razão_: a única diferença entre um princípio e uma intenção é alguém conseguir
 provar que ele foi violado antes do merge.
@@ -123,12 +201,19 @@ polui a conta do usuário com música errada.
 
 ## Restrições de Plataforma e Produto
 
-**Honestidade sobre os limites da plataforma**: o que a Spotify Web API não
+**Honestidade sobre os limites da plataforma**: o que a API de um provedor não
 oferece MUST NOT ser simulado. Pastas de playlist são o caso de referência — não
 há campo de pasta, e o sistema exibe o caminho efetivo real com aviso de que
 mover para pasta é ação manual no aplicativo oficial. Toda premissa do pedido que
 colidir com a realidade da plataforma MUST ser corrigida na spec, com a decisão
 adotada registrada, antes de virar código.
+
+**Assimetria entre provedores**: provedores não têm as mesmas capacidades nem os
+mesmos limites — orçamento diário de cota, renovação de sessão, natureza do
+catálogo. A interface MUST expor a diferença onde ela muda o que o usuário pode
+fazer, e MUST NOT aparentar simetria que não existe. Uma limitação que só afeta
+um provedor MUST ser dita no contexto daquele provedor, não diluída em um aviso
+genérico.
 
 **Idioma**: toda a interface MUST estar em pt-BR, e todo texto visível ao usuário
 MUST vir de `src/i18n/`. A regra `tp/no-ui-text-literals` é o mecanismo de
@@ -146,12 +231,14 @@ durante espera por limitação de taxa. Limitação (HTTP 429) MUST respeitar
 
 **Simplicidade proporcional**: dependência nova MUST ser justificada por escrito
 contra a alternativa de escrever o necessário à mão. O projeto não usa biblioteca
-de componentes de UI nem SDK do Spotify, e essa é a posição padrão: o ônus da
-prova é de quem quer adicionar, não de quem quer manter.
+de componentes de UI nem SDK de provedor — nem sequer os oficiais —, e essa é a
+posição padrão: o ônus da prova é de quem quer adicionar, não de quem quer manter.
 
 **Armazenamento**: as chaves do navegador MUST ser versionadas e tipadas, com
 esquema documentado. Mudança incompatível de formato MUST incluir migração ou
 descarte seguro, nunca leitura de dado com formato antigo como se fosse novo.
+Credencial e sessão MUST ser isoladas por provedor: remover ou expirar uma
+MUST NOT afetar a de outro provedor.
 
 ## Fluxo de Desenvolvimento e Portões de Qualidade
 
@@ -201,6 +288,7 @@ urgência ou escopo de protótipo — mudá-los exige emenda MAJOR ratificada an
 não depois, do código que os viola.
 
 **Orientação de execução**: `README.md` para operação e privacidade;
-`specs/001-text-to-playlist/` para requisitos, decisões técnicas e contratos.
+`specs/001-text-to-playlist/` e `specs/002-multi-service-playlists/` para
+requisitos, decisões técnicas e contratos.
 
-**Version**: 1.0.0 | **Ratified**: 2026-08-05 | **Last Amended**: 2026-08-05
+**Version**: 1.1.0 | **Ratified**: 2026-08-05 | **Last Amended**: 2026-08-05

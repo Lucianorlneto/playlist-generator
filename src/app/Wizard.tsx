@@ -1,29 +1,37 @@
 import type { JSX } from 'react';
 
 import type { WizardStep } from '@/domain/types';
-import { CredentialStep } from '@/features/credential/CredentialStep';
 import { SessionHeader } from '@/features/connect/SessionHeader';
+import { CredentialStep } from '@/features/credential/CredentialStep';
+import { DestinationsStep } from '@/features/destinations/DestinationsStep';
 import { InputScreen } from '@/features/input/InputScreen';
-import { ResultScreen } from '@/features/result/ResultScreen';
-import { ReviewScreen } from '@/features/review/ReviewScreen';
+import { ServiceStep } from '@/features/service/ServiceStep';
+import { SummaryScreen } from '@/features/summary/SummaryScreen';
 import { t } from '@/i18n/pt-BR';
 import { useAppStore } from '@/store';
 
 import { DraftRecoveryBanner } from './DraftRecoveryBanner';
 import { StepIndicator } from './StepIndicator';
 
-const SCREENS: Record<WizardStep, () => JSX.Element> = {
+const SCREENS: Record<WizardStep, () => JSX.Element | null> = {
   credential: CredentialStep,
+  destinations: DestinationsStep,
   input: InputScreen,
-  review: ReviewScreen,
-  result: ResultScreen,
+  service: ServiceStep,
+  summary: SummaryScreen,
 };
 
 /**
- * Fluxo linear de quatro etapas (FR-041). O Wizard não decide quando avançar —
- * cada etapa chama `goToStep` quando sua própria condição de saída é satisfeita.
- * A movimentação de foco fica no `StepHeading` de cada tela, disparada pelo
- * `stepToken` que muda a cada transição (FR-046).
+ * Fluxo linear de cinco etapas (FR-043):
+ *
+ * ```text
+ * Configuração → Destinos → Entrada → [ciclo por serviço] → Resumo
+ * ```
+ *
+ * O Wizard não decide quando avançar — cada etapa chama `goToStep` quando sua
+ * própria condição de saída é satisfeita, e a etapa "Serviço" delega ao redutor
+ * puro da fila. A movimentação de foco fica no `StepHeading` de cada tela,
+ * disparada pelo `stepToken` que muda a cada transição.
  */
 export function Wizard() {
   const step = useAppStore((state) => state.step);
