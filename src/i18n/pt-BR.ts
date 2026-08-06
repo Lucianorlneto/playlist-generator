@@ -129,8 +129,8 @@ const messages = {
         'Acesse o Google Cloud Console e crie (ou escolha) um projeto.',
         'Ative a YouTube Data API v3 na biblioteca de APIs do projeto.',
         'Em Credenciais, crie um ID do cliente OAuth do tipo "Aplicativo da Web".',
-        'Cadastre o endereço abaixo em "Origens JavaScript autorizadas" e em "URIs de redirecionamento autorizados".',
-        'Na tela de consentimento, adicione sua conta como usuário de teste enquanto o app não for verificado.',
+        'Cadastre os dois endereços mostrados abaixo, cada um no seu campo: a origem em "Origens JavaScript autorizadas" e o Redirect URI em "URIs de redirecionamento autorizados". São parecidos mas diferentes — só o Redirect URI termina em barra.',
+        'Em "Público-alvo", adicione como usuário de teste a conta do YouTube onde as playlists serão criadas. Ela precisa estar na lista mesmo que seja a dona do projeto, e se for diferente da conta que criou o projeto é ela que deve entrar — sem isso a autorização é bloqueada com "access_denied".',
       ],
       consoleLinkLabel: 'Abrir o Google Cloud Console',
       scopesNotice:
@@ -180,13 +180,13 @@ const messages = {
     removed: 'Credencial de {service} removida deste dispositivo.',
     redirectUriHeading: 'Redirect URI a cadastrar',
     redirectUriHint:
-      'Cadastre exatamente este endereço. A correspondência é exata, incluindo maiúsculas, minúsculas e a barra final.',
+      'Cadastre exatamente este endereço, com a barra final. A correspondência é exata, incluindo maiúsculas e minúsculas. Faltando a barra, a autorização é recusada com "redirect_uri_mismatch".',
     redirectUriLocalhostWarning:
       'As plataformas não aceitam http://localhost. Em desenvolvimento use o endereço IPv4 literal 127.0.0.1, como mostrado acima.',
     copyRedirectUri: 'Copiar Redirect URI',
     javascriptOriginHeading: 'Origem JavaScript autorizada',
     javascriptOriginHint:
-      'Cadastre também esta origem em "Origens JavaScript autorizadas". Sem ela a autorização é recusada antes mesmo da tela de consentimento.',
+      'Valor diferente do Redirect URI: este vai sem a barra final, em "Origens JavaScript autorizadas". Sem ele a autorização é recusada antes mesmo da tela de consentimento.',
     copyJavascriptOrigin: 'Copiar origem JavaScript',
   },
 
@@ -533,7 +533,7 @@ const messages = {
       cause:
         'O endereço de retorno usado por este app não consta na lista do seu app no painel do {service}.',
       nextStep:
-        'Copie o Redirect URI exibido na configuração, cadastre-o no painel do seu app e tente conectar de novo.',
+        'Volte à configuração, copie o Redirect URI pelo botão de copiar e cole-o no painel do seu app. Confira a barra final: o Redirect URI termina em barra, a origem JavaScript não — trocar um pelo outro é a causa mais comum deste erro.',
     },
     authAccessDenied: {
       title: 'A autorização foi recusada',
@@ -558,7 +558,7 @@ const messages = {
       cause:
         'Seu app do {service} está em modo de teste: a tela de consentimento avisa que ele não é verificado e só aceita contas na lista de testadores do seu projeto.',
       nextStep:
-        'Adicione a conta que você está usando como usuário de teste no projeto e autorize de novo.',
+        'No painel do provedor, adicione como usuário de teste exatamente a conta com que você está autorizando — ela não entra na lista sozinha, nem quando é a dona do projeto. Depois autorize de novo.',
     },
     authGeneric: {
       title: 'A autorização falhou',
