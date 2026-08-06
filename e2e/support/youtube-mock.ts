@@ -14,13 +14,49 @@ export const YT_CLIENT_ID = '123-abc.apps.googleusercontent.com';
 export const YT_CHANNEL_NAME = 'Canal de Teste';
 export const YT_CHANNEL_ID = 'UC_teste';
 
+/** Uma faixa do catálogo simulado. O canal oficial é derivado do artista. */
+export interface YouTubeTrack {
+  title: string;
+  artist: string;
+}
+
 export interface YouTubeMockOptions {
   /** Playlists já existentes na conta, para a checagem de nome duplicado. */
   existingPlaylists?: { id: string; title: string }[];
+  /**
+   * Catálogo que a busca conhece. Sem ele nenhuma consulta encontra nada — é o
+   * que torna o mock fiel: a busca do YouTube é texto livre, e a única forma de
+   * devolver um canal plausível (`{artista} - Topic`) é saber quem é o artista.
+   */
+  tracks?: YouTubeTrack[];
   /** Títulos que a busca deve tratar como inexistentes. */
   missingTitles?: string[];
   /** Devolve `403 quotaExceeded` a partir desta inserção (base 0). */
   quotaExceededFromItem?: number;
+}
+
+/** Converte a mesma lista que o teste digita em catálogo de busca. */
+export function catalogoDe(lista: string): YouTubeTrack[] {
+  return lista
+    .split(/\r?\n/u)
+    .map((linha) => linha.trim())
+    .filter((linha) => linha !== '')
+    .map((linha) => {
+      const separado = /^(.*?)\s+(?:-|–|—|by)\s+(.*)$/u.exec(linha);
+      return separado === null
+        ? { title: linha, artist: '' }
+        : { title: separado[1]!.trim(), artist: separado[2]!.trim() };
+    });
+}
+
+/** Comparação tolerante a acento, caixa e pontuação — como a busca real é. */
+function normalizar(value: string): string {
+  return value
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/gu, ' ')
+    .trim();
 }
 
 export interface YouTubeMockState {
@@ -60,7 +96,17 @@ export async function mockYouTube(
     searchCount: 0,
   };
   const existing = options.existingPlaylists ?? [];
-  const missing = new Set((options.missingTitles ?? []).map((title) => title.toLowerCase()));
+  const tracks = options.tracks ?? [];
+  const missing = new Set((options.missingTitles ?? []).map(normalizar));
+
+  /**
+   * Índice do que a busca já devolveu, consultado por `videos.list`.
+   *
+   * O enriquecimento **reescreve** título e canal da candidata: um mock que não
+   * devolvesse ali o mesmo dado da busca destruiria a pontuação e faria a
+   * revisão exibir algo que a busca nunca encontrou.
+   */
+  const porVideoId = new Map<string, { title: string; channelTitle: string }>();
 
   // §2 Autorização — implicit flow: o token volta no **fragmento**.
   await page.route('https://accounts.google.com/o/oauth2/v2/auth*', async (route: Route) => {
@@ -94,25 +140,43 @@ export async function mockYouTube(
   // §3 Busca de vídeos
   await page.route('https://www.googleapis.com/youtube/v3/search*', async (route: Route) => {
     state.searchCount += 1;
-    const query = new URL(route.request().url()).searchParams.get('q') ?? '';
-    const isMissing = [...missing].some((title) => query.toLowerCase().includes(title));
+    const query = normalizar(new URL(route.request().url()).searchParams.get('q') ?? '');
+
+    // A consulta é livre: `"{título} {artista}"` e, no fallback, só o título.
+    const faixa =
+      tracks.find((track) => normalizar(`${track.title} ${track.artist}`) === query) ??
+      tracks.find((track) => normalizar(track.title) === query) ??
+      null;
+    const ausente = faixa === null || missing.has(normalizar(faixa.title));
+
+    if (ausente) {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ items: [] }),
+      });
+      return;
+    }
+
+    const videoId = `vid-${slug(faixa.title)}`;
+    const title = `${faixa.title} (Official Music Video)`;
+    const channelTitle = faixa.artist === '' ? 'Canal de Música' : `${faixa.artist} - Topic`;
+    porVideoId.set(videoId, { title, channelTitle });
 
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({
-        items: isMissing
-          ? []
-          : [
-              {
-                id: { kind: 'youtube#video', videoId: `vid-${slug(query)}` },
-                snippet: {
-                  title: `${query} (Official Music Video)`,
-                  channelTitle: `${query.split(' ').slice(-1).join('')} - Topic`,
-                  thumbnails: { default: { url: `https://i.ytimg.com/vi/x/default.jpg` } },
-                },
-              },
-            ],
+        items: [
+          {
+            id: { kind: 'youtube#video', videoId },
+            snippet: {
+              title,
+              channelTitle,
+              thumbnails: { default: { url: `https://i.ytimg.com/vi/${videoId}/default.jpg` } },
+            },
+          },
+        ],
       }),
     });
   });
@@ -127,15 +191,18 @@ export async function mockYouTube(
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({
-        items: ids.map((id) => ({
-          id,
-          snippet: {
-            title: `${id} (Official Music Video)`,
-            channelTitle: 'Canal - Topic',
-            thumbnails: { default: { url: `https://i.ytimg.com/vi/${id}/default.jpg` } },
-          },
-          contentDetails: { duration: 'PT3M52S' },
-        })),
+        items: ids.map((id) => {
+          const conhecido = porVideoId.get(id);
+          return {
+            id,
+            snippet: {
+              title: conhecido?.title ?? id,
+              channelTitle: conhecido?.channelTitle ?? 'Canal de Música',
+              thumbnails: { default: { url: `https://i.ytimg.com/vi/${id}/default.jpg` } },
+            },
+            contentDetails: { duration: 'PT3M52S' },
+          };
+        }),
       }),
     });
   });

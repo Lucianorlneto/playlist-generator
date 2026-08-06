@@ -1,12 +1,23 @@
 import { expect, test, type Page } from '@playwright/test';
 
 import { t } from '../src/i18n/pt-BR';
+import {
+  ateEntrada,
+  botaoConectar,
+  botaoCriar,
+  fmt,
+  incluirPendentes,
+  SPOTIFY,
+  tituloResultado,
+  tituloRevisao,
+  YOUTUBE,
+} from './support/flow';
 import { CLIENT_ID, DISPLAY_NAME, mockSpotify, seedCredential } from './support/spotify-mock';
-import { mockYouTube, YT_CHANNEL_NAME, YT_CLIENT_ID } from './support/youtube-mock';
+import { catalogoDe, mockYouTube, YT_CHANNEL_NAME, YT_CLIENT_ID } from './support/youtube-mock';
 
 /**
- * Fluxo completo com **dois destinos** (US3, FR-016 a FR-021, SC-004, SC-005,
- * SC-007, SC-012).
+ * Fluxo completo com **dois destinos** (US3, FR-016 a FR-021, FR-036, FR-040,
+ * FR-041, SC-004, SC-005, SC-012).
  *
  * Os dois provedores são mockados; nenhum teste toca a rede real. O que este
  * arquivo existe para provar é o que só aparece quando há mais de um destino:
@@ -19,11 +30,17 @@ const LISTA = [
   'Smells Like Teen Spirit - Nirvana',
 ].join('\n');
 
-const spotify = t.providers.spotify.name;
-const youtube = t.providers.youtube.name;
-
-const fmt = (template: string, values: Record<string, string | number>): string =>
-  template.replace(/\{(\w+)\}/gu, (_, key: string) => String(values[key] ?? ''));
+/** A ordem original da lista, preservada de ponta a ponta (FR-021, SC-004). */
+const URIS_SPOTIFY = [
+  'spotify:track:bohemian-rhapsody',
+  'spotify:track:imagine',
+  'spotify:track:smells-like-teen-spirit',
+];
+const VIDEOS_YOUTUBE = [
+  'vid-bohemian-rhapsody',
+  'vid-imagine',
+  'vid-smells-like-teen-spirit',
+];
 
 /** Cadastra as duas credenciais antes do primeiro carregamento. */
 async function seedAmbas(page: Page): Promise<void> {
@@ -31,42 +48,32 @@ async function seedAmbas(page: Page): Promise<void> {
   await seedCredential(page, YT_CLIENT_ID, 'youtube');
 }
 
-/** Configuração → Destinos → Entrada, parando antes do ciclo do primeiro serviço. */
-async function ateEntrada(page: Page): Promise<void> {
-  await page.goto('/');
-
-  // Etapa 1: as credenciais já estão salvas; basta avançar.
-  await expect(page.getByRole('heading', { name: t.credential.heading })).toBeVisible();
-  await page.getByRole('button', { name: t.common.next }).click();
-
-  // Etapa 2: destinos com credencial vêm marcados por padrão (SC-003).
-  await expect(page.getByRole('heading', { name: t.destinations.heading })).toBeVisible();
-  await page.getByRole('button', { name: t.common.next }).click();
-
-  // Etapa 3: a lista é informada uma única vez, para todos os destinos (FR-013).
-  await page.getByLabel(t.input.textareaLabel).fill(LISTA);
-  await page.getByRole('button', { name: t.input.start }).click();
-}
-
 /** Vai da abertura até a revisão do primeiro serviço da fila. */
 async function ateRevisaoDoPrimeiro(page: Page, nome = 'Clássicos'): Promise<void> {
-  await ateEntrada(page);
+  await ateEntrada(page, LISTA);
 
   // Ciclo do Spotify: autorização pedida só agora (FR-017).
-  await page.getByRole('button', { name: fmt(t.connect.connect, { service: spotify }) }).click();
+  await botaoConectar(page, SPOTIFY).click();
   await expect(page.getByText(DISPLAY_NAME)).toBeVisible();
-  await expect(
-    page.getByRole('heading', { name: fmt(t.review.heading, { service: spotify }) }),
-  ).toBeVisible();
+  await expect(tituloRevisao(page, SPOTIFY)).toBeVisible();
 
   // Nome e visibilidade ficam na revisão, junto da confirmação.
   await page.getByLabel(t.playlistConfig.nameLabel).fill(nome);
 }
 
+/** Ciclo do YouTube, do resultado do Spotify até a revisão daquele serviço. */
+async function ateRevisaoDoYouTube(page: Page): Promise<void> {
+  await page.getByRole('button', { name: fmt(t.result.continueNext, { service: YOUTUBE }) }).click();
+  await botaoConectar(page, YOUTUBE).click();
+  await expect(page.getByText(YT_CHANNEL_NAME)).toBeVisible();
+  await page.getByRole('button', { name: t.quota.proceed }).click();
+  await expect(tituloRevisao(page, YOUTUBE)).toBeVisible();
+}
+
 test.describe('US3 — dois destinos, um depois do outro', () => {
   test('cria em ambos, na ordem fixa, e mostra o resumo consolidado', async ({ page }) => {
     const spotifyState = await mockSpotify(page);
-    const youtubeState = await mockYouTube(page);
+    const youtubeState = await mockYouTube(page, { tracks: catalogoDe(LISTA) });
     await seedAmbas(page);
 
     // Nenhuma requisição pode sair para host fora da lista fechada (Princípio II).
@@ -79,55 +86,53 @@ test.describe('US3 — dois destinos, um depois do outro', () => {
 
     // FR-018: a posição na fila está visível em todas as telas do ciclo.
     await expect(
-      page.getByText(fmt(t.queue.position, { service: spotify, current: 1, total: 2 })),
+      page.getByText(fmt(t.queue.position, { service: SPOTIFY, current: 1, total: 2 })),
     ).toBeVisible();
 
     // SC-005: nada saiu para o YouTube antes do ciclo dele começar.
     expect(youtubeState.searchCount).toBe(0);
     expect(youtubeState.createdPlaylistId).toBeNull();
 
-    await page.getByRole('button', { name: t.playlistConfig.create }).click();
-    await expect(
-      page.getByRole('heading', { name: fmt(t.result.heading, { service: spotify }) }),
-    ).toBeVisible();
-    expect(spotifyState.addedUris.length).toBeGreaterThan(0);
+    await botaoCriar(page, SPOTIFY).click();
+    await expect(tituloResultado(page, SPOTIFY)).toBeVisible();
+    expect(spotifyState.addedUris).toEqual(URIS_SPOTIFY);
 
     // Ciclo do YouTube começa só agora (FR-017).
-    await page.getByRole('button', { name: fmt(t.result.continueNext, { service: youtube }) }).click();
-    await page.getByRole('button', { name: fmt(t.connect.connect, { service: youtube }) }).click();
+    await page
+      .getByRole('button', { name: fmt(t.result.continueNext, { service: YOUTUBE }) })
+      .click();
+    await botaoConectar(page, YOUTUBE).click();
     await expect(page.getByText(YT_CHANNEL_NAME)).toBeVisible();
 
     // FR-029 / SC-011: a estimativa aparece antes de qualquer busca no YouTube.
-    await expect(
-      page.getByRole('heading', { name: fmt(t.quota.heading, { service: youtube }) }),
-    ).toBeVisible();
+    await expect(page.getByText(fmt(t.quota.heading, { service: YOUTUBE }))).toBeVisible();
     expect(youtubeState.searchCount).toBe(0);
     await page.getByRole('button', { name: t.quota.proceed }).click();
 
+    await expect(tituloRevisao(page, YOUTUBE)).toBeVisible();
     await expect(
-      page.getByRole('heading', { name: fmt(t.review.heading, { service: youtube }) }),
-    ).toBeVisible();
-    await expect(
-      page.getByText(fmt(t.queue.position, { service: youtube, current: 2, total: 2 })),
+      page.getByText(fmt(t.queue.position, { service: YOUTUBE, current: 2, total: 2 })),
     ).toBeVisible();
 
-    await page.getByRole('button', { name: t.playlistConfig.create }).click();
-    await expect(
-      page.getByRole('heading', { name: fmt(t.result.heading, { service: youtube }) }),
-    ).toBeVisible();
+    await incluirPendentes(page);
+    await botaoCriar(page, YOUTUBE).click();
+    await expect(tituloResultado(page, YOUTUBE)).toBeVisible();
 
-    // SC-004: duas playlists, uma em cada conta.
+    // SC-004: duas playlists, uma em cada conta, na ordem original da lista.
     expect(youtubeState.createdPlaylistId).not.toBeNull();
-    expect(youtubeState.addedVideoIds.length).toBeGreaterThan(0);
+    expect(youtubeState.addedVideoIds).toEqual(VIDEOS_YOUTUBE);
     // FR-026: privada por padrão nos dois serviços.
     expect(youtubeState.createdPrivacy).toBe('private');
 
+    // FR-028: o resultado do YouTube não promete playlist do YouTube Music.
+    await expect(page.getByText(t.providers.youtube.resultNotices[0]!)).toBeVisible();
+
     // FR-040: resumo consolidado com os dois desfechos.
-    await page.getByRole('button', { name: t.common.next }).click();
+    await page.getByRole('button', { name: t.common.next, exact: true }).click();
     await expect(page.getByRole('heading', { name: t.summary.heading })).toBeVisible();
     const resumo = page.getByRole('list', { name: t.summary.listLabel });
-    await expect(resumo).toContainText(spotify);
-    await expect(resumo).toContainText(youtube);
+    await expect(resumo).toContainText(SPOTIFY);
+    await expect(resumo).toContainText(YOUTUBE);
     await expect(resumo.getByText(t.summary.outcome.completed).first()).toBeVisible();
 
     // Princípio II: superfície de rede fechada, verificada de fato.
@@ -140,8 +145,7 @@ test.describe('US3 — dois destinos, um depois do outro', () => {
           'https://accounts.google.com',
           'https://www.googleapis.com',
           'https://i.ytimg.com',
-          'http://127.0.0.1:4173',
-          'http://127.0.0.1:5173',
+          new URL(page.url()).origin,
         ],
         `origem inesperada: ${origem}`,
       ).toContain(origem);
@@ -150,19 +154,18 @@ test.describe('US3 — dois destinos, um depois do outro', () => {
 
   test('pular o segundo serviço preserva a playlist do primeiro (FR-020)', async ({ page }) => {
     const spotifyState = await mockSpotify(page);
-    const youtubeState = await mockYouTube(page);
+    const youtubeState = await mockYouTube(page, { tracks: catalogoDe(LISTA) });
     await seedAmbas(page);
 
     await ateRevisaoDoPrimeiro(page);
-    await page.getByRole('button', { name: t.playlistConfig.create }).click();
-    await expect(
-      page.getByRole('heading', { name: fmt(t.result.heading, { service: spotify }) }),
-    ).toBeVisible();
+    await botaoCriar(page, SPOTIFY).click();
+    await expect(tituloResultado(page, SPOTIFY)).toBeVisible();
 
     const criadasNoSpotify = spotifyState.addedUris.length;
 
-    await page.getByRole('button', { name: fmt(t.result.continueNext, { service: youtube }) }).click();
-    await page.getByRole('button', { name: fmt(t.queue.skipService, { service: youtube }) }).click();
+    await page
+      .getByRole('button', { name: fmt(t.queue.skipService, { service: YOUTUBE }) })
+      .click();
 
     await expect(page.getByRole('heading', { name: t.summary.heading })).toBeVisible();
 
@@ -180,58 +183,114 @@ test.describe('US3 — dois destinos, um depois do outro', () => {
   }) => {
     const spotifyState = await mockSpotify(page);
     // A primeira inserção passa; a segunda esbarra na cota.
-    const youtubeState = await mockYouTube(page, { quotaExceededFromItem: 1 });
+    const youtubeState = await mockYouTube(page, { tracks: catalogoDe(LISTA), quotaExceededFromItem: 1 });
     await seedAmbas(page);
 
     await ateRevisaoDoPrimeiro(page);
-    await page.getByRole('button', { name: t.playlistConfig.create }).click();
-    await expect(
-      page.getByRole('heading', { name: fmt(t.result.heading, { service: spotify }) }),
-    ).toBeVisible();
+    await botaoCriar(page, SPOTIFY).click();
+    await expect(tituloResultado(page, SPOTIFY)).toBeVisible();
     const criadasNoSpotify = [...spotifyState.addedUris];
 
-    await page.getByRole('button', { name: fmt(t.result.continueNext, { service: youtube }) }).click();
-    await page.getByRole('button', { name: fmt(t.connect.connect, { service: youtube }) }).click();
-    await page.getByRole('button', { name: t.quota.proceed }).click();
-    await expect(
-      page.getByRole('heading', { name: fmt(t.review.heading, { service: youtube }) }),
-    ).toBeVisible();
-    await page.getByRole('button', { name: t.playlistConfig.create }).click();
+    await ateRevisaoDoYouTube(page);
+    await incluirPendentes(page);
+    await botaoCriar(page, YOUTUBE).click();
 
     // FR-031, FR-032: encerrou com relato, playlist incompleta permanece.
-    await expect(
-      page.getByText(fmt(t.quota.exhaustedHeading, { service: youtube })),
-    ).toBeVisible();
+    await expect(page.getByText(fmt(t.quota.exhaustedHeading, { service: YOUTUBE }))).toBeVisible();
     expect(youtubeState.addedVideoIds).toHaveLength(1);
 
     // SC-012: o resultado do Spotify é o mesmo de antes.
     expect(spotifyState.addedUris).toEqual(criadasNoSpotify);
 
-    await page.getByRole('button', { name: t.common.next }).click();
+    await page.getByRole('button', { name: t.common.next, exact: true }).click();
     const resumo = page.getByRole('list', { name: t.summary.listLabel });
     await expect(resumo.getByText(t.summary.outcome.completed)).toBeVisible();
     await expect(resumo.getByText(t.summary.outcome.partial)).toBeVisible();
+  });
+
+  test('desconectar um serviço não afeta a sessão nem o resultado do outro (FR-036)', async ({
+    page,
+  }) => {
+    await mockSpotify(page);
+    await mockYouTube(page, { tracks: catalogoDe(LISTA) });
+    await seedAmbas(page);
+
+    await ateRevisaoDoPrimeiro(page, 'Isolamento');
+    await botaoCriar(page, SPOTIFY).click();
+    await expect(tituloResultado(page, SPOTIFY)).toBeVisible();
+
+    await ateRevisaoDoYouTube(page);
+
+    // As duas contas aparecem no cabeçalho ao mesmo tempo.
+    const contas = page.getByRole('list', { name: t.connect.sessionsLabel });
+    await expect(contas).toContainText(DISPLAY_NAME);
+    await expect(contas).toContainText(YT_CHANNEL_NAME);
+
+    // Desconectar do Spotify — o serviço já concluído — não derruba o YouTube.
+    await page
+      .getByRole('button', { name: fmt(t.connect.disconnect, { service: SPOTIFY }) })
+      .click();
+    await expect(contas).not.toContainText(DISPLAY_NAME);
+    await expect(contas).toContainText(YT_CHANNEL_NAME);
+
+    // E o ciclo do YouTube continua exatamente onde estava.
+    await expect(tituloRevisao(page, YOUTUBE)).toBeVisible();
+  });
+
+  test('as linhas não encontradas são copiáveis por serviço, separadamente (FR-041)', async ({
+    page,
+  }) => {
+    await mockSpotify(page, { missingTitles: ['Imagine'] });
+    await mockYouTube(page, {
+      tracks: catalogoDe(LISTA),
+      missingTitles: ['Smells Like Teen Spirit'],
+    });
+    await seedAmbas(page);
+
+    await ateRevisaoDoPrimeiro(page, 'Separadas');
+    await botaoCriar(page, SPOTIFY).click();
+    await expect(tituloResultado(page, SPOTIFY)).toBeVisible();
+
+    // No resultado do Spotify, só a linha que faltou **naquele** serviço.
+    const falhasSpotify = page.getByText(fmt(t.result.failedHeading, { service: SPOTIFY }));
+    await expect(falhasSpotify).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: fmt(t.result.copyFailed, { service: SPOTIFY }) }),
+    ).toBeVisible();
+
+    await ateRevisaoDoYouTube(page);
+    await incluirPendentes(page);
+    await botaoCriar(page, YOUTUBE).click();
+    await expect(tituloResultado(page, YOUTUBE)).toBeVisible();
+
+    await page.getByRole('button', { name: t.common.next, exact: true }).click();
+    await expect(page.getByRole('heading', { name: t.summary.heading })).toBeVisible();
+
+    // FR-041: um botão de cópia por serviço, nunca uma lista consolidada.
+    const resumo = page.getByRole('list', { name: t.summary.listLabel });
+    await expect(
+      resumo.getByRole('button', { name: fmt(t.result.copyFailed, { service: SPOTIFY }) }),
+    ).toBeVisible();
+    await expect(
+      resumo.getByRole('button', { name: fmt(t.result.copyFailed, { service: YOUTUBE }) }),
+    ).toBeVisible();
   });
 
   test('um único destino não mostra fila nem resumo (FR-018, FR-040)', async ({ page }) => {
     await mockSpotify(page);
     await seedCredential(page, CLIENT_ID, 'spotify');
 
-    await ateEntrada(page);
-    await page.getByRole('button', { name: fmt(t.connect.connect, { service: spotify }) }).click();
+    await ateEntrada(page, LISTA);
+    await botaoConectar(page, SPOTIFY).click();
 
-    await expect(
-      page.getByRole('heading', { name: fmt(t.review.heading, { service: spotify }) }),
-    ).toBeVisible();
+    await expect(tituloRevisao(page, SPOTIFY)).toBeVisible();
     await page.getByLabel(t.playlistConfig.nameLabel).fill('Só Spotify');
 
     // Nenhum "1 de 1" ruidoso.
     await expect(page.getByLabel(t.queue.label)).toHaveCount(0);
 
-    await page.getByRole('button', { name: t.playlistConfig.create }).click();
-    await expect(
-      page.getByRole('heading', { name: fmt(t.result.heading, { service: spotify }) }),
-    ).toBeVisible();
+    await botaoCriar(page, SPOTIFY).click();
+    await expect(tituloResultado(page, SPOTIFY)).toBeVisible();
 
     // Sem resumo consolidado redundante.
     await expect(page.getByRole('heading', { name: t.summary.heading })).toHaveCount(0);
