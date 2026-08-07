@@ -56,7 +56,7 @@ describe('FR-019 — a rebusca alcança apenas a linha corrigida', () => {
   const lista = parseInput(['Imagine - John Lennon', 'Wonderwal - Oassis', 'zoio de lula charlie brown jr'].join('\n'));
 
   it('refazer uma linha emite uma única requisição', async () => {
-    const antes = await runMatching('spotify', lista, { signal: signal() });
+    const { items: antes } = await runMatching('spotify', lista, { signal: signal() });
     expect(antes).toHaveLength(3);
 
     // Quatro, não três: `Wonderwal - Oassis` não acha nada pela consulta por
@@ -76,7 +76,7 @@ describe('FR-019 — a rebusca alcança apenas a linha corrigida', () => {
   });
 
   it('as demais linhas mantêm candidatas e escolhas intactas', async () => {
-    const antes = await runMatching('spotify', lista, { signal: signal() });
+    const { items: antes } = await runMatching('spotify', lista, { signal: signal() });
 
     const corrigida = parseLine('Wonderwall - Oasis', 1, lista[1]!.id);
     await matchLine('spotify', corrigida, signal());

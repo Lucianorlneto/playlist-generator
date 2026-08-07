@@ -18,11 +18,12 @@
 import { buildOrderedUris, committedItemCount, remainingItems } from '@/domain/batching';
 import { capabilitiesOf, type ProviderId } from '@/domain/providers';
 import type { CreationProgress, CreationResult, MatchItem } from '@/domain/types';
-import { toAppError, toErrorInfo } from '@/services/providers/errors';
-import type { AppError } from '@/services/providers/errors';
+import { AppError, isSessionLevel, toAppError, toErrorInfo } from '@/services/providers/errors';
 import { providerFor } from '@/services/providers/registry';
+import { handleSessionLoss } from '@/features/connect/reconnect';
 import { clearDraft } from '@/services/storage/draftRepo';
 import { useAppStore } from '@/store';
+import { flushDraftNow } from '@/store/draftPersistence';
 
 import { effectivePath } from './effectivePath';
 
@@ -106,6 +107,21 @@ async function sendRemainingItems(
         return;
       }
 
+      if (isSessionLevel(appError)) {
+        // FR-027: a autorização caiu no meio da adição. Isto **não** é falha da
+        // criação — a playlist existe, o índice de confirmação está gravado e a
+        // execução é retomável. A ordem é a mesma da busca: rascunho primeiro,
+        // depois sessão, depois estado.
+        handleSessionLoss(provider, appError);
+        useAppStore.getState().dispatchRun({ type: 'session_lost', from: 'creating' }, provider);
+        useAppStore.getState().setCreating(false);
+        // Gravação imediata da fase nova, pelo mesmo motivo que o índice de
+        // itens confirmados é gravado síncrono: o pedido precisa sobreviver ao
+        // fechamento da aba e à ida ao consentimento (A6, FR-018).
+        flushDraftNow();
+        return;
+      }
+
       useAppStore.getState().setCreationError(appError);
       return;
     }
@@ -184,6 +200,9 @@ export async function startCreation(signal?: AbortSignal): Promise<void> {
     batchSize: capabilitiesOf(provider).batchSize,
     committedItems: 0,
     failedAt: null,
+    // Registrado aqui porque é o único instante em que a conta que **de fato**
+    // recebeu a playlist é conhecida com certeza (`004/FR-031`).
+    accountId: session.user.id,
   };
   useAppStore.getState().dispatchRun({ type: 'creation_started', creation: progress }, provider);
 
@@ -202,10 +221,79 @@ export async function retryRemaining(signal?: AbortSignal): Promise<void> {
   const progress = store.runFor(provider)?.creation ?? null;
   if (progress === null) return;
 
+  const veredito = resumeVerdict(provider, progress);
+  // Sem sessão, **nada** acontece: nem retomada nem encerramento (R4, FR-016).
+  // Encerrar aqui transformaria "o usuário ainda não reconectou" em desfecho
+  // definitivo, descartando o trabalho que a execução está justamente esperando
+  // para concluir.
+  if (veredito === 'no_session') return;
+  if (veredito === 'other_account') {
+    finishAsPartialInAnotherAccount(provider, progress);
+    return;
+  }
+
   store.setCreating(true);
   store.setCreationError(null);
 
   await sendRemainingItems(provider, progress, signal);
+}
+
+/**
+ * Três respostas possíveis, e cada uma leva a um caminho diferente
+ * (`004/FR-031`, R4):
+ *
+ * - `no_session`: ainda não reconectou. Não é desfecho — é espera.
+ * - `other_account`: reconectou a outra conta. A playlist parcial está na
+ *   antiga, e a confirmação de revisão não se transfere (D2 do plano).
+ * - `same_account`: retoma normalmente.
+ *
+ * `accountId` desconhecido — rascunho anterior a esta feature — conta como
+ * `same_account`: tratar ausência como divergência encerraria como parcial uma
+ * execução perfeitamente retomável, que é o dano oposto ao que o requisito evita.
+ */
+type ResumeVerdict = 'no_session' | 'other_account' | 'same_account';
+
+function resumeVerdict(provider: ProviderId, progress: CreationProgress): ResumeVerdict {
+  const current = useAppStore.getState().sessions[provider];
+  if (current === null) return 'no_session';
+  if (progress.accountId === null) return 'same_account';
+  return current.user.id === progress.accountId ? 'same_account' : 'other_account';
+}
+
+/**
+ * Reconectar a outra conta encerra o destino como **parcial**, com a contagem
+ * real do que foi escrito (FR-031).
+ *
+ * Não há retomada possível: a playlist está na conta antiga, e a confirmação de
+ * revisão que o usuário deu não se transfere para outra conta — é o limite
+ * explícito de D2 do plano. Criar uma segunda playlist na conta nova deixaria a
+ * primeira órfã e incompleta, e escreveria sem a confirmação que o Princípio V
+ * exige.
+ */
+function finishAsPartialInAnotherAccount(
+  provider: ProviderId,
+  progress: CreationProgress,
+): void {
+  const items = useAppStore.getState().items();
+  const committed = committedItemCount(progress);
+
+  // O resultado entra **antes** do encerramento: `outcomeOf` só distingue
+  // "parcial" de "falhou" pela existência da playlist, e uma execução já
+  // encerrada é imutável (R2) — inverter a ordem relataria "falhou" sobre uma
+  // playlist que existe na conta do usuário.
+  useAppStore
+    .getState()
+    .setResult(provider, buildResult(provider, progress, items, committed, false));
+  useAppStore
+    .getState()
+    .dispatchRun(
+      {
+        type: 'failed',
+        error: toErrorInfo(new AppError('reauth_required', { provider }), provider),
+      },
+      provider,
+    );
+  useAppStore.getState().setCreating(false);
 }
 
 export function creationErrorOf(error: unknown, provider: ProviderId): AppError {

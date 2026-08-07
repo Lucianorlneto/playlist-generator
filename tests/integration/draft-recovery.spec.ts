@@ -204,3 +204,61 @@ describe('FR-037 a FR-039 — ciclo de vida do rascunho', () => {
     expect(bruto).not.toContain(CLIENT_ID);
   });
 });
+
+/**
+ * V23 — a perda de sessão em um provedor não encosta no outro, e o rascunho
+ * sobrevive à ida e à volta da autorização (`004/FR-004`, FR-005, SC-005).
+ *
+ * Estes casos são **acrescentados**, não substituem nenhum acima: a prova de não
+ * regressão desta suíte é que todos os casos existentes continuam passando sem
+ * alteração.
+ *
+ * O isolamento por provedor já era o invariante S2 da 002. O que a 004 muda é
+ * quem percorre `handleSessionLoss`: antes, só a falha de renovação do Spotify
+ * chegava lá. Agora toda perda de autorização passa por ele — e por isso o
+ * isolamento precisa valer no caminho novo também.
+ */
+describe('004/V23 — isolamento entre serviços na perda de sessão', () => {
+  it('perder a sessão do YouTube não toca sessão, credencial nem resultado do Spotify', () => {
+    seedTrabalhoRevisado();
+    saveCredential('youtube', '123-abc.apps.googleusercontent.com');
+    saveSession(makeSession('youtube'));
+    useAppStore.setState({
+      sessions: makeSessions({ spotify: makeSession('spotify'), youtube: makeSession('youtube') }),
+      credentials: makeCredentials({
+        spotify: CLIENT_ID,
+        youtube: '123-abc.apps.googleusercontent.com',
+      }),
+    });
+
+    const itensAntes = useAppStore.getState().runFor('spotify')?.items;
+
+    handleSessionLoss('youtube');
+
+    expect(useAppStore.getState().sessions.spotify).not.toBeNull();
+    expect(loadSession('spotify')).not.toBeNull();
+    expect(loadCredential('spotify')).toEqual({ clientId: CLIENT_ID });
+    // O resultado já produzido pelo outro serviço permanece intacto.
+    expect(useAppStore.getState().runFor('spotify')?.items).toBe(itensAntes);
+    // E a credencial do próprio serviço perdido continua salva: é o que permite
+    // reconectar sem recadastrar o Client ID (FR-025).
+    expect(loadCredential('youtube')).not.toBeNull();
+  });
+
+  it('o rascunho sobrevive à ida e à volta da autorização', () => {
+    seedTrabalhoRevisado();
+    const antes = loadDraft();
+
+    handleSessionLoss('spotify');
+
+    // `handleSessionLoss` grava **antes** de qualquer mudança de estado: o
+    // rascunho na volta do consentimento é pelo menos tão completo quanto o de
+    // antes da perda (FR-003, SC-014).
+    const depois = loadDraft();
+    expect(depois).not.toBeNull();
+    expect(depois?.rawText).toBe(antes?.rawText);
+    expect(depois?.lines).toEqual(antes?.lines);
+    expect(depois?.playlistConfig).toEqual(antes?.playlistConfig);
+    expect(depois?.queue.runs.spotify?.items).toEqual(antes?.queue.runs.spotify?.items);
+  });
+});

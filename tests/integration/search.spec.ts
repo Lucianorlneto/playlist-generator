@@ -151,7 +151,7 @@ describe('Falha de uma linha não aborta as demais (contrato §6)', () => {
 
     // Concorrência 1: as três falhas seguidas caem todas na primeira linha.
     limiterFor('spotify').configure({ concurrency: 1 });
-    const items = await runMatching('spotify', lines, { signal: new AbortController().signal });
+    const { items } = await runMatching('spotify', lines, { signal: new AbortController().signal });
 
     expect(items).toHaveLength(2);
     expect(items[0]?.error).not.toBeNull();
@@ -173,7 +173,7 @@ describe('Falha de uma linha não aborta as demais (contrato §6)', () => {
       parseLine('Hey Jude by The Beatles', 2, 'l2'),
     ];
 
-    const items = await runMatching('spotify', lines, { signal: new AbortController().signal });
+    const { items } = await runMatching('spotify', lines, { signal: new AbortController().signal });
 
     expect(items.map((item) => item.line.id)).toEqual(['l0', 'l1', 'l2']);
     expect(items.map((item) => item.status)).toEqual(['confident', 'confident', 'confident']);
@@ -187,7 +187,7 @@ describe('Falha de uma linha não aborta as demais (contrato §6)', () => {
   it('linha sem conteúdo alfanumérico nem chega a consultar o catálogo', async () => {
     setCatalog([catalogTrack()]);
 
-    const items = await runMatching('spotify', [parseLine('---', 0, 'l0')], {
+    const { items } = await runMatching('spotify', [parseLine('---', 0, 'l0')], {
       signal: new AbortController().signal,
     });
 
@@ -198,7 +198,7 @@ describe('Falha de uma linha não aborta as demais (contrato §6)', () => {
   it('zero resultados nas duas tentativas resulta em não encontrada', async () => {
     setCatalog([]);
 
-    const items = await runMatching('spotify', [parseLine('Faixa Inexistente - Ninguém', 0, 'l0')], { signal: new AbortController().signal });
+    const { items } = await runMatching('spotify', [parseLine('Faixa Inexistente - Ninguém', 0, 'l0')], { signal: new AbortController().signal });
 
     expect(items[0]?.status).toBe('not_found');
     expect(items[0]?.included).toBe(false);
@@ -210,7 +210,7 @@ describe('Falha de uma linha não aborta as demais (contrato §6)', () => {
     // o título casa, o artista não — exatamente o caso que precisa de olho humano.
     setCatalog([catalogTrack()]);
 
-    const items = await runMatching('spotify', [
+    const { items } = await runMatching('spotify', [
         parseLine('Bohemian Rhapsody - Queen', 0, 'l0'),
         parseLine('Bohemian Rhapsody - Panic At The Disco', 1, 'l1'),
       ], { signal: new AbortController().signal });
@@ -226,7 +226,7 @@ describe('Falha de uma linha não aborta as demais (contrato §6)', () => {
     const controller = new AbortController();
     controller.abort();
 
-    const items = await runMatching('spotify', [parseLine('Bohemian Rhapsody - Queen', 0, 'l0')], {
+    const { items } = await runMatching('spotify', [parseLine('Bohemian Rhapsody - Queen', 0, 'l0')], {
       signal: controller.signal,
     });
 

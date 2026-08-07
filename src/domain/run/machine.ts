@@ -46,6 +46,12 @@ export type RunEvent =
   | { type: 'creation_progress'; creation: CreationProgress }
   | { type: 'created'; result: CreationResult }
   | { type: 'quota_exhausted'; result: CreationResult | null; error: AppErrorInfo }
+  /**
+   * A autorização caiu no meio do trabalho (`004/FR-001`). `items` só é enviado
+   * quando `from === 'search'`, carregando o resultado parcial; na criação o
+   * ponto de retomada é `creation.committedItems`, que já é persistido.
+   */
+  | { type: 'session_lost'; from: 'search' | 'creating'; items?: MatchItem[] }
   | { type: 'skipped' }
   | { type: 'failed'; error: AppErrorInfo };
 
@@ -56,6 +62,10 @@ const OPEN_PHASES: readonly RunPhase[] = [
   'search',
   'review',
   'creating',
+  // Parada à espera de reautorização **é** uma execução aberta (`004/FR-002`).
+  // Deixá-la fora faria a fila tratá-la como encerrada e avançar para o destino
+  // seguinte, descartando exatamente o trabalho que a feature preserva.
+  'awaiting_reauth',
 ];
 
 export function isActive(run: ServiceRun): boolean {
@@ -79,6 +89,7 @@ export function emptyRun(provider: ServiceRun['provider'], lineIds: string[]): S
     outcome: null,
     error: null,
     retriesUsed: 0,
+    resumeFrom: null,
   };
 }
 
@@ -102,7 +113,11 @@ export function needsEstimate(run: ServiceRun): boolean {
 }
 
 function finish(run: ServiceRun, phase: RunPhase, outcome: RunOutcome): ServiceRun {
-  return { ...run, phase, outcome };
+  // `resumeFrom` é zerado aqui porque **todo** encerramento passa por esta
+  // função. Uma execução pulada ou esgotada a partir de `awaiting_reauth`
+  // manteria o ponto de retomada de um trabalho que ninguém vai retomar,
+  // quebrando A2 e fazendo o diálogo prometer uma volta que não existe.
+  return { ...run, phase, outcome, resumeFrom: null };
 }
 
 export function reduceRun(run: ServiceRun, event: RunEvent): ServiceRun {
@@ -114,8 +129,28 @@ export function reduceRun(run: ServiceRun, event: RunEvent): ServiceRun {
       return run.phase === 'pending' ? { ...run, phase: 'connect' } : run;
 
     case 'authorized': {
+      // Retomada: volta **exatamente** para a fase de onde a execução saiu, sem
+      // passar pela estimativa. Reexibi-la contaria a lista inteira e
+      // contradiria FR-013 no primeiro clique, depois de o diálogo já ter dito
+      // o custo do que falta (`004/T5`).
+      if (run.phase === 'awaiting_reauth') {
+        return run.resumeFrom === null ? run : { ...run, phase: run.resumeFrom, resumeFrom: null };
+      }
       if (run.phase !== 'connect') return run;
       return { ...run, phase: needsEstimate(run) ? 'estimate' : 'search' };
+    }
+
+    case 'session_lost': {
+      // A fase nova só nasce de uma execução que estava de fato trabalhando.
+      // Em `connect` ou `review` não há autorização em uso a perder, e criar o
+      // pedido ali só produziria um modal sem retomada possível.
+      if (run.phase !== event.from) return run;
+      return {
+        ...run,
+        phase: 'awaiting_reauth',
+        resumeFrom: event.from,
+        ...(event.items === undefined ? {} : { items: event.items }),
+      };
     }
 
     case 'estimate_ready':

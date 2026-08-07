@@ -212,6 +212,8 @@ function migrateCreation(raw: unknown): CreationProgress | null {
     batchSize: size,
     committedItems: Math.min(orderedUris.length, Math.max(0, committedBatches) * size),
     failedAt: failedAt ?? null,
+    // Conteúdo antigo não registrava a conta; desconhecido não bloqueia.
+    accountId: null,
   };
 }
 
@@ -228,6 +230,8 @@ function buildRun(
     items,
     frozenLines: null,
     estimate: null,
+    // Conteúdo antigo nunca esteve em `awaiting_reauth`: a fase não existia.
+    resumeFrom: null,
     creation,
     result: null,
     outcome: null,

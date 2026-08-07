@@ -10,6 +10,8 @@
  * quase todas — criaria um ciclo entre `types.ts`, `run/` e `quota/`.
  */
 
+import type { AppError } from '@/services/providers/errors';
+
 import type { ProviderId } from './providers';
 
 /** Versão do esquema serializado em disco (003/contracts/storage.md). */
@@ -165,6 +167,28 @@ export type AttentionReason =
   /** Havia retentativa a fazer e a reserva de cota acabou (research §8). */
   | 'retry_skipped_quota';
 
+/**
+ * Resultado da busca de uma lista (`004/data-model §5`,
+ * `004/provider-contract §1`).
+ *
+ * Substitui `MatchItem[]` no retorno de `PlaylistProvider.search` e de
+ * `runProviderSearch`. A lista de itens continua **sempre completa** — invariante
+ * A5, `items.length === lines.length`, interrompida ou não. A interrupção nunca
+ * encurta o resultado; ela só faz mais itens saírem `pending`, que é a diferença
+ * entre "ainda não busquei" e "busquei e não achei".
+ *
+ * O tipo de `interruption` é importado **apenas como tipo**, e por isso não cria
+ * dependência de execução do domínio para os serviços: a importação é apagada na
+ * compilação, e o Princípio III continua valendo — este módulo segue sem rede,
+ * sem DOM e sem armazenamento.
+ */
+export interface SearchOutcome {
+  /** Um por linha de entrada, na ordem original. Sempre completo (A5). */
+  items: MatchItem[];
+  /** Não-nulo ⟹ a execução foi interrompida por falha de sessão. */
+  interruption: AppError | null;
+}
+
 export interface MatchItem {
   line: InputLine;
   status: MatchStatus;
@@ -222,6 +246,21 @@ export interface CreationProgress {
   committedItems: number;
   /** Índice do **item** em que a adição parou, ou `null` se nada falhou. */
   failedAt: number | null;
+  /**
+   * Conta em que a playlist foi criada (`004/FR-031`).
+   *
+   * Existe para responder uma pergunta que nenhum outro campo responde: se o
+   * usuário reconectar a uma conta **diferente**, a retomada não é possível — a
+   * playlist parcial está na outra conta, e a confirmação de revisão que ele deu
+   * não se transfere. Sem isto, retomar criaria uma segunda playlist na conta
+   * nova e deixaria a primeira órfã e incompleta.
+   *
+   * `null` em rascunho anterior a esta feature: desconhecido **não bloqueia**,
+   * porque tratar ausência como divergência encerraria como parcial uma execução
+   * perfeitamente retomável. `SCHEMA_VERSION` não muda pelo mesmo motivo de
+   * `resumeFrom` (`004/research §13`).
+   */
+  accountId: string | null;
 }
 
 export interface CreationResult {
@@ -310,6 +349,13 @@ export type RunPhase =
   | 'search'
   | 'review'
   | 'creating'
+  /**
+   * A autorização caiu no meio do trabalho e a execução está **parada, não
+   * encerrada** (`004/FR-002`). Entra em `OPEN_PHASES`: `isActive` continua
+   * verdadeira e `isFinished` continua falsa, que é o que distingue "espera o
+   * usuário reconectar" de "fracassou".
+   */
+  | 'awaiting_reauth'
   | 'done'
   | 'skipped'
   | 'failed';
@@ -336,6 +382,18 @@ export interface ServiceRun {
    * e gastar a reserva duas vezes (`003/data-model §5`).
    */
   retriesUsed: number;
+  /**
+   * Para onde voltar quando a sessão for restabelecida (`004/data-model §2`).
+   *
+   * Invariante A2: não-nulo **apenas** enquanto `phase === 'awaiting_reauth'`.
+   * Sair da fase zera o campo.
+   *
+   * Explícito, e não derivado de `creation !== null`: a derivação erra quando a
+   * perda acontece na própria criação da playlist, antes do primeiro lote —
+   * `creation` ainda é `null` e a retomada refaria a busca inteira, queimando
+   * cota já gasta.
+   */
+  resumeFrom: 'search' | 'creating' | null;
 }
 
 export interface ExecutionQueue {

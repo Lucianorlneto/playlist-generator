@@ -14,7 +14,7 @@
  */
 
 import { normalizeText } from '@/domain/normalize';
-import type { InputLine, LineShape } from '@/domain/types';
+import type { InputLine, LineShape, ServiceRun } from '@/domain/types';
 
 /**
  * Validação de FR-013: `next` é subconjunto de `previous` **preservando a
@@ -116,4 +116,34 @@ export function applyTextCorrection(
 export function linesFor(lines: readonly InputLine[], lineIds: readonly string[]): InputLine[] {
   const wanted = new Set(lineIds);
   return lines.filter((line) => wanted.has(line.id));
+}
+
+/**
+ * Ids das linhas deste destino **ainda não resolvidas** (`004/data-model §4`).
+ *
+ * Fonte única de duas coisas que precisam concordar: o custo da retomada exibido
+ * no diálogo (FR-013) e a lista efetivamente buscada quando a sessão volta
+ * (FR-013b). Calculá-las por caminhos diferentes é o que faria SC-008 — desvio
+ * nulo entre o informado e o real — depender de disciplina em vez de construção.
+ *
+ * O critério é `status === 'pending'`, e ele carrega a distinção do invariante
+ * A3: pendente significa "ainda não busquei", nunca "busquei e não achei". Uma
+ * linha sem item algum também é pendência — é o estado da execução que nem
+ * chegou a começar. `searching` entra pelo mesmo motivo: a requisição saiu, mas
+ * a resposta não voltou, e a linha continua sem resultado.
+ *
+ * Linha `unparsed` fica **de fora**: buscá-la de novo violaria `003/FR-011` e
+ * gastaria cota com `---` e emoji, que o parser já recusou por não terem
+ * conteúdo alfanumérico.
+ *
+ * Invariante A4: o resultado é subconjunto de `run.lineIds` preservando aquela
+ * ordem — e não a ordem de `items`, que a concorrência da busca não garante.
+ */
+export function remainingLineIds(run: ServiceRun): string[] {
+  const resolved = new Set(
+    run.items
+      .filter((item) => item.status !== 'pending' && item.status !== 'searching')
+      .map((item) => item.line.id),
+  );
+  return run.lineIds.filter((id) => !resolved.has(id));
 }

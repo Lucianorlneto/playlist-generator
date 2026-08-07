@@ -24,12 +24,22 @@ import { flushDraftNow } from '@/store/draftPersistence';
 
 /**
  * Onde o trabalho será retomado, para exibir junto do pedido de reautorização
- * (FR-035). Deriva da fila; não guarda estado próprio.
+ * (FR-035, `004/FR-009`). Deriva da fila; não guarda estado próprio.
+ *
+ * **A armadilha que esta função tinha**: devolvia `run.phase` diretamente, e no
+ * instante em que o diálogo renderiza a fase **já é** `awaiting_reauth`. O texto
+ * "Ao reconectar, você volta para: {where}" diria "aguardando reconexão" — uma
+ * tautologia inútil no exato ponto em que FR-009 exige informação. Na fase de
+ * espera, quem responde é `resumeFrom`, que guarda de onde a execução saiu.
  */
-export function resumePointOf(provider: ProviderId): string {
+export function resumePointOf(provider: ProviderId): ResumePoint {
   const run = useAppStore.getState().queue.runs[provider];
-  return run?.phase ?? 'connect';
+  if (run === undefined) return 'connect';
+  if (run.phase === 'awaiting_reauth') return run.resumeFrom ?? 'connect';
+  return run.phase === 'search' || run.phase === 'creating' ? run.phase : 'connect';
 }
+
+export type ResumePoint = 'search' | 'creating' | 'connect';
 
 export function handleSessionLoss(provider: ProviderId, error?: AppError): void {
   const store = useAppStore.getState();
@@ -41,4 +51,10 @@ export function handleSessionLoss(provider: ProviderId, error?: AppError): void 
   clearSession(provider);
   store.setSession(provider, null);
   store.setAuthError(error ?? new AppError('reauth_required', { provider }));
+
+  // A lista de nomes de playlist foi lida da conta **antiga** (`004/FR-015`).
+  // Sem invalidá-la aqui, reconectar a outra conta deixaria o valor velho
+  // legível — e um consumidor poderia lê-lo antes de a nova checagem terminar,
+  // bloqueando um nome livre ou liberando um nome já usado.
+  store.setExistingNames(null);
 }

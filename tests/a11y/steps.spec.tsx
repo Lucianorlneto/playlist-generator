@@ -19,6 +19,8 @@ import { ListReduction } from '@/features/input/ListReduction';
 import { QueueIndicator } from '@/features/queue/QueueIndicator';
 import { QuotaEstimateScreen } from '@/features/quota/QuotaEstimateScreen';
 import { ResultScreen } from '@/features/result/ResultScreen';
+import { ReauthDialog } from '@/features/connect/ReauthDialog';
+import { SessionHeader } from '@/features/connect/SessionHeader';
 import { ReviewScreen } from '@/features/review/ReviewScreen';
 import { SummaryScreen } from '@/features/summary/SummaryScreen';
 import { t } from '@/i18n/pt-BR';
@@ -28,6 +30,7 @@ import { useAppStore } from '@/store';
 
 import {
   makeCandidate,
+  makeCreation,
   makeCredentials,
   makeFreeLine,
   makeItem,
@@ -392,6 +395,75 @@ describe('Acessibilidade do fluxo (FR-047)', () => {
     });
 
     const { container } = render(<SummaryScreen />);
+    await semViolacoes(container);
+  });
+});
+
+/**
+ * V17/A4 — o diálogo de reconexão sob o axe (`004/SC-006`,
+ * `004/ui-contract §5`).
+ *
+ * A contenção de foco **não** é afirmada aqui: happy-dom expõe `showModal()` mas
+ * não emula a camada de topo do navegador, e um teste que passasse aqui não
+ * provaria nada sobre ela (D1 do plano). O que se verifica é o que este ambiente
+ * de fato observa — papel, rótulo, ordem de cabeçalhos e nomes acessíveis dos
+ * controles. A contenção é provada em `e2e/reconnect.spec.ts`, no navegador.
+ */
+describe('004/V17 — reconexão sem violação séria ou crítica', () => {
+  beforeEach(() => {
+    useAppStore.setState({
+      credentials: makeCredentials({ spotify: CLIENT_ID, youtube: YT_CLIENT_ID }),
+      sessions: makeSessions({ spotify: makeSession('spotify') }),
+      destinations: { selected: ['spotify', 'youtube'], locked: false },
+      lines: linhas,
+      queue: makeQueue(['youtube'], {
+        currentIndex: 0,
+        runs: {
+          youtube: makeRun('youtube', {
+            phase: 'awaiting_reauth',
+            resumeFrom: 'search',
+            lineIds: linhas.map((line) => line.id),
+            items: itens,
+          }),
+        },
+      }),
+    });
+  });
+
+  it('o diálogo aberto não introduz violação', async () => {
+    const { container } = render(<ReauthDialog provider="youtube" />);
+    await semViolacoes(container);
+  });
+
+  it('o diálogo na fase de criação também passa', async () => {
+    useAppStore.setState({
+      queue: makeQueue(['youtube'], {
+        currentIndex: 0,
+        runs: {
+          youtube: makeRun('youtube', {
+            phase: 'awaiting_reauth',
+            resumeFrom: 'creating',
+            lineIds: linhas.map((line) => line.id),
+            items: itens,
+            creation: makeCreation({ orderedUris: ['a', 'b'], committedItems: 1 }),
+          }),
+        },
+      }),
+    });
+
+    const { container } = render(<ReauthDialog provider="youtube" />);
+    await semViolacoes(container);
+  });
+
+  it('o diálogo sem credencial salva também passa', async () => {
+    useAppStore.setState({ credentials: makeCredentials({}) });
+
+    const { container } = render(<ReauthDialog provider="youtube" />);
+    await semViolacoes(container);
+  });
+
+  it('o cabeçalho com um serviço desconectado não introduz violação', async () => {
+    const { container } = render(<SessionHeader />);
     await semViolacoes(container);
   });
 });

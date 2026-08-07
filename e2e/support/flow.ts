@@ -61,8 +61,21 @@ export async function ateEntrada(page: Page, lista: string): Promise<void> {
   await informarLista(page, lista);
 }
 
+/**
+ * O botão **Conectar** da etapa do serviço.
+ *
+ * `exact` é obrigatório desde a 004: o cabeçalho passou a listar todo destino
+ * escolhido com credencial, conectado ou não, e o seu botão diz "Reconectar ao
+ * {service}" — que contém "Conectar ao {service}" como substring. Sem a
+ * correspondência exata, o seletor casaria com os dois.
+ */
 export function botaoConectar(page: Page, service: string) {
-  return page.getByRole('button', { name: fmt(t.connect.connect, { service }) });
+  return page.getByRole('button', { name: fmt(t.connect.connect, { service }), exact: true });
+}
+
+/** O botão **Reconectar** do cabeçalho de contas (`004/US3`). */
+export function botaoReconectar(page: Page, service: string) {
+  return page.getByRole('button', { name: fmt(t.connect.reconnect, { service }), exact: true });
 }
 
 export function botaoCriar(page: Page, service: string) {

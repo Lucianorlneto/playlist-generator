@@ -71,7 +71,7 @@ describe('US1 — lista sem separador algum produz candidatas', () => {
   });
 
   it('no catálogo musical, toda linha recebe candidatas', async () => {
-    const items = await runMatching('spotify', semSeparador, { signal: signal() });
+    const { items } = await runMatching('spotify', semSeparador, { signal: signal() });
 
     expect(items).toHaveLength(3);
     for (const item of items) {
@@ -83,7 +83,7 @@ describe('US1 — lista sem separador algum produz candidatas', () => {
   });
 
   it('no catálogo de vídeo, toda linha recebe candidatas', async () => {
-    const items = await runMatching('youtube', semSeparador, { signal: signal() });
+    const { items } = await runMatching('youtube', semSeparador, { signal: signal() });
 
     expect(items).toHaveLength(3);
     for (const item of items) {
@@ -102,8 +102,8 @@ describe('US1 — lista sem separador algum produz candidatas', () => {
       FAIXAS.map((faixa) => `${faixa.title} - ${faixa.artist}`).join('\n'),
     );
 
-    const livres = await runMatching('spotify', semSeparador, { signal: signal() });
-    const declaradas = await runMatching('spotify', explicitas, { signal: signal() });
+    const { items: livres } = await runMatching('spotify', semSeparador, { signal: signal() });
+    const { items: declaradas } = await runMatching('spotify', explicitas, { signal: signal() });
 
     expect(livres.map((item) => item.selectedUri)).toEqual(
       declaradas.map((item) => item.selectedUri),
@@ -111,7 +111,7 @@ describe('US1 — lista sem separador algum produz candidatas', () => {
   });
 
   it('a linha livre com artista reivindicado resolve sozinha', async () => {
-    const [item] = await runMatching(
+    const { items: [item] } = await runMatching(
       'spotify',
       parseInput('nao sei viver sem ter voce cpm 22'),
       { signal: signal() },
@@ -139,7 +139,7 @@ describe('FR-018 — a forma livre herda as candidatas alternativas', () => {
   it('linha livre e linha só-título recebem até 5 candidatas', async () => {
     setCatalog(cincoIguais);
 
-    const items = await runMatching('spotify', parseInput('Amor\namor artista 3'), {
+    const { items } = await runMatching('spotify', parseInput('Amor\namor artista 3'), {
       signal: signal(),
     });
 
@@ -150,10 +150,10 @@ describe('FR-018 — a forma livre herda as candidatas alternativas', () => {
   });
 
   it('as candidatas trazem os mesmos campos exibíveis da forma explícita', async () => {
-    const [livre] = await runMatching('spotify', parseInput('nao sei viver sem ter voce cpm 22'), {
+    const { items: [livre] } = await runMatching('spotify', parseInput('nao sei viver sem ter voce cpm 22'), {
       signal: signal(),
     });
-    const [explicita] = await runMatching(
+    const { items: [explicita] } = await runMatching(
       'spotify',
       parseInput('Não Sei Viver Sem Ter Você - CPM 22'),
       { signal: signal() },
@@ -169,7 +169,7 @@ describe('FR-018 — a forma livre herda as candidatas alternativas', () => {
   });
 
   it('no catálogo de vídeo, a linha livre também traz canal e URL externa (002/FR-024)', async () => {
-    const [item] = await runMatching('youtube', parseInput('zoio de lula charlie brown jr'), {
+    const { items: [item] } = await runMatching('youtube', parseInput('zoio de lula charlie brown jr'), {
       signal: signal(),
     });
 
@@ -182,7 +182,7 @@ describe('FR-018 — a forma livre herda as candidatas alternativas', () => {
   it('as candidatas saem ordenadas por pontuação decrescente', async () => {
     setCatalog(cincoIguais);
 
-    const [item] = await runMatching('spotify', parseInput('Amor'), { signal: signal() });
+    const { items: [item] } = await runMatching('spotify', parseInput('Amor'), { signal: signal() });
     const notas = item?.candidates.map((candidate) => candidate.score) ?? [];
 
     expect(notas).toEqual([...notas].sort((a, b) => b - a));

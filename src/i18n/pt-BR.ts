@@ -224,12 +224,60 @@ const messages = {
     disconnected: 'Sessão do {service} encerrada. Sua credencial e seu rascunho foram preservados.',
     connectedAs: 'Conectado como',
     accountLabel: 'Conta conectada no {service}',
-    sessionsLabel: 'Contas conectadas',
     needsCredential: 'Salve o Client ID do {service} antes de conectar.',
     reconnect: 'Reconectar ao {service}',
     reconnectNeeded:
       'Sua autorização do {service} expirou. Reconecte para continuar — seu trabalho foi mantido.',
     resumeAt: 'Ao reconectar, você volta para: {where}',
+
+    // -----------------------------------------------------------------------
+    // 004 — reconexão sem descartar o trabalho
+    //
+    // As três chaves acima já existiam desde a 002 e **nunca foram
+    // renderizadas**: a perda de sessão no YouTube nem chegava a este caminho.
+    // Reusá-las é a exigência de FR-033, e não gentileza — texto novo para a
+    // mesma ideia produziria duas frases divergentes para o mesmo estado.
+    // -----------------------------------------------------------------------
+
+    /** Rótulos do ponto de retomada, consumidos por `resumeAt`. */
+    resumePoint: {
+      search: 'a busca das músicas',
+      creating: 'a criação da playlist',
+      connect: 'a conexão da conta',
+    },
+
+    reauthTitle: 'Reconecte o {service} para continuar',
+    reauthPreserved: 'Nada do seu trabalho foi perdido.',
+    reauthDismiss: 'Fechar sem reconectar',
+    reauthStillPending:
+      'O {service} continua aguardando reconexão. Você pode reconectar agora ou pular este serviço.',
+
+    /** Progresso preservado, por fase de origem (`004/FR-009`, FR-028). */
+    reauthSearchProgress: '{done} de {total} linhas já foram buscadas.',
+    reauthCreationProgress: '{added} de {total} faixas já entraram na playlist.',
+
+    /**
+     * Custo da retomada — só em provedor com orçamento diário (C4). Calculado
+     * sobre as linhas que **faltam**, nunca sobre a lista inteira (FR-013).
+     */
+    reauthCostOne: 'Retomar vai custar cerca de {units} unidades de cota, para 1 linha restante.',
+    reauthCostOther:
+      'Retomar vai custar cerca de {units} unidades de cota, para {count} linhas restantes.',
+    reauthCostNone: 'Todas as linhas já foram buscadas. Retomar não consome cota.',
+
+    /** Credencial removida com o pedido aberto (`004/FR-016a`, R5). */
+    reauthNeedsCredential:
+      'O Client ID do {service} não está mais salvo. Cadastre-o de novo para reconectar — seu trabalho continua guardado.',
+    reauthGoToCredential: 'Cadastrar o Client ID',
+
+    /** Reconexão a uma conta diferente durante a criação (`004/FR-031`). */
+    reauthAccountChanged:
+      'A playlist parcial foi criada em outra conta do {service}. A retomada não é possível nela, e este serviço será encerrado como parcial.',
+
+    /** Estado de cada serviço no cabeçalho de contas (`004/US3`). */
+    disconnectedState: 'Desconectado',
+    accountsLabel: 'Contas dos serviços escolhidos',
+    serviceStateLabel: '{service} · {state}',
   },
 
   // -------------------------------------------------------------------------
@@ -295,6 +343,8 @@ const messages = {
       search: 'Buscando',
       review: 'Revisando',
       creating: 'Criando',
+      // A execução está **parada**, não encerrada (`004/FR-002`).
+      awaiting_reauth: 'Aguardando reconexão',
       done: 'Concluído',
       skipped: 'Pulado',
       failed: 'Falhou',

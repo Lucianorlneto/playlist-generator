@@ -64,6 +64,32 @@ export interface YouTubeMockState {
   createdPlaylistId: string | null;
   createdPrivacy: string | null;
   searchCount: number;
+  /**
+   * Token que a conta aceita neste momento (`004/e2e`).
+   *
+   * Cada consentimento emite um token novo e passa a ser o único válido. Isso
+   * modela a realidade que a feature de reconexão trata: o token morre, toda
+   * requisição passa a receber `401`, e **reconectar** — não repetir — é o que
+   * restaura o acesso. Invalidá-lo é o gatilho de `invalidarSessaoYouTube`.
+   */
+  validToken: string;
+  /** Quantos consentimentos foram concedidos — base da contagem de SC-003. */
+  authorizations: number;
+}
+
+/** Mata a sessão do YouTube: as próximas requisições recebem `401`. */
+export function invalidarSessaoYouTube(state: YouTubeMockState): void {
+  state.validToken = 'token-que-nao-vale-mais';
+}
+
+function credencialInvalida() {
+  return {
+    error: {
+      code: 401,
+      message: 'Invalid Credentials',
+      errors: [{ domain: 'global', reason: 'authError', message: 'Invalid Credentials' }],
+    },
+  };
 }
 
 function slug(value: string): string {
@@ -94,7 +120,13 @@ export async function mockYouTube(
     createdPlaylistId: null,
     createdPrivacy: null,
     searchCount: 0,
+    validToken: 'ya29.token-de-teste',
+    authorizations: 0,
   };
+
+  /** `true` quando a requisição chega com o token que a conta aceita agora. */
+  const autorizada = (route: Route): boolean =>
+    (route.request().headers()['authorization'] ?? '') === `Bearer ${state.validToken}`;
   const existing = options.existingPlaylists ?? [];
   const tracks = options.tracks ?? [];
   const missing = new Set((options.missingTitles ?? []).map(normalizar));
@@ -113,8 +145,12 @@ export async function mockYouTube(
     const url = new URL(route.request().url());
     const redirectUri = url.searchParams.get('redirect_uri') ?? '/';
     const authState = url.searchParams.get('state') ?? '';
+    // Cada consentimento emite um token novo, que passa a ser o único válido —
+    // é assim que reconectar restaura o acesso sem nenhum passo extra.
+    state.authorizations += 1;
+    state.validToken = `ya29.token-de-teste-${state.authorizations}`;
     const fragment = new URLSearchParams({
-      access_token: 'ya29.token-de-teste',
+      access_token: state.validToken,
       token_type: 'Bearer',
       expires_in: '3599',
       scope: 'https://www.googleapis.com/auth/youtube',
@@ -139,6 +175,14 @@ export async function mockYouTube(
 
   // §3 Busca de vídeos
   await page.route('https://www.googleapis.com/youtube/v3/search*', async (route: Route) => {
+    if (!autorizada(route)) {
+      await route.fulfill({
+        status: 401,
+        contentType: 'application/json',
+        body: JSON.stringify(credencialInvalida()),
+      });
+      return;
+    }
     state.searchCount += 1;
     const query = normalizar(new URL(route.request().url()).searchParams.get('q') ?? '');
 

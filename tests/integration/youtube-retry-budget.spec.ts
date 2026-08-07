@@ -102,7 +102,7 @@ describe('M2 — a linha barrada pelo teto diz que foi barrada', () => {
   it('recebe retry_skipped_quota, não not_found puro', async () => {
     const lines = elegiveis(4);
 
-    const items = await runMatching('youtube', lines, { signal: signal(), retryBudget: 1 });
+    const { items } = await runMatching('youtube', lines, { signal: signal(), retryBudget: 1 });
 
     const barradas = items.filter((item) => item.attentionReason === 'retry_skipped_quota');
     const semReserva = items.filter((item) => item.attentionReason === 'not_found');
@@ -120,7 +120,7 @@ describe('M2 — a linha barrada pelo teto diz que foi barrada', () => {
   it('com reserva sobrando, nenhuma linha é marcada como barrada', async () => {
     const lines = elegiveis(3);
 
-    const items = await runMatching('youtube', lines, { signal: signal(), retryBudget: 10 });
+    const { items } = await runMatching('youtube', lines, { signal: signal(), retryBudget: 10 });
 
     expect(items.every((item) => item.attentionReason === 'not_found')).toBe(true);
   });
@@ -129,7 +129,7 @@ describe('M2 — a linha barrada pelo teto diz que foi barrada', () => {
   it('linha inelegível recebe not_found, mesmo com a reserva esgotada', async () => {
     const lines = [parseLine('Zoio de Lula - Charlie Brown Jr', 0, 'l0')];
 
-    const items = await runMatching('youtube', lines, { signal: signal(), retryBudget: 0 });
+    const { items } = await runMatching('youtube', lines, { signal: signal(), retryBudget: 0 });
 
     expect(requestsTo('ytSearch')).toHaveLength(1);
     expect(items[0]?.attentionReason).toBe('not_found');

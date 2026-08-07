@@ -112,6 +112,9 @@ const state = {
 
 const queues = new Map<EndpointKey, ProgrammedResponse[]>();
 
+/** Endpoints que respondem `401` indefinidamente — ver `alwaysUnauthorized`. */
+const unauthorizedForever = new Set<EndpointKey>();
+
 /** Quantas respostas ainda saem só com ruído, por endpoint de busca. */
 const belowFloor = new Map<'search' | 'ytSearch', number>();
 
@@ -135,6 +138,7 @@ export function resetMockSpotify(): void {
   state.ytPageSize = 50;
   state.ytAccessToken = 'ya29.token-1';
   queues.clear();
+  unauthorizedForever.clear();
   belowFloor.clear();
   requestLog.length = 0;
 }
@@ -190,6 +194,29 @@ export function createdYouTubePlaylist(
   return state.ytCreatedPlaylists.get(id);
 }
 
+/**
+ * Registra uma playlist como **já criada**, sem passar pelo endpoint de criação.
+ *
+ * É o que permite montar o cenário de `004/US2`: a execução foi interrompida com
+ * uma playlist parcial na conta, e a retomada precisa partir dela. Sem isto, o
+ * primeiro `playlistItems.insert` responderia `playlistNotFound` e o teste
+ * mediria um 404 em vez da retomada.
+ */
+export function seedCreatedYouTubePlaylist(
+  id: string,
+  title: string,
+  videoIds: string[] = [],
+): void {
+  state.ytCreatedPlaylists.set(id, { title, videoIds: [...videoIds], privacy: 'private' });
+  state.ytPlaylists.push({ id, title });
+}
+
+/** Equivalente do Spotify, pelo mesmo motivo. */
+export function seedCreatedPlaylist(id: string, name: string, uris: string[] = []): void {
+  state.createdPlaylists.set(id, { name, uris: [...uris] });
+  state.playlists.push({ id, name, ownerId: state.user.id });
+}
+
 export function currentYouTubeAccessToken(): string {
   return state.ytAccessToken;
 }
@@ -231,6 +258,37 @@ export function program(endpoint: EndpointKey, ...responses: ProgrammedResponse[
   const queue = queues.get(endpoint) ?? [];
   queue.push(...responses);
   queues.set(endpoint, queue);
+}
+
+/** Endpoints do catálogo de vídeo — o corpo de erro tem outra forma. */
+function isYouTubeEndpoint(endpoint: EndpointKey): boolean {
+  return endpoint.startsWith('yt');
+}
+
+/**
+ * Enfileira `times` respostas `401` no endpoint, já na forma do provedor a que
+ * ele pertence (`004/T002`).
+ *
+ * Existe porque a perda de autorização é o gatilho da feature de reconexão e
+ * precisa ser programável em **volume**: uma lista de 100 linhas exige 100
+ * respostas de credencial inválida na busca para provar que sai **uma**
+ * interrupção, e não cem. Nenhum host novo entra por aqui — são os mesmos
+ * endpoints já declarados (N1).
+ */
+export function programUnauthorized(endpoint: EndpointKey, times = 1): void {
+  const build = isYouTubeEndpoint(endpoint) ? YT_RESPONSES.unauthorized : RESPONSES.unauthorized;
+  const responses: ProgrammedResponse[] = [];
+  for (let i = 0; i < Math.max(0, times); i += 1) responses.push(build());
+  program(endpoint, ...responses);
+}
+
+/**
+ * Todas as chamadas seguintes àquele endpoint respondem `401`, sem fila a
+ * esgotar. É o caso "a sessão morreu" — que não tem contagem, ao contrário de
+ * `programUnauthorized`, feito para o cenário de N linhas.
+ */
+export function alwaysUnauthorized(...endpoints: EndpointKey[]): void {
+  for (const endpoint of endpoints) unauthorizedForever.add(endpoint);
 }
 
 export function createdPlaylist(id: string): { name: string; uris: string[] } | undefined {
@@ -312,6 +370,9 @@ export const YT_RESPONSES = {
  * passa, a segunda falha".
  */
 function takeProgrammed(endpoint: EndpointKey): ProgrammedResponse | undefined {
+  if (unauthorizedForever.has(endpoint)) {
+    return isYouTubeEndpoint(endpoint) ? YT_RESPONSES.unauthorized() : RESPONSES.unauthorized();
+  }
   const queue = queues.get(endpoint);
   if (queue === undefined || queue.length === 0) return undefined;
   const next = queue.shift();

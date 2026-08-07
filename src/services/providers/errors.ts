@@ -86,6 +86,37 @@ const TERMINAL: ReadonlySet<AppErrorKind> = new Set<AppErrorKind>([
   'reauth_required',
 ]);
 
+/**
+ * Falhas em que a **execução inteira** perdeu autorização, não uma linha
+ * (`004/E1` a `E3`).
+ */
+const SESSION_LEVEL: ReadonlySet<AppErrorKind> = new Set<AppErrorKind>([
+  'reauth_required',
+  'session_expired',
+]);
+
+/**
+ * A regra que separa "esta linha falhou" de "a execução perdeu a sessão"
+ * (`004/provider-contract §2`).
+ *
+ * > Falha de linha vira item. Falha de sessão derruba a execução.
+ *
+ * Sem essa distinção, `searchOne` engolia o `401` como se fosse um resultado
+ * ruim e escrevia "Não encontrada" em cem fileiras — a mensagem certa existia,
+ * enterrada no detalhe de cada linha, enquanto o cabeçalho seguia mostrando a
+ * conta como conectada.
+ *
+ * A lista é **fechada e afirmativa**: um `kind` novo devolve `false` e continua
+ * sendo falha de linha, que é o comportamento de hoje e o menos destrutivo.
+ * `quota_exhausted` fica fora por decisão estrutural (E2) — reconectar não
+ * devolve orçamento, e a precedência de cota já encerra por outro caminho.
+ *
+ * Genérica, sem `ProviderId` (E3): a distinção não é do catálogo de vídeo.
+ */
+export function isSessionLevel(error: AppError): boolean {
+  return SESSION_LEVEL.has(error.kind);
+}
+
 export const PROVIDER_LABEL: Record<ProviderId, string> = {
   spotify: t.providers.spotify.name,
   youtube: t.providers.youtube.name,

@@ -16,7 +16,7 @@
 import { capabilitiesOf } from '@/domain/providers';
 import { channelBonus, scoreForShape } from '@/domain/scoring';
 import { stripDecorations, versionHints } from '@/domain/versionHints';
-import type { InputLine, MatchItem, ProviderSession, TrackCandidateRaw } from '@/domain/types';
+import type { InputLine, ProviderSession, SearchOutcome, TrackCandidateRaw } from '@/domain/types';
 import { runProviderSearch } from '@/services/providers/searchRunner';
 import type { CallbackParams, CreateParams, PlaylistProvider } from '@/services/providers/types';
 
@@ -78,7 +78,7 @@ export const youtubeProvider: PlaylistProvider = {
 
   // Sem `refresh`: a ausência é a capacidade declarada, não um esquecimento.
 
-  search: (lines: InputLine[], ctx): Promise<MatchItem[]> =>
+  search: (lines: InputLine[], ctx): Promise<SearchOutcome> =>
     runProviderSearch(lines, ctx, {
       provider: PROVIDER,
       searchLine: searchVideo,

@@ -8,10 +8,15 @@
  * indícios de versão marcar — e a mecânica de concorrência, cancelamento e
  * isolamento de falha fica aqui.
  *
- * Duas garantias que este módulo sustenta:
+ * Três garantias que este módulo sustenta:
  *
  * - **a falha de uma linha não aborta as demais**: cada busca é capturada
  *   individualmente e vira `error` naquele item;
+ * - **a falha de sessão derruba a execução inteira** (`004/S1` a `S6`). É a
+ *   regra nova, e a distinção é a razão de ser da feature de reconexão: sem ela,
+ *   um token morto virava cem itens "Não encontrada" — a mensagem certa escrita
+ *   cem vezes, enterrada no detalhe de cada fileira, enquanto o cabeçalho seguia
+ *   mostrando a conta como conectada;
  * - **cancelar funciona em qualquer momento**, inclusive durante a espera por
  *   limitação, porque o mesmo `AbortSignal` atravessa o limitador e o backoff do
  *   cliente HTTP (`001/FR-026`, SC-011).
@@ -24,6 +29,7 @@ import {
   pendingItem,
   type InputLine,
   type MatchItem,
+  type SearchOutcome,
   type TrackCandidate,
   type TrackCandidateRaw,
   type VersionHint,
@@ -31,7 +37,7 @@ import {
 import { t } from '@/i18n/pt-BR';
 import { isAbortError, limiterFor, type Limiter } from '@/services/rate-limiter';
 
-import { AppError } from './errors';
+import { AppError, isSessionLevel } from './errors';
 import { queryShapeOf } from './retryPlan';
 import type { SearchContext } from './types';
 
@@ -169,6 +175,10 @@ async function searchOne(
     };
   } catch (error) {
     if (isAbortError(error)) throw error;
+    // A regra de `004/§3`: falha de linha vira item, falha de sessão relança.
+    // Relançar é o que permite ao chamador abortar as demais linhas e pedir
+    // **uma** reautorização em vez de cem itens "Não encontrada".
+    if (error instanceof AppError && isSessionLevel(error)) throw error;
     const message = error instanceof AppError ? error.info.title : t.errors.searchLineFailed.title;
     return { raw: [], error: message, resolved: true, retrySkipped: false };
   }
@@ -229,27 +239,81 @@ function toItem(line: InputLine, outcome: LineOutcome, deps: ProviderSearchDeps)
 /**
  * Resolve a lista inteira. Os itens saem na ordem original das linhas — a
  * concorrência está na execução, não no resultado.
+ *
+ * O retorno carrega, além dos itens, a **interrupção** que porventura tenha
+ * derrubado a execução (`004/S1` a `S6`). A lista continua sempre completa: uma
+ * interrupção não a encurta, apenas faz mais itens saírem `pending`.
  */
 export async function runProviderSearch(
   lines: InputLine[],
   ctx: SearchContext,
   deps: ProviderSearchDeps,
-): Promise<MatchItem[]> {
+): Promise<SearchOutcome> {
   const limiter = deps.limiter ?? limiterFor(deps.provider);
   const budget = new RetryBudget(deps.retryBudget, ctx.onRetry);
   const outcomes: LineOutcome[] = lines.map(() => ({ ...UNRESOLVED }));
   let done = 0;
 
-  await Promise.allSettled(
-    lines.map(async (line, index) => {
-      const outcome = await searchOne(line, deps, limiter, budget, ctx.signal);
-      outcomes[index] = outcome;
-      done += 1;
-      ctx.onProgress?.(done, lines.length);
-    }),
-  );
+  /**
+   * Controlador **interno**, encadeado ao externo (S1).
+   *
+   * É o que permite abortar as demais linhas na primeira falha de sessão sem
+   * tocar no `AbortSignal` do chamador — que continua significando apenas "o
+   * usuário mandou parar". Sem essa separação não haveria como distinguir as
+   * duas coisas no fim, e cancelar durante uma sessão já morta abriria um modal
+   * de reconexão para quem pediu para parar (FR-008).
+   */
+  const controller = new AbortController();
+  const chain = (): void => {
+    controller.abort();
+  };
+  if (ctx.signal !== undefined) {
+    if (ctx.signal.aborted) controller.abort();
+    else ctx.signal.addEventListener('abort', chain, { once: true });
+  }
 
-  if (deps.enrich !== undefined) {
+  let interruption: AppError | null = null;
+
+  try {
+    await Promise.allSettled(
+      lines.map(async (line, index) => {
+        try {
+          outcomes[index] = await searchOne(line, deps, limiter, budget, controller.signal);
+        } catch (error) {
+          if (error instanceof AppError && isSessionLevel(error)) {
+            // S4: **uma** interrupção por execução, mesmo com cem linhas
+            // falhando juntas. A primeira ganha; as demais são a mesma perda
+            // relatada de novo, e cada uma viraria um pedido de reautorização.
+            if (interruption === null) {
+              interruption = error;
+              // S2: o que ainda não saiu nunca vira requisição — inclusive o
+              // que está parado na fila do limitador (SC-007).
+              controller.abort();
+            }
+            return;
+          }
+          // Cancelamento: a linha fica `resolved: false` e volta `pending` (S3).
+          throw error;
+        }
+        done += 1;
+        ctx.onProgress?.(done, lines.length);
+      }),
+    );
+  } finally {
+    ctx.signal?.removeEventListener('abort', chain);
+  }
+
+  // S5, FR-008: cancelar não é perder sessão. Se o usuário mandou parar, o
+  // desfecho é cancelamento — mesmo que uma falha de sessão tenha aparecido no
+  // caminho, porque a ação que importa foi a dele.
+  const canceled = ctx.signal?.aborted === true;
+  const reported: AppError | null = canceled ? null : interruption;
+
+  // S6: o enriquecimento só roda no caminho que chegou ao fim. Depois de uma
+  // interrupção ele emitiria requisição nova com a mesma credencial morta,
+  // contrariando P4 — e o `ctx.signal` externo, que não foi abortado, não o
+  // impediria.
+  if (deps.enrich !== undefined && interruption === null) {
     const all = outcomes.flatMap((outcome) => outcome.raw);
     if (all.length > 0) {
       // Falha do enriquecimento degrada a exibição, não a busca: sem duração o
@@ -267,5 +331,8 @@ export async function runProviderSearch(
     }
   }
 
-  return lines.map((line, index) => toItem(line, outcomes[index] ?? UNRESOLVED, deps));
+  return {
+    items: lines.map((line, index) => toItem(line, outcomes[index] ?? UNRESOLVED, deps)),
+    interruption: reported,
+  };
 }

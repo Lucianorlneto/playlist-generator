@@ -207,6 +207,158 @@ describe('FR-040 — desfechos, sem limiar percentual', () => {
   });
 });
 
+/**
+ * V10 — a fase `awaiting_reauth` (`004/data-model §3`).
+ *
+ * A promessa que estas transições sustentam: perder a autorização no meio do
+ * trabalho **para** a execução, não a encerra. `outcome` continua `null`,
+ * `isActive` continua verdadeira, e o que já foi feito permanece no lugar.
+ */
+describe('004/V10 — session_lost e a fase awaiting_reauth', () => {
+  const ERRO_COTA: AppErrorInfo = { ...ERRO, provider: 'youtube', kind: 'quota_exhausted' };
+
+  it('a busca perdida vai a awaiting_reauth guardando o resultado parcial', () => {
+    const parciais = [makeItem(), makeItem()];
+    const parado = reduceRun(run({ phase: 'search' }), {
+      type: 'session_lost',
+      from: 'search',
+      items: parciais,
+    });
+
+    expect(parado.phase).toBe('awaiting_reauth');
+    expect(parado.resumeFrom).toBe('search');
+    expect(parado.items).toEqual(parciais);
+    // FR-002: parada, não encerrada.
+    expect(parado.outcome).toBeNull();
+    expect(isActive(parado)).toBe(true);
+  });
+
+  it('a criação perdida vai a awaiting_reauth sem tocar o progresso já gravado', () => {
+    const progresso = makeCreation({ orderedUris: ['a', 'b', 'c'], committedItems: 2 });
+    const parado = reduceRun(run({ phase: 'creating', creation: progresso }), {
+      type: 'session_lost',
+      from: 'creating',
+    });
+
+    expect(parado.phase).toBe('awaiting_reauth');
+    expect(parado.resumeFrom).toBe('creating');
+    // FR-030: o índice de confirmação é o ponto de retomada — mexer nele
+    // duplicaria ou pularia faixa.
+    expect(parado.creation).toEqual(progresso);
+    expect(parado.outcome).toBeNull();
+  });
+
+  it('session_lost sem itens preserva os que já estavam na execução', () => {
+    const anteriores = [makeItem()];
+    const parado = reduceRun(run({ phase: 'search', items: anteriores }), {
+      type: 'session_lost',
+      from: 'search',
+    });
+    expect(parado.items).toEqual(anteriores);
+  });
+
+  it('autorizar devolve a execução exatamente à fase de onde ela saiu', () => {
+    for (const origem of ['search', 'creating'] as const) {
+      const parado = reduceRun(run({ phase: origem }), { type: 'session_lost', from: origem });
+      const retomado = reduceRun(parado, { type: 'authorized' });
+
+      expect(retomado.phase).toBe(origem);
+      // A2: sair da fase zera o campo.
+      expect(retomado.resumeFrom).toBeNull();
+    }
+  });
+
+  it('retomar da busca **não** passa pela estimativa, nem no YouTube (T5)', () => {
+    // A estimativa reexibida contaria a lista **inteira** e contradiria FR-013
+    // no primeiro clique: o custo já foi dito no diálogo, sobre o que falta.
+    const parado = reduceRun(run({ phase: 'search' }, 'youtube'), {
+      type: 'session_lost',
+      from: 'search',
+    });
+    expect(reduceRun(parado, { type: 'authorized' }).phase).toBe('search');
+  });
+
+  it('pular a partir de awaiting_reauth encerra o destino como skipped', () => {
+    const parado = reduceRun(run({ phase: 'search' }), { type: 'session_lost', from: 'search' });
+    const pulado = reduceRun(parado, { type: 'skipped' });
+
+    expect(pulado.outcome).toBe('skipped');
+    expect(pulado.phase).toBe('skipped');
+  });
+
+  it('cota esgotada a partir de awaiting_reauth encerra como já fazia', () => {
+    const parado = reduceRun(
+      run({ phase: 'creating', creation: makeCreation({ orderedUris: ['a', 'b'] }) }, 'youtube'),
+      { type: 'session_lost', from: 'creating' },
+    );
+    const encerrado = reduceRun(parado, {
+      type: 'quota_exhausted',
+      result: makeResult({ provider: 'youtube', addedCount: 1, incompleteByQuota: true }),
+      error: ERRO_COTA,
+    });
+
+    expect(encerrado.outcome).toBe('partial');
+    expect(encerrado.result?.incompleteByQuota).toBe(true);
+  });
+
+  it('session_lost em qualquer outra fase é a identidade', () => {
+    const outras: ServiceRun['phase'][] = [
+      'pending',
+      'connect',
+      'estimate',
+      'review',
+      'awaiting_reauth',
+    ];
+    for (const phase of outras) {
+      const atual = run({ phase });
+      expect(reduceRun(atual, { type: 'session_lost', from: 'search' })).toBe(atual);
+      expect(reduceRun(atual, { type: 'session_lost', from: 'creating' })).toBe(atual);
+    }
+  });
+
+  it('R2 — execução encerrada ignora session_lost', () => {
+    const encerrado = run({ phase: 'done', outcome: 'completed', result: makeResult() });
+    expect(reduceRun(encerrado, { type: 'session_lost', from: 'search' })).toBe(encerrado);
+    expect(reduceRun(encerrado, { type: 'session_lost', from: 'creating' })).toBe(encerrado);
+  });
+
+  it('A1/A2 — resumeFrom não-nulo ⟺ fase awaiting_reauth, e outcome é nulo lá', () => {
+    const eventos: RunEvent[] = [
+      { type: 'started' },
+      { type: 'authorized' },
+      { type: 'estimate_ok' },
+      { type: 'search_done', items: [makeItem()] },
+      { type: 'items_changed', items: [makeItem()] },
+      { type: 'review_confirmed' },
+      { type: 'session_lost', from: 'search', items: [makeItem()] },
+      { type: 'session_lost', from: 'creating' },
+      { type: 'creation_started', creation: makeCreation() },
+      { type: 'created', result: makeResult() },
+      { type: 'skipped' },
+      { type: 'failed', error: ERRO },
+    ];
+
+    for (const provider of ['spotify', 'youtube'] as ProviderId[]) {
+      const explorar = (atual: ServiceRun, profundidade: number): void => {
+        const esperado = atual.phase === 'awaiting_reauth';
+        expect(atual.resumeFrom !== null, `A2 quebrada em ${provider}/${atual.phase}`).toBe(
+          esperado,
+        );
+        if (esperado) {
+          expect(atual.outcome, `A1 quebrada em ${provider}`).toBeNull();
+        }
+        if (profundidade === 0) return;
+        for (const evento of eventos) explorar(reduceRun(atual, evento), profundidade - 1);
+      };
+      explorar(run({}, provider), 4);
+    }
+  });
+
+  it('emptyRun nasce sem ponto de retomada', () => {
+    expect(emptyRun('spotify', ['l0']).resumeFrom).toBeNull();
+  });
+});
+
 describe('FR-016, FR-021 — a fila', () => {
   it('constrói uma execução por destino, na ordem fixa', () => {
     const fila = buildQueue(['youtube', 'spotify'], ['l0', 'l1']);
