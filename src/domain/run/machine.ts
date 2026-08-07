@@ -78,6 +78,7 @@ export function emptyRun(provider: ServiceRun['provider'], lineIds: string[]): S
     result: null,
     outcome: null,
     error: null,
+    retriesUsed: 0,
   };
 }
 

@@ -7,13 +7,15 @@
  *   pontuar `&amp;` contra `&` degradaria a correspondência sem motivo;
  * - **duração vem de outra chamada**: `search.list` não a traz, e sem ela não há
  *   nem exibição (FR-024) nem indício de duração destoante (FR-025);
- * - **fallback único**: zero resultados tenta o título isolado uma vez, e só.
- *   Cada busca custa 100 unidades — repetir sem limite queimaria a cota.
+ * - **uma requisição por chamada**: a segunda tentativa deixou de ser fallback
+ *   interno e virou decisão do runner (`003/FR-009`), que é quem conta o
+ *   orçamento. Cada busca custa 100 unidades, e a única forma de garantir
+ *   "consumo real ≤ estimado" é ter um só lugar decidindo emiti-las.
  */
 
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { makeLine } from '../fixtures/factories';
+import { makeFreeLine, makeLine } from '../fixtures/factories';
 import {
   decodeHtmlEntities,
   searchVideo,
@@ -59,24 +61,31 @@ describe('FR-023 — busca no catálogo de vídeos', () => {
     expect(found.length).toBeLessThanOrEqual(5);
   });
 
-  it('cai para o título isolado **uma única vez** quando não acha nada', async () => {
+  /**
+   * `003/research §6`: o fallback interno saiu. Cada busca custa 100 unidades, e
+   * quem decide emitir a segunda é o runner — só quando a consulta alternativa
+   * difere de fato e há orçamento. `searchVideo` emite uma, sempre.
+   */
+  it('emite exatamente uma requisição, mesmo sem achar nada', async () => {
     setYouTubeCatalog([
       { id: 'v1', title: 'Bohemian Rhapsody', channel: 'Outro Canal', duration: 'PT5M55S' },
     ]);
 
-    // Artista que não casa: a primeira consulta não acha, a segunda sim.
     const found = await searchVideo(makeLine({ artist: 'Artista Inexistente' }));
 
-    expect(found).toHaveLength(1);
-    // Exatamente duas buscas — o custo de cota é 100 por chamada.
-    expect(requestsTo('ytSearch')).toHaveLength(2);
+    expect(found).toHaveLength(0);
+    expect(requestsTo('ytSearch')).toHaveLength(1);
   });
 
-  it('não repete a busca quando o título sozinho já era a consulta', async () => {
-    setYouTubeCatalog([]);
+  it('linha livre consulta a linha inteira em texto livre', async () => {
+    setYouTubeCatalog([
+      { id: 'v1', title: 'Bohemian Rhapsody', channel: 'Queen', duration: 'PT5M55S' },
+    ]);
 
-    await searchVideo(makeLine({ artist: '' }));
+    await searchVideo(makeFreeLine({ raw: 'bohemian rhapsody queen' }));
 
+    const url = new URL(requestsTo('ytSearch')[0]?.url ?? '');
+    expect(url.searchParams.get('q')).toBe('bohemian rhapsody queen');
     expect(requestsTo('ytSearch')).toHaveLength(1);
   });
 

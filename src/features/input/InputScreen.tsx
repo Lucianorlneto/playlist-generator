@@ -29,6 +29,20 @@ export function InputScreen() {
     [rawText],
   );
 
+  /**
+   * Quantas linhas provavelmente exigirão escolha manual (US4/AC1).
+   *
+   * A previsão é a das linhas **sem artista declarado**: são elas que dependem
+   * da regra de margem e, quando o título é comum, vão para o humano. É uma
+   * estimativa de esforço, não uma promessa — por isso "provavelmente" no texto.
+   * Contá-la aqui custa uma análise local do texto, nenhuma requisição.
+   */
+  const manualLikely = useMemo(
+    () => parseInput(rawText).filter((line) => line.parseStatus === 'parsed' && line.artist === '')
+      .length,
+    [rawText],
+  );
+
   const empty = rawText.trim() === '';
 
   function start(): void {
@@ -61,6 +75,14 @@ export function InputScreen() {
       <p className="text-ink-muted text-sm">
         {plural(lineCount, t.input.lineCountOne, t.input.lineCountOther)}
       </p>
+
+      {!empty && (
+        <p className="field-message">
+          {manualLikely === 0
+            ? t.input.manualEffortNone
+            : plural(manualLikely, t.input.manualEffortOne, t.input.manualEffortOther)}
+        </p>
+      )}
 
       {lineCount > LARGE_LIST_THRESHOLD && (
         <p role="status" className="field-message text-status-uncertain">

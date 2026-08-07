@@ -60,11 +60,20 @@ export function unitsUsedToday(now: number = Date.now()): number {
   return quota.dailyBudget - estimate.availableUnits;
 }
 
-/** Estimativa completa para a lista atual, já com margem e saldo (FR-029). */
+/**
+ * Estimativa completa para a lista atual, já com margem e saldo (FR-029).
+ *
+ * `retryReserve` é a **contagem exata** das linhas elegíveis a retentativa, não
+ * uma fração arbitrária: a elegibilidade depende só do texto, já analisado neste
+ * ponto (`003/research §8`, invariante O5). Omiti-la reproduz a fórmula anterior
+ * — e reintroduziria o buraco de passagem que esta feature fecha, em que o
+ * fallback de busca gastava unidades fora do que foi prometido ao usuário.
+ */
 export function estimate(
   lineCount: number,
   selectedCount: number,
   now: number = Date.now(),
+  retryReserve = 0,
 ): QuotaEstimate {
   return estimateQuota({
     provider: PROVIDER,
@@ -73,5 +82,6 @@ export function estimate(
     selectedCount,
     record: loadConsumption(PROVIDER),
     now,
+    retryReserve,
   });
 }

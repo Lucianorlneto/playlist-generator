@@ -18,6 +18,26 @@ export interface MockOptions {
   existingPlaylists?: { id: string; name: string }[];
   /** Títulos que a busca deve tratar como inexistentes. */
   missingTitles?: string[];
+  /**
+   * Consultas que devem devolver **várias** gravações do mesmo título por
+   * artistas diferentes — o caso do título genérico (`003/research §5`).
+   *
+   * É o que força a regra de margem a não abrir e a linha a chegar à revisão
+   * pedindo escolha humana. Sem isso, o mock devolve sempre uma candidata só, e
+   * o cenário mais importante da 003 ficaria sem cobertura de ponta a ponta.
+   */
+  ambiguousQueries?: string[];
+  /**
+   * Catálogo consultável por **texto livre**, como o `search.list` real se
+   * comporta: casa quando todos os termos da consulta aparecem no título ou no
+   * artista.
+   *
+   * Sem ele o mock devolve sempre uma faixa cujo artista é a string literal
+   * `Artista`, e nenhuma linha jamais reivindica o artista da candidata — o que
+   * faria toda linha livre parecer ambígua por artefato do mock, e não por
+   * ambiguidade real.
+   */
+  catalog?: { name: string; artists: string[] }[];
   /** Falha o envio de faixas a partir deste lote (base 0), uma única vez. */
   failAddTracksFromBatch?: number;
 }
@@ -32,6 +52,9 @@ export async function mockSpotify(page: Page, options: MockOptions = {}): Promis
   const state: MockState = { addedUris: [], batchIndex: 0, createdPlaylistId: null };
   const existing = options.existingPlaylists ?? [];
   const missing = new Set((options.missingTitles ?? []).map((title) => title.toLowerCase()));
+  const ambiguous = new Set(
+    (options.ambiguousQueries ?? []).map((query) => query.trim().toLowerCase()),
+  );
 
   await page.route('https://accounts.spotify.com/authorize*', async (route: Route) => {
     const url = new URL(route.request().url());
@@ -88,20 +111,58 @@ export async function mockSpotify(page: Page, options: MockOptions = {}): Promis
     const title = fielded?.[1] ?? query;
     const artist = fielded?.[2] ?? '';
 
-    const items =
-      missing.has(title.toLowerCase()) || title.trim() === ''
-        ? []
-        : [
-            {
-              uri: `spotify:track:${slug(title)}`,
-              id: slug(title),
-              name: title,
-              artists: [{ name: artist === '' ? 'Artista' : artist }],
-              album: { name: 'Álbum de Teste', images: [] },
-              duration_ms: 210_000,
-              external_urls: { spotify: `https://open.spotify.com/track/${slug(title)}` },
-            },
-          ];
+    const faixa = (nome: string, quem: string, id: string) => ({
+      uri: `spotify:track:${id}`,
+      id,
+      name: nome,
+      artists: [{ name: quem }],
+      album: { name: 'Álbum de Teste', images: [] },
+      duration_ms: 210_000,
+      external_urls: { spotify: `https://open.spotify.com/track/${id}` },
+    });
+
+    /** Sem acento, sem caixa, sem pontuação — o suficiente para casar termos. */
+    const plano = (texto: string): string =>
+      texto
+        .normalize('NFD')
+        .replace(/\p{Diacritic}/gu, '')
+        .toLowerCase()
+        .replace(/[^\p{L}\p{N}\s]+/gu, ' ')
+        .replace(/\s{2,}/gu, ' ')
+        .trim();
+
+    const doCatalogo = (options.catalog ?? []).filter((entrada) => {
+      const feno = plano(`${entrada.name} ${entrada.artists.join(' ')}`);
+      const termos = plano(title).split(' ').filter((termo) => termo !== '');
+      return termos.length > 0 && termos.every((termo) => feno.includes(termo));
+    });
+
+    /**
+     * "Inexistente" precisa valer para **as duas** consultas da linha. A
+     * retentativa de `003/FR-009` manda a linha inteira em texto livre, e casar
+     * só o título exato deixaria a segunda tentativa inventar uma faixa que o
+     * catálogo simulado não tem.
+     */
+    const ausente = [...missing].some(
+      (titulo) => plano(title) === plano(titulo) || plano(title).includes(plano(titulo)),
+    );
+
+    let items: ReturnType<typeof faixa>[];
+    if (ausente || title.trim() === '') {
+      items = [];
+    } else if (ambiguous.has(query.trim().toLowerCase())) {
+      // Mesmo título, artistas diferentes: nada no texto da linha permite
+      // escolher entre eles, e a margem não abre.
+      items = ['Primeira Banda', 'Segunda Banda', 'Terceira Banda'].map((quem, index) =>
+        faixa(title, quem, `${slug(title)}-${index}`),
+      );
+    } else if (doCatalogo.length > 0) {
+      items = doCatalogo
+        .slice(0, 5)
+        .map((entrada) => faixa(entrada.name, entrada.artists[0] ?? 'Artista', slug(entrada.name)));
+    } else {
+      items = [faixa(title, artist === '' ? 'Artista' : artist, slug(title))];
+    }
 
     await route.fulfill({
       status: 200,

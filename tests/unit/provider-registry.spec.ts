@@ -59,7 +59,7 @@ describe('FR-023, FR-024, FR-029, FR-035 — capacidades declaradas', () => {
     expect(capabilities.quota).toBeNull();
     expect(capabilities.batchSize).toBe(100);
     expect(capabilities.showsAlbum).toBe(true);
-    expect(capabilities.thresholds).toEqual({ confident: 0.82, uncertain: 0.55 });
+    expect(capabilities.thresholds).toEqual({ confident: 0.82, uncertain: 0.55, soloMargin: 0.1 });
   });
 
   it('YouTube: sem renovação silenciosa, com cota, lote 1, sem álbum, limiar 0,88', () => {
@@ -69,7 +69,7 @@ describe('FR-023, FR-024, FR-029, FR-035 — capacidades declaradas', () => {
     expect(capabilities.quota?.resetTimeZone).toBe('America/Los_Angeles');
     expect(capabilities.batchSize).toBe(1);
     expect(capabilities.showsAlbum).toBe(false);
-    expect(capabilities.thresholds).toEqual({ confident: 0.88, uncertain: 0.55 });
+    expect(capabilities.thresholds).toEqual({ confident: 0.88, uncertain: 0.55, soloMargin: 0.12 });
   });
 
   it('o adaptador expõe refresh exatamente quando a capacidade declara (FR-035)', () => {

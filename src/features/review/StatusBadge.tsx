@@ -1,4 +1,4 @@
-import type { MatchStatus } from '@/domain/types';
+import type { AttentionReason, MatchStatus } from '@/domain/types';
 import { t } from '@/i18n/pt-BR';
 import { cx } from '@/ui/cx';
 
@@ -62,4 +62,22 @@ const STATUS_HINT: Partial<Record<MatchStatus, string>> = {
 export function statusHint(status: MatchStatus, duplicate: boolean): string | null {
   if (duplicate) return t.review.statusHint.duplicate;
   return STATUS_HINT[status] ?? null;
+}
+
+/**
+ * Frase do motivo de atenção (`003/FR-017`).
+ *
+ * O motivo é dado no domínio e traduzido aqui — o mapa existe para que a
+ * exaustividade seja verificada pelo compilador: um motivo novo em
+ * `AttentionReason` quebra este `Record` antes de chegar à tela sem texto.
+ */
+const REASON_TEXT: Record<AttentionReason, string> = {
+  no_artist_ambiguous: t.review.attentionReason.noArtistAmbiguous,
+  version_hint: t.review.attentionReason.versionHint,
+  not_found: t.review.attentionReason.notFound,
+  retry_skipped_quota: t.review.attentionReason.retrySkippedQuota,
+};
+
+export function attentionText(reason: AttentionReason | null): string | null {
+  return reason === null ? null : REASON_TEXT[reason];
 }

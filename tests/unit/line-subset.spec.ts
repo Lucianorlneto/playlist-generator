@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { applyTextCorrection, isSubsetOf, linesFor, removedIds } from '@/domain/run/lines';
 
-import { makeLine } from '../fixtures/factories';
+import { makeFreeLine, makeLine } from '../fixtures/factories';
 
 describe('FR-013 — a lista de um destino posterior só pode encolher', () => {
   const previous = ['l0', 'l1', 'l2', 'l3'];
@@ -36,6 +36,37 @@ describe('FR-013 — a lista de um destino posterior só pode encolher', () => {
     expect(removedIds(previous, ['l0', 'l2'])).toEqual(['l1', 'l3']);
     expect(removedIds(previous, previous)).toEqual([]);
     expect(removedIds(previous, [])).toEqual(previous);
+  });
+
+  /**
+   * `003/FR-022`: a regra de subconjunto vale igualmente para a forma livre —
+   * era herança presumida, sem verificação. A redução é por `id`, e o `id` não
+   * sabe nem se importa com a forma da linha; este teste existe para que
+   * qualquer mudança que **fizesse** a forma importar quebre aqui.
+   */
+  it('FR-022 — a redução para o destino seguinte trata a forma livre como qualquer outra', () => {
+    const mistas = [
+      makeLine({ id: 'm0', index: 0, raw: 'Bohemian Rhapsody - Queen' }),
+      makeFreeLine({ id: 'm1', index: 1, raw: 'nao sei viver sem ter voce cpm 22' }),
+      makeFreeLine({ id: 'm2', index: 2, raw: 'Garota de Ipanema' }),
+      makeLine({ id: 'm3', index: 3, raw: 'Imagine - John Lennon' }),
+    ];
+    const todos = mistas.map((line) => line.id);
+    const reduzido = ['m0', 'm2'];
+
+    expect(isSubsetOf(todos, reduzido)).toBe(true);
+    expect(removedIds(todos, reduzido)).toEqual(['m1', 'm3']);
+
+    const restantes = linesFor(mistas, reduzido);
+    expect(restantes.map((line) => line.id)).toEqual(['m0', 'm2']);
+    // A linha livre que sobrou continua livre e buscável.
+    expect(restantes[1]?.shape).toBe('free');
+    expect(restantes[1]?.parseStatus).toBe('parsed');
+  });
+
+  it('FR-022 — reduzir a lista a apenas linhas livres continua sendo subconjunto', () => {
+    const todos = ['m0', 'm1', 'm2', 'm3'];
+    expect(isSubsetOf(todos, ['m1', 'm2'])).toBe(true);
   });
 });
 

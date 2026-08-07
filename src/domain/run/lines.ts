@@ -13,7 +13,8 @@
  *   um estado que o resumo não consegue descrever com honestidade (SC-018).
  */
 
-import type { InputLine } from '@/domain/types';
+import { normalizeText } from '@/domain/normalize';
+import type { InputLine, LineShape } from '@/domain/types';
 
 /**
  * Validação de FR-013: `next` é subconjunto de `previous` **preservando a
@@ -41,20 +42,26 @@ export interface TextPatch {
   title?: string;
   artist?: string;
   featuredArtists?: string[];
+  /** Nova na 003: acrescentar ou remover o separador muda a forma da linha. */
+  shape?: LineShape;
 }
 
 /**
  * Aplica correção de texto à fonte única.
  *
- * Altera `title`, `artist` e `featuredArtists`; **nunca** `raw`, `id` nem
- * `index` (invariante L2). `raw` é o que a lista de linhas não encontradas
- * copia — reescrevê-lo devolveria ao usuário um texto que ele nunca digitou, e
+ * Altera `title`, `artist`, `featuredArtists` e `shape`; **nunca** `raw`, `id`
+ * nem `index`. `raw` é o que a lista de linhas não encontradas copia —
+ * reescrevê-lo devolveria ao usuário um texto que ele nunca digitou —, e
  * `id`/`index` são o que liga a linha às execuções de cada serviço.
  *
  * `parseStatus` é **derivado**, não preservado: corrigir uma linha que o parser
  * não entendeu é justamente o caso de uso da edição, e manter o `unparsed`
- * antigo faria a busca devolver a linha intocada para sempre. A regra é a mesma
- * do parser — título e artista não vazios (`parser/index.ts`).
+ * antigo faria a busca devolver a linha intocada para sempre.
+ *
+ * A regra de derivação passou a ser a **nova** L2 (`003/FR-004`): inválida só
+ * quando não sobra conteúdo alfanumérico. A regra antiga — título **e** artista
+ * não vazios — condenaria toda linha corrigida para a forma livre, que é
+ * exatamente o que esta feature passou a permitir.
  */
 export function applyTextCorrection(
   lines: InputLine[],
@@ -73,17 +80,26 @@ export function applyTextCorrection(
       ...(patch.featuredArtists === undefined
         ? {}
         : { featuredArtists: [...patch.featuredArtists] }),
+      ...(patch.shape === undefined ? {} : { shape: patch.shape }),
       // Reafirmado explicitamente: nem um spread acidental pode alterá-los.
       raw: line.raw,
       id: line.id,
       index: line.index,
     };
+
+    // Invariante L1: a forma livre não declara artista nem artista secundário.
+    if (updated.shape === 'free') {
+      updated.artist = '';
+      updated.featuredArtists = [];
+    }
+
     updated.parseStatus =
-      updated.title.trim() !== '' && updated.artist.trim() !== '' ? 'parsed' : 'unparsed';
+      normalizeText(`${updated.title} ${updated.artist}`) === '' ? 'unparsed' : 'parsed';
 
     if (
       updated.title !== line.title ||
       updated.artist !== line.artist ||
+      updated.shape !== line.shape ||
       updated.parseStatus !== line.parseStatus ||
       updated.featuredArtists.join('\u0000') !== line.featuredArtists.join('\u0000')
     ) {

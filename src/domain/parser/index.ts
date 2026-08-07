@@ -1,12 +1,21 @@
 /**
- * Análise do texto colado (FR-012 a FR-015).
+ * Análise do texto colado (`001/FR-012` a `001/FR-015`, `003/FR-001` a
+ * `003/FR-004`).
  *
- * Determinística e **nunca lança**: uma linha irreconhecível vira
- * `parseStatus: 'unparsed'` e não interrompe o processamento das demais — o
- * usuário corrige aquela linha sem refazer o trabalho inteiro (FR-015, FR-016).
+ * Determinística e **nunca lança**.
+ *
+ * **O separador deixou de ser portão de admissão** (`003/research §1`). Ele
+ * continua sendo o melhor sinal disponível — quem o escreve declara onde termina
+ * o título e ganha a via de pontuação por campos —, mas a sua ausência não
+ * reprova mais nada. A linha sem corte vira `shape: 'free'` e é consultada
+ * inteira.
+ *
+ * Sobra um único gatilho de invalidez (invariante L2): `normalizeText(raw) === ''`,
+ * isto é, a linha não tem caractere alfanumérico algum. `---`, `3.` e `🎵` não
+ * são música e não podem custar uma requisição (`003/FR-011`).
  */
 
-import { removeNumberingPrefix, stripPromoSuffixes } from '@/domain/normalize';
+import { normalizeText, removeNumberingPrefix, stripPromoSuffixes } from '@/domain/normalize';
 import type { InputLine } from '@/domain/types';
 
 /**
@@ -61,28 +70,45 @@ function lastSeparator(line: string): { start: number; end: number } | null {
   return found;
 }
 
+/**
+ * Forma livre: a linha inteira vira o título, sem artista e sem _featured_.
+ *
+ * Não se extrai nada aqui de propósito (invariante L1). Extrair exigiria
+ * adivinhar o corte que §1 recusa a adivinhar — e errar sistematicamente em
+ * `Charlie Brown Jr`, `CPM 22` e `Nossa Senhora Aparecida`.
+ */
+function freeLine(raw: string, index: number, id: string, working: string): InputLine {
+  const empty = normalizeText(raw) === '';
+  return {
+    id,
+    index,
+    raw,
+    title: empty ? '' : working,
+    artist: '',
+    featuredArtists: [],
+    shape: 'free',
+    parseStatus: empty ? 'unparsed' : 'parsed',
+  };
+}
+
 export function parseLine(raw: string, index: number, id: string): InputLine {
   const working = removeNumberingPrefix(raw).trim();
+
+  // L2 primeiro, e sem exceção: `--- - ---` tem separador e dois lados não
+  // vazios, mas não tem conteúdo. Deixar o corte decidir antes daria a essa
+  // linha um `shape: 'explicit'` e uma consulta paga.
+  if (normalizeText(raw) === '') return freeLine(raw, index, id, working);
+
   const separator = lastSeparator(working);
 
-  if (separator === null) {
-    return {
-      id,
-      index,
-      raw,
-      title: '',
-      artist: '',
-      featuredArtists: [],
-      parseStatus: 'unparsed',
-    };
-  }
+  if (separator === null) return freeLine(raw, index, id, working);
 
   const rawTitle = working.slice(0, separator.start).trim();
   const rawArtist = working.slice(separator.end).trim();
 
-  if (rawTitle === '' || rawArtist === '') {
-    return { id, index, raw, title: '', artist: '', featuredArtists: [], parseStatus: 'unparsed' };
-  }
+  // Corte com um lado vazio não declarou nada: `- Artista` é uma linha livre
+  // cujo prefixo de numeração já foi removido, não uma linha inválida.
+  if (rawTitle === '' || rawArtist === '') return freeLine(raw, index, id, working);
 
   const titleExtract = extractFeatured(rawTitle);
   const artistExtract = extractFeatured(rawArtist);
@@ -105,6 +131,7 @@ export function parseLine(raw: string, index: number, id: string): InputLine {
     title: stripPromoSuffixes(titleExtract.text),
     artist: mainArtist,
     featuredArtists,
+    shape: 'explicit',
     parseStatus: 'parsed',
   };
 }

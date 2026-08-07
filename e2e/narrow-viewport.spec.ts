@@ -100,6 +100,37 @@ test.describe('SC-016 — tela de 375 px', () => {
     await semRolagemHorizontal(page);
   });
 
+  /**
+   * `003/FR-017` em 375 px: o motivo de atenção é a frase mais longa que a
+   * revisão exibe, e é justamente o texto que não pode estourar a largura nem
+   * empurrar os controles para fora da tela.
+   */
+  test('o motivo de atenção cabe na largura, sem rolagem horizontal', async ({ page }) => {
+    await mockSpotify(page, { ambiguousQueries: ['Amor'] });
+    await seedCredential(page);
+    await page.goto('/');
+
+    await page.getByRole('button', { name: t.common.next, exact: true }).click();
+    await page.getByRole('button', { name: t.common.next, exact: true }).click();
+    // Um título genérico, que cai na regra de margem e pede escolha humana.
+    await page.getByLabel(t.input.textareaLabel).fill('Amor');
+    await page.getByRole('button', { name: t.input.start }).click();
+    await botaoConectar(page, SPOTIFY).click();
+    await expect(tituloRevisao(page, SPOTIFY)).toBeVisible();
+
+    const motivo = page.getByText(t.review.attentionReason.noArtistAmbiguous);
+    await expect(motivo).toBeVisible();
+    await semRolagemHorizontal(page);
+
+    // O texto longo não pode empurrar as ações para fora da largura.
+    const alternativas = page.getByRole('button', { name: t.review.alternatives }).first();
+    await alternativas.scrollIntoViewIfNeeded();
+    await expect(alternativas).toBeInViewport({ ratio: 1 });
+
+    await alternativas.click();
+    await semRolagemHorizontal(page);
+  });
+
   test('todos os controles da revisão continuam alcançáveis', async ({ page }) => {
     await mockSpotify(page);
     await seedCredential(page);

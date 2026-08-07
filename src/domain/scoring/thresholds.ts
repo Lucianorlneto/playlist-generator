@@ -30,6 +30,39 @@ export const ARTIST_WEIGHT = 0.4;
 export const FEATURED_BONUS = 0.05;
 
 /**
+ * Fração dos termos do artista da candidata que a linha precisa conter para
+ * que se considere que ela **reivindicou** aquele artista (`003/research §4`).
+ *
+ * `0,6` tolera artista parcialmente escrito — `charlie brown` para
+ * `Charlie Brown Jr` dá 2/3 — sem aceitar coincidência de uma palavra em nome
+ * longo. Exigir reivindicação total jogaria em escolha manual um caso que a
+ * pontuação resolve com folga.
+ */
+export const ARTIST_CLAIM_RATIO = 0.6;
+
+/**
+ * Distância mínima entre a 1ª e a 2ª candidata para que uma linha **sem artista
+ * confirmado** possa ser marcada sozinha (`003/research §5`, FR-014a).
+ *
+ * Passar o limiar não basta. Quando existem cinco gravações do mesmo título,
+ * todas pontuam quase igual — a margem é ~0 e a escolha vai para o humano.
+ * Quando o título é distintivo, as candidatas 2ª a 5ª são outras músicas, a
+ * margem é larga, e a linha passa sozinha. A margem mede exatamente a
+ * propriedade que interessa ("esta candidata se destaca?"), que a pontuação
+ * absoluta não mede.
+ *
+ * Os valores são **calibrados** contra `reference-titles-30.json`, com SC-004
+ * (zero seleções automáticas erradas) como teto e SC-010 (≥ 60% automático no
+ * catálogo musical) como piso. A medição está registrada em `003/research §5`.
+ *
+ * O catálogo de vídeo é mais exigente por um motivo estrutural: um título
+ * isolado devolve clipe, áudio, ao vivo e cover com títulos quase idênticos
+ * entre si, e abrir a margem ali significaria escolher o cover em silêncio.
+ */
+export const SPOTIFY_SOLO_MARGIN = 0.1;
+export const YOUTUBE_SOLO_MARGIN = 0.12;
+
+/**
  * Bônus de canal canônico no catálogo de vídeo (research §7).
  *
  * ` - Topic` é o áudio auto-gerado pela própria plataforma a partir do catálogo

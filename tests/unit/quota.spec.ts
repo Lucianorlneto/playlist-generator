@@ -16,15 +16,26 @@ const MODEL = YOUTUBE_QUOTA;
 /** 5 de agosto de 2026, 12:00 em Los Angeles (horário de verão, UTC−7). */
 const MEIO_DIA_PT = Date.UTC(2026, 7, 5, 19, 0, 0);
 
-function estimate(lineCount: number, selectedCount: number, used = 0) {
-  return estimateQuota({
-    provider: 'youtube',
+function base(lineCount: number, selectedCount: number, used = 0) {
+  return {
+    provider: 'youtube' as const,
     model: MODEL,
     lineCount,
     selectedCount,
-    record: used === 0 ? null : { provider: 'youtube', ptDate: providerDay(MEIO_DIA_PT, MODEL.resetTimeZone), units: used },
+    record:
+      used === 0
+        ? null
+        : {
+            provider: 'youtube' as const,
+            ptDate: providerDay(MEIO_DIA_PT, MODEL.resetTimeZone),
+            units: used,
+          },
     now: MEIO_DIA_PT,
-  });
+  };
+}
+
+function estimate(lineCount: number, selectedCount: number, used = 0) {
+  return estimateQuota(base(lineCount, selectedCount, used));
 }
 
 describe('research §3 — custo nominal', () => {
@@ -88,6 +99,76 @@ describe('FR-029 — estimativa com margem e bloqueio', () => {
       expect(atual).toBeGreaterThan(anterior);
       anterior = atual;
     }
+  });
+});
+
+/**
+ * `003/research §8`: a reserva de segunda tentativa entra na conta. É o que
+ * fecha o buraco de passagem em que o fallback de busca gastava unidades fora do
+ * que a estimativa prometeu.
+ */
+describe('003/§8 — reserva de retentativa na fórmula', () => {
+  /**
+   * A garantia de compatibilidade que mantém válidos todos os casos acima:
+   * omitir `retryReserve` reproduz **exatamente** os números anteriores.
+   */
+  it('omitir a reserva reproduz exatamente a fórmula anterior', () => {
+    expect(nominalCost(MODEL, 50, 50)).toBe(nominalCost(MODEL, 50, 50, 0));
+    expect(nominalCost(MODEL, 50, 50, 0)).toBe(7_556);
+    expect(nominalCost(MODEL, 1, 1, 0)).toBe(202);
+    expect(costWithMargin(MODEL, 50, 50)).toBe(costWithMargin(MODEL, 50, 50, 0));
+  });
+
+  it('cada linha reservada acrescenta o custo de uma busca (100)', () => {
+    expect(nominalCost(MODEL, 50, 50, 1)).toBe(7_556 + 100);
+    expect(nominalCost(MODEL, 50, 50, 10)).toBe(7_556 + 1_000);
+    expect(nominalCost(MODEL, 50, 50, 50)).toBe(7_556 + 5_000);
+  });
+
+  it('a reserva não altera o custo de enriquecimento, que depende só das linhas', () => {
+    // A diferença entre R=0 e R=10 é exatamente 10 buscas: nem uma unidade de
+    // enriquecimento a mais. A retentativa reaproveita o lote já contado.
+    expect(nominalCost(MODEL, 50, 50, 10) - nominalCost(MODEL, 50, 50, 0)).toBe(1_000);
+  });
+
+  it('reserva negativa ou fracionária é tratada como zero/truncada', () => {
+    expect(nominalCost(MODEL, 10, 10, -3)).toBe(nominalCost(MODEL, 10, 10, 0));
+    expect(nominalCost(MODEL, 10, 10, 2.9)).toBe(nominalCost(MODEL, 10, 10, 2));
+  });
+
+  it('a estimativa expõe a reserva usada, limitada ao número de linhas', () => {
+    expect(estimate(10, 10).retryReserve).toBe(0);
+    expect(estimateQuota({ ...base(10, 10), retryReserve: 4 }).retryReserve).toBe(4);
+    // Não há como reservar mais retentativas do que existem linhas.
+    expect(estimateQuota({ ...base(10, 10), retryReserve: 99 }).retryReserve).toBe(10);
+  });
+
+  it('a reserva empurra o bloqueio, como deve', () => {
+    const semReserva = estimateQuota({ ...base(60, 60), retryReserve: 0 });
+    const comReserva = estimateQuota({ ...base(60, 60), retryReserve: 60 });
+
+    expect(semReserva.estimatedUnits).toBeLessThan(comReserva.estimatedUnits);
+    expect(semReserva.blocked).toBe(false);
+    expect(comReserva.blocked).toBe(true);
+  });
+
+  /**
+   * `003/research §8`: no caso típico do catálogo de vídeo quase nenhuma linha é
+   * elegível, e o teto prático de ~60 linhas **não se move**. É o que torna a
+   * decisão Q2 barata em vez de custosa.
+   */
+  it('com reserva zero, o teto prático permanece o de antes', () => {
+    expect(maxLinesThatFit(MODEL, MODEL.dailyBudget, 0)).toBe(
+      maxLinesThatFit(MODEL, MODEL.dailyBudget),
+    );
+  });
+
+  it('uma lista atipicamente elegível reduz o teto, e o usuário vê isso antes', () => {
+    const semReserva = maxLinesThatFit(MODEL, MODEL.dailyBudget, 0);
+    const tudoElegivel = maxLinesThatFit(MODEL, MODEL.dailyBudget, 1);
+
+    expect(tudoElegivel).toBeLessThan(semReserva);
+    expect(tudoElegivel).toBeGreaterThan(30);
   });
 });
 

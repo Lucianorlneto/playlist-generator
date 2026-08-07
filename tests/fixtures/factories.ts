@@ -29,9 +29,24 @@ export function makeLine(overrides: Partial<InputLine> = {}): InputLine {
     title: 'Bohemian Rhapsody',
     artist: 'Queen',
     featuredArtists: [],
+    shape: 'explicit',
     parseStatus: 'parsed',
     ...overrides,
   };
+}
+
+/** Linha na forma livre: sem artista declarado, título é a linha inteira (L1). */
+export function makeFreeLine(overrides: Partial<InputLine> = {}): InputLine {
+  const raw = overrides.raw ?? 'nao sei viver sem ter voce cpm 22';
+  return makeLine({
+    raw,
+    title: raw,
+    artist: '',
+    featuredArtists: [],
+    shape: 'free',
+    parseStatus: 'parsed',
+    ...overrides,
+  });
 }
 
 export function makeCandidate(overrides: Partial<TrackCandidate> = {}): TrackCandidate {
@@ -84,6 +99,7 @@ export function makeItem(overrides: Partial<MatchItem> = {}): MatchItem {
     duplicateOf: overrides.duplicateOf ?? null,
     error: overrides.error ?? null,
     previousStatus: overrides.previousStatus ?? null,
+    attentionReason: overrides.attentionReason ?? null,
   };
 }
 
@@ -126,6 +142,7 @@ export function makeRun(provider: ProviderId, overrides: Partial<ServiceRun> = {
     result: null,
     outcome: null,
     error: null,
+    retriesUsed: 0,
     ...overrides,
   };
 }

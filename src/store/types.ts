@@ -1,5 +1,6 @@
 import type { StateCreator } from 'zustand';
 
+import type { TextPatch } from '@/domain/run/lines';
 import type { RunEvent } from '@/domain/run/machine';
 import type { ProviderId } from '@/domain/providers';
 import type {
@@ -96,7 +97,7 @@ export interface ItemsSlice {
   setRawText: (rawText: string) => void;
   setLines: (lines: InputLine[]) => void;
   /** Correção de texto na fonte única; propaga aos serviços seguintes (FR-014). */
-  correctLine: (lineId: string, patch: { title?: string; artist?: string }) => void;
+  correctLine: (lineId: string, patch: TextPatch) => void;
 
   /** Itens da execução corrente — atalho de leitura sobre a fila. */
   items: () => MatchItem[];
@@ -134,6 +135,8 @@ export interface RunSlice {
   reduceUpcoming: (provider: ProviderId, lineIds: string[]) => void;
 
   setEstimate: (provider: ProviderId, estimate: QuotaEstimate | null) => void;
+  /** Retentativas já emitidas nesta execução (`003/data-model §5`, O4). */
+  recordRetries: (provider: ProviderId, total: number) => void;
   setCreation: (provider: ProviderId, creation: CreationProgress | null) => void;
   setResult: (provider: ProviderId, result: CreationResult | null) => void;
 }

@@ -44,9 +44,17 @@ export function LineEditor({ item, provider, onDone }: LineEditorProps) {
     setRunning(true);
     const parsed = parseLine(text, item.line.index, item.line.id);
 
-    // `raw`, `id` e `index` da fonte única não mudam (invariante L2).
-    correctLine(item.line.id, { title: parsed.title, artist: parsed.artist });
-    patchItem(item.line.id, { status: 'searching', error: null });
+    // `raw`, `id` e `index` da fonte única não mudam. `shape` **muda**:
+    // acrescentar ou remover o separador muda a forma da linha, e é o que
+    // permite corrigir `zoio de lula charlie brown jr` para
+    // `Zoio de Lula - Charlie Brown Jr` e ganhar a via de pontuação por campos.
+    correctLine(item.line.id, {
+      title: parsed.title,
+      artist: parsed.artist,
+      featuredArtists: parsed.featuredArtists,
+      shape: parsed.shape,
+    });
+    patchItem(item.line.id, { status: 'searching', error: null, attentionReason: null });
 
     try {
       const line = useAppStore.getState().lines.find((entry) => entry.id === item.line.id) ?? parsed;
@@ -59,10 +67,15 @@ export function LineEditor({ item, provider, onDone }: LineEditorProps) {
         included: resolved.included,
         error: resolved.error,
         previousStatus: null,
+        attentionReason: resolved.attentionReason,
       });
     } catch (error) {
       if (!isAbortError(error)) {
-        patchItem(item.line.id, { status: 'not_found', error: t.errors.searchLineFailed.title });
+        patchItem(item.line.id, {
+          status: 'not_found',
+          error: t.errors.searchLineFailed.title,
+          attentionReason: 'not_found',
+        });
       }
     } finally {
       setRunning(false);

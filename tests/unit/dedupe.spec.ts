@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import { markDuplicates } from '@/domain/dedupe';
+import { inputKey, markDuplicates } from '@/domain/dedupe';
 
-import { makeCandidate, makeItem, makeLine } from '../fixtures/factories';
+import { makeCandidate, makeFreeLine, makeItem, makeLine } from '../fixtures/factories';
 
 describe('Duplicatas em duas passagens (research §7, FR-018)', () => {
   it('marca a repetição pela chave normalizada, preservando a primeira', () => {
@@ -87,15 +87,16 @@ describe('Duplicatas em duas passagens (research §7, FR-018)', () => {
     expect(items.every((item) => item.duplicateOf === null)).toBe(true);
   });
 
-  it('não marca linhas sem separador reconhecido', () => {
+  it('não marca linhas sem conteúdo alfanumérico', () => {
     const items = markDuplicates([
       makeItem({
         line: makeLine({
           id: 'l0',
           index: 0,
-          raw: 'ruim',
+          raw: '---',
           title: '',
           artist: '',
+          shape: 'free',
           parseStatus: 'unparsed',
         }),
         status: 'unparsed',
@@ -106,9 +107,10 @@ describe('Duplicatas em duas passagens (research §7, FR-018)', () => {
         line: makeLine({
           id: 'l1',
           index: 1,
-          raw: 'outra ruim',
+          raw: '🎵',
           title: '',
           artist: '',
+          shape: 'free',
           parseStatus: 'unparsed',
         }),
         status: 'unparsed',
@@ -118,6 +120,82 @@ describe('Duplicatas em duas passagens (research §7, FR-018)', () => {
     ]);
 
     expect(items.every((item) => item.duplicateOf === null)).toBe(true);
+  });
+
+  /**
+   * `003/FR-020`: as duas formas de escrever a mesma faixa colapsam na mesma
+   * chave. Antes da chave unificada elas produziam `zoio de lula|charlie brown
+   * jr` e `zoio de lula charlie brown jr|`, e a segunda escapava da detecção.
+   */
+  it('a forma explícita e a livre da mesma faixa produzem a MESMA chave', () => {
+    const explicita = makeItem({
+      line: makeLine({
+        id: 'l0',
+        index: 0,
+        raw: 'Zoio de Lula - Charlie Brown Jr',
+        title: 'Zoio de Lula',
+        artist: 'Charlie Brown Jr',
+        shape: 'explicit',
+      }),
+      candidates: [makeCandidate({ id: 'a' })],
+    });
+    const livre = makeItem({
+      line: makeFreeLine({ id: 'l1', index: 1, raw: 'zoio de lula charlie brown jr' }),
+      candidates: [makeCandidate({ id: 'b' })],
+    });
+
+    expect(inputKey(livre)).toBe(inputKey(explicita));
+
+    const items = markDuplicates([explicita, livre]);
+    expect(items[0]?.duplicateOf).toBeNull();
+    expect(items[1]?.duplicateOf).toBe('l0');
+    expect(items[1]?.included).toBe(false);
+  });
+
+  it('duas linhas livres iguais a menos de acento e caixa são duplicatas', () => {
+    const items = markDuplicates([
+      makeItem({
+        line: makeFreeLine({ id: 'l0', index: 0, raw: 'Não Sei Viver Sem Ter Você' }),
+        candidates: [makeCandidate({ id: 'a' })],
+      }),
+      makeItem({
+        line: makeFreeLine({ id: 'l1', index: 1, raw: 'nao sei viver sem ter voce' }),
+        candidates: [makeCandidate({ id: 'b' })],
+      }),
+    ]);
+
+    expect(items[1]?.duplicateOf).toBe('l0');
+  });
+
+  /**
+   * O limite registrado em research §9: o _featured_ é extraído do título na
+   * forma explícita e permanece na livre, então as duas chaves divergem. Elas só
+   * se encontram na deduplicação por `uri`, depois da escolha.
+   */
+  it('o limite conhecido: feat. extraído na explícita não colapsa com a livre', () => {
+    const explicita = makeItem({
+      line: makeLine({
+        id: 'l0',
+        index: 0,
+        raw: 'Song (feat. X) - Artist',
+        title: 'Song',
+        artist: 'Artist',
+        featuredArtists: ['X'],
+        shape: 'explicit',
+      }),
+    });
+    const livre = makeItem({
+      line: makeFreeLine({ id: 'l1', index: 1, raw: 'song feat x artist' }),
+    });
+
+    expect(inputKey(livre)).not.toBe(inputKey(explicita));
+  });
+
+  it('linha livre sem conteúdo produz chave vazia, e chave vazia não agrupa', () => {
+    const lixo = makeItem({
+      line: makeLine({ id: 'l0', index: 0, raw: '---', title: '', artist: '', shape: 'free' }),
+    });
+    expect(inputKey(lixo)).toBe('');
   });
 
   it('limpa a marcação quando a duplicidade deixa de existir', () => {

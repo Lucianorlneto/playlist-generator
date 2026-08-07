@@ -1,0 +1,1565 @@
+{
+  "description": "Trinta linhas escritas SÓ com o título, para calibrar `soloMargin` (research §5) e medir SC-004 e SC-010. Vinte são de título distintivo (`kind: \"dominant\"`): a busca devolve a gravação canônica e, nas quatro posições seguintes, OUTRAS faixas do mesmo artista — é o que a ordenação por popularidade produz para um título muito conhecido, e é a situação em que a margem entre 1ª e 2ª abre. Dez são de título genérico (`kind: \"generic\"`): cinco artistas diferentes com uma gravação famosa do MESMO título, todas empatadas no texto. `expectedId` é a gravação pretendida; nas genéricas nada na linha permite ao sistema descobri-la, e a resposta correta é pedir escolha humana — nunca acertar por sorte.",
+  "entries": [
+    {
+      "line": "Smells Like Teen Spirit",
+      "kind": "dominant",
+      "expectedId": "teen_spirit_1",
+      "candidates": [
+        {
+          "id": "teen_spirit_1",
+          "title": "Smells Like Teen Spirit",
+          "artists": [
+            "Nirvana"
+          ],
+          "album": "Nevermind",
+          "durationMs": 301920
+        },
+        {
+          "id": "teen_spirit_2",
+          "title": "Come As You Are",
+          "artists": [
+            "Nirvana"
+          ],
+          "album": "Nevermind",
+          "durationMs": 200000
+        },
+        {
+          "id": "teen_spirit_3",
+          "title": "Lithium",
+          "artists": [
+            "Nirvana"
+          ],
+          "album": "Nevermind",
+          "durationMs": 207000
+        },
+        {
+          "id": "teen_spirit_4",
+          "title": "In Bloom",
+          "artists": [
+            "Nirvana"
+          ],
+          "album": "Nevermind",
+          "durationMs": 214000
+        },
+        {
+          "id": "teen_spirit_5",
+          "title": "Heart-Shaped Box",
+          "artists": [
+            "Nirvana"
+          ],
+          "album": "Nevermind",
+          "durationMs": 221000
+        }
+      ]
+    },
+    {
+      "line": "Stairway to Heaven",
+      "kind": "dominant",
+      "expectedId": "stairway_1",
+      "candidates": [
+        {
+          "id": "stairway_1",
+          "title": "Stairway to Heaven",
+          "artists": [
+            "Led Zeppelin"
+          ],
+          "album": "Led Zeppelin IV",
+          "durationMs": 482830
+        },
+        {
+          "id": "stairway_2",
+          "title": "Whole Lotta Love",
+          "artists": [
+            "Led Zeppelin"
+          ],
+          "album": "Led Zeppelin IV",
+          "durationMs": 200000
+        },
+        {
+          "id": "stairway_3",
+          "title": "Kashmir",
+          "artists": [
+            "Led Zeppelin"
+          ],
+          "album": "Led Zeppelin IV",
+          "durationMs": 207000
+        },
+        {
+          "id": "stairway_4",
+          "title": "Black Dog",
+          "artists": [
+            "Led Zeppelin"
+          ],
+          "album": "Led Zeppelin IV",
+          "durationMs": 214000
+        },
+        {
+          "id": "stairway_5",
+          "title": "Immigrant Song",
+          "artists": [
+            "Led Zeppelin"
+          ],
+          "album": "Led Zeppelin IV",
+          "durationMs": 221000
+        }
+      ]
+    },
+    {
+      "line": "Bohemian Rhapsody",
+      "kind": "dominant",
+      "expectedId": "bohemian_1",
+      "candidates": [
+        {
+          "id": "bohemian_1",
+          "title": "Bohemian Rhapsody",
+          "artists": [
+            "Queen"
+          ],
+          "album": "A Night at the Opera",
+          "durationMs": 354320
+        },
+        {
+          "id": "bohemian_2",
+          "title": "Under Pressure",
+          "artists": [
+            "Queen"
+          ],
+          "album": "A Night at the Opera",
+          "durationMs": 200000
+        },
+        {
+          "id": "bohemian_3",
+          "title": "Killer Queen",
+          "artists": [
+            "Queen"
+          ],
+          "album": "A Night at the Opera",
+          "durationMs": 207000
+        },
+        {
+          "id": "bohemian_4",
+          "title": "Somebody to Love",
+          "artists": [
+            "Queen"
+          ],
+          "album": "A Night at the Opera",
+          "durationMs": 214000
+        },
+        {
+          "id": "bohemian_5",
+          "title": "Radio Ga Ga",
+          "artists": [
+            "Queen"
+          ],
+          "album": "A Night at the Opera",
+          "durationMs": 221000
+        }
+      ]
+    },
+    {
+      "line": "Sweet Child O' Mine",
+      "kind": "dominant",
+      "expectedId": "sweet_child_1",
+      "candidates": [
+        {
+          "id": "sweet_child_1",
+          "title": "Sweet Child O' Mine",
+          "artists": [
+            "Guns N' Roses"
+          ],
+          "album": "Appetite for Destruction",
+          "durationMs": 356000
+        },
+        {
+          "id": "sweet_child_2",
+          "title": "Welcome to the Jungle",
+          "artists": [
+            "Guns N' Roses"
+          ],
+          "album": "Appetite for Destruction",
+          "durationMs": 200000
+        },
+        {
+          "id": "sweet_child_3",
+          "title": "Paradise City",
+          "artists": [
+            "Guns N' Roses"
+          ],
+          "album": "Appetite for Destruction",
+          "durationMs": 207000
+        },
+        {
+          "id": "sweet_child_4",
+          "title": "Patience",
+          "artists": [
+            "Guns N' Roses"
+          ],
+          "album": "Appetite for Destruction",
+          "durationMs": 214000
+        },
+        {
+          "id": "sweet_child_5",
+          "title": "Nightrain",
+          "artists": [
+            "Guns N' Roses"
+          ],
+          "album": "Appetite for Destruction",
+          "durationMs": 221000
+        }
+      ]
+    },
+    {
+      "line": "Boulevard of Broken Dreams",
+      "kind": "dominant",
+      "expectedId": "boulevard_1",
+      "candidates": [
+        {
+          "id": "boulevard_1",
+          "title": "Boulevard of Broken Dreams",
+          "artists": [
+            "Green Day"
+          ],
+          "album": "American Idiot",
+          "durationMs": 260786
+        },
+        {
+          "id": "boulevard_2",
+          "title": "Basket Case",
+          "artists": [
+            "Green Day"
+          ],
+          "album": "American Idiot",
+          "durationMs": 200000
+        },
+        {
+          "id": "boulevard_3",
+          "title": "American Idiot",
+          "artists": [
+            "Green Day"
+          ],
+          "album": "American Idiot",
+          "durationMs": 207000
+        },
+        {
+          "id": "boulevard_4",
+          "title": "Wake Me Up When September Ends",
+          "artists": [
+            "Green Day"
+          ],
+          "album": "American Idiot",
+          "durationMs": 214000
+        },
+        {
+          "id": "boulevard_5",
+          "title": "Holiday",
+          "artists": [
+            "Green Day"
+          ],
+          "album": "American Idiot",
+          "durationMs": 221000
+        }
+      ]
+    },
+    {
+      "line": "Billie Jean",
+      "kind": "dominant",
+      "expectedId": "billie_jean_1",
+      "candidates": [
+        {
+          "id": "billie_jean_1",
+          "title": "Billie Jean",
+          "artists": [
+            "Michael Jackson"
+          ],
+          "album": "Thriller",
+          "durationMs": 294226
+        },
+        {
+          "id": "billie_jean_2",
+          "title": "Beat It",
+          "artists": [
+            "Michael Jackson"
+          ],
+          "album": "Thriller",
+          "durationMs": 200000
+        },
+        {
+          "id": "billie_jean_3",
+          "title": "Thriller",
+          "artists": [
+            "Michael Jackson"
+          ],
+          "album": "Thriller",
+          "durationMs": 207000
+        },
+        {
+          "id": "billie_jean_4",
+          "title": "Smooth Criminal",
+          "artists": [
+            "Michael Jackson"
+          ],
+          "album": "Thriller",
+          "durationMs": 214000
+        },
+        {
+          "id": "billie_jean_5",
+          "title": "Bad",
+          "artists": [
+            "Michael Jackson"
+          ],
+          "album": "Thriller",
+          "durationMs": 221000
+        }
+      ]
+    },
+    {
+      "line": "Comfortably Numb",
+      "kind": "dominant",
+      "expectedId": "comfortably_1",
+      "candidates": [
+        {
+          "id": "comfortably_1",
+          "title": "Comfortably Numb",
+          "artists": [
+            "Pink Floyd"
+          ],
+          "album": "The Wall",
+          "durationMs": 382296
+        },
+        {
+          "id": "comfortably_2",
+          "title": "Another Brick in the Wall",
+          "artists": [
+            "Pink Floyd"
+          ],
+          "album": "The Wall",
+          "durationMs": 200000
+        },
+        {
+          "id": "comfortably_3",
+          "title": "Money",
+          "artists": [
+            "Pink Floyd"
+          ],
+          "album": "The Wall",
+          "durationMs": 207000
+        },
+        {
+          "id": "comfortably_4",
+          "title": "Time",
+          "artists": [
+            "Pink Floyd"
+          ],
+          "album": "The Wall",
+          "durationMs": 214000
+        },
+        {
+          "id": "comfortably_5",
+          "title": "Hey You",
+          "artists": [
+            "Pink Floyd"
+          ],
+          "album": "The Wall",
+          "durationMs": 221000
+        }
+      ]
+    },
+    {
+      "line": "Losing My Religion",
+      "kind": "dominant",
+      "expectedId": "losing_religion_1",
+      "candidates": [
+        {
+          "id": "losing_religion_1",
+          "title": "Losing My Religion",
+          "artists": [
+            "R.E.M."
+          ],
+          "album": "Out of Time",
+          "durationMs": 268000
+        },
+        {
+          "id": "losing_religion_2",
+          "title": "Everybody Hurts",
+          "artists": [
+            "R.E.M."
+          ],
+          "album": "Out of Time",
+          "durationMs": 200000
+        },
+        {
+          "id": "losing_religion_3",
+          "title": "Man on the Moon",
+          "artists": [
+            "R.E.M."
+          ],
+          "album": "Out of Time",
+          "durationMs": 207000
+        },
+        {
+          "id": "losing_religion_4",
+          "title": "Shiny Happy People",
+          "artists": [
+            "R.E.M."
+          ],
+          "album": "Out of Time",
+          "durationMs": 214000
+        },
+        {
+          "id": "losing_religion_5",
+          "title": "Nightswimming",
+          "artists": [
+            "R.E.M."
+          ],
+          "album": "Out of Time",
+          "durationMs": 221000
+        }
+      ]
+    },
+    {
+      "line": "Blinding Lights",
+      "kind": "dominant",
+      "expectedId": "blinding_1",
+      "candidates": [
+        {
+          "id": "blinding_1",
+          "title": "Blinding Lights",
+          "artists": [
+            "The Weeknd"
+          ],
+          "album": "After Hours",
+          "durationMs": 200040
+        },
+        {
+          "id": "blinding_2",
+          "title": "Save Your Tears",
+          "artists": [
+            "The Weeknd"
+          ],
+          "album": "After Hours",
+          "durationMs": 200000
+        },
+        {
+          "id": "blinding_3",
+          "title": "Starboy",
+          "artists": [
+            "The Weeknd"
+          ],
+          "album": "After Hours",
+          "durationMs": 207000
+        },
+        {
+          "id": "blinding_4",
+          "title": "The Hills",
+          "artists": [
+            "The Weeknd"
+          ],
+          "album": "After Hours",
+          "durationMs": 214000
+        },
+        {
+          "id": "blinding_5",
+          "title": "Die For You",
+          "artists": [
+            "The Weeknd"
+          ],
+          "album": "After Hours",
+          "durationMs": 221000
+        }
+      ]
+    },
+    {
+      "line": "Rolling in the Deep",
+      "kind": "dominant",
+      "expectedId": "rolling_deep_1",
+      "candidates": [
+        {
+          "id": "rolling_deep_1",
+          "title": "Rolling in the Deep",
+          "artists": [
+            "Adele"
+          ],
+          "album": "21",
+          "durationMs": 228293
+        },
+        {
+          "id": "rolling_deep_2",
+          "title": "Set Fire to the Rain",
+          "artists": [
+            "Adele"
+          ],
+          "album": "21",
+          "durationMs": 200000
+        },
+        {
+          "id": "rolling_deep_3",
+          "title": "Someone Like You",
+          "artists": [
+            "Adele"
+          ],
+          "album": "21",
+          "durationMs": 207000
+        },
+        {
+          "id": "rolling_deep_4",
+          "title": "Rumour Has It",
+          "artists": [
+            "Adele"
+          ],
+          "album": "21",
+          "durationMs": 214000
+        },
+        {
+          "id": "rolling_deep_5",
+          "title": "Turning Tables",
+          "artists": [
+            "Adele"
+          ],
+          "album": "21",
+          "durationMs": 221000
+        }
+      ]
+    },
+    {
+      "line": "Every Breath You Take",
+      "kind": "dominant",
+      "expectedId": "every_breath_1",
+      "candidates": [
+        {
+          "id": "every_breath_1",
+          "title": "Every Breath You Take",
+          "artists": [
+            "The Police"
+          ],
+          "album": "Synchronicity",
+          "durationMs": 253946
+        },
+        {
+          "id": "every_breath_2",
+          "title": "Roxanne",
+          "artists": [
+            "The Police"
+          ],
+          "album": "Synchronicity",
+          "durationMs": 200000
+        },
+        {
+          "id": "every_breath_3",
+          "title": "Message in a Bottle",
+          "artists": [
+            "The Police"
+          ],
+          "album": "Synchronicity",
+          "durationMs": 207000
+        },
+        {
+          "id": "every_breath_4",
+          "title": "Walking on the Moon",
+          "artists": [
+            "The Police"
+          ],
+          "album": "Synchronicity",
+          "durationMs": 214000
+        },
+        {
+          "id": "every_breath_5",
+          "title": "So Lonely",
+          "artists": [
+            "The Police"
+          ],
+          "album": "Synchronicity",
+          "durationMs": 221000
+        }
+      ]
+    },
+    {
+      "line": "Eduardo e Mônica",
+      "kind": "dominant",
+      "expectedId": "eduardo_monica_1",
+      "candidates": [
+        {
+          "id": "eduardo_monica_1",
+          "title": "Eduardo e Mônica",
+          "artists": [
+            "Legião Urbana"
+          ],
+          "album": "Dois",
+          "durationMs": 268000
+        },
+        {
+          "id": "eduardo_monica_2",
+          "title": "Tempo Perdido",
+          "artists": [
+            "Legião Urbana"
+          ],
+          "album": "Dois",
+          "durationMs": 200000
+        },
+        {
+          "id": "eduardo_monica_3",
+          "title": "Faroeste Caboclo",
+          "artists": [
+            "Legião Urbana"
+          ],
+          "album": "Dois",
+          "durationMs": 207000
+        },
+        {
+          "id": "eduardo_monica_4",
+          "title": "Pais e Filhos",
+          "artists": [
+            "Legião Urbana"
+          ],
+          "album": "Dois",
+          "durationMs": 214000
+        },
+        {
+          "id": "eduardo_monica_5",
+          "title": "Que País É Este",
+          "artists": [
+            "Legião Urbana"
+          ],
+          "album": "Dois",
+          "durationMs": 221000
+        }
+      ]
+    },
+    {
+      "line": "Garota de Ipanema",
+      "kind": "dominant",
+      "expectedId": "ipanema_1",
+      "candidates": [
+        {
+          "id": "ipanema_1",
+          "title": "Garota de Ipanema",
+          "artists": [
+            "Tom Jobim"
+          ],
+          "album": "Getz/Gilberto",
+          "durationMs": 325000
+        },
+        {
+          "id": "ipanema_2",
+          "title": "Corcovado",
+          "artists": [
+            "Tom Jobim"
+          ],
+          "album": "Getz/Gilberto",
+          "durationMs": 200000
+        },
+        {
+          "id": "ipanema_3",
+          "title": "Desafinado",
+          "artists": [
+            "Tom Jobim"
+          ],
+          "album": "Getz/Gilberto",
+          "durationMs": 207000
+        },
+        {
+          "id": "ipanema_4",
+          "title": "Wave",
+          "artists": [
+            "Tom Jobim"
+          ],
+          "album": "Getz/Gilberto",
+          "durationMs": 214000
+        },
+        {
+          "id": "ipanema_5",
+          "title": "Chega de Saudade",
+          "artists": [
+            "Tom Jobim"
+          ],
+          "album": "Getz/Gilberto",
+          "durationMs": 221000
+        }
+      ]
+    },
+    {
+      "line": "Águas de Março",
+      "kind": "dominant",
+      "expectedId": "aguas_marco_1",
+      "candidates": [
+        {
+          "id": "aguas_marco_1",
+          "title": "Águas de Março",
+          "artists": [
+            "Elis Regina"
+          ],
+          "album": "Elis & Tom",
+          "durationMs": 213000
+        },
+        {
+          "id": "aguas_marco_2",
+          "title": "Como Nossos Pais",
+          "artists": [
+            "Elis Regina"
+          ],
+          "album": "Elis & Tom",
+          "durationMs": 200000
+        },
+        {
+          "id": "aguas_marco_3",
+          "title": "Alô, Alô, Marciano",
+          "artists": [
+            "Elis Regina"
+          ],
+          "album": "Elis & Tom",
+          "durationMs": 207000
+        },
+        {
+          "id": "aguas_marco_4",
+          "title": "O Bêbado e a Equilibrista",
+          "artists": [
+            "Elis Regina"
+          ],
+          "album": "Elis & Tom",
+          "durationMs": 214000
+        },
+        {
+          "id": "aguas_marco_5",
+          "title": "Corcovado",
+          "artists": [
+            "Elis Regina"
+          ],
+          "album": "Elis & Tom",
+          "durationMs": 221000
+        }
+      ]
+    },
+    {
+      "line": "País Tropical",
+      "kind": "dominant",
+      "expectedId": "pais_tropical_1",
+      "candidates": [
+        {
+          "id": "pais_tropical_1",
+          "title": "País Tropical",
+          "artists": [
+            "Jorge Ben Jor"
+          ],
+          "album": "Jorge Ben",
+          "durationMs": 180000
+        },
+        {
+          "id": "pais_tropical_2",
+          "title": "Taj Mahal",
+          "artists": [
+            "Jorge Ben Jor"
+          ],
+          "album": "Jorge Ben",
+          "durationMs": 200000
+        },
+        {
+          "id": "pais_tropical_3",
+          "title": "Mas Que Nada",
+          "artists": [
+            "Jorge Ben Jor"
+          ],
+          "album": "Jorge Ben",
+          "durationMs": 207000
+        },
+        {
+          "id": "pais_tropical_4",
+          "title": "Chove Chuva",
+          "artists": [
+            "Jorge Ben Jor"
+          ],
+          "album": "Jorge Ben",
+          "durationMs": 214000
+        },
+        {
+          "id": "pais_tropical_5",
+          "title": "Charles Anjo 45",
+          "artists": [
+            "Jorge Ben Jor"
+          ],
+          "album": "Jorge Ben",
+          "durationMs": 221000
+        }
+      ]
+    },
+    {
+      "line": "Velha Infância",
+      "kind": "dominant",
+      "expectedId": "velha_infancia_1",
+      "candidates": [
+        {
+          "id": "velha_infancia_1",
+          "title": "Velha Infância",
+          "artists": [
+            "Tribalistas"
+          ],
+          "album": "Tribalistas",
+          "durationMs": 215000
+        },
+        {
+          "id": "velha_infancia_2",
+          "title": "Já Sei Namorar",
+          "artists": [
+            "Tribalistas"
+          ],
+          "album": "Tribalistas",
+          "durationMs": 200000
+        },
+        {
+          "id": "velha_infancia_3",
+          "title": "Passe em Casa",
+          "artists": [
+            "Tribalistas"
+          ],
+          "album": "Tribalistas",
+          "durationMs": 207000
+        },
+        {
+          "id": "velha_infancia_4",
+          "title": "Carnavália",
+          "artists": [
+            "Tribalistas"
+          ],
+          "album": "Tribalistas",
+          "durationMs": 214000
+        },
+        {
+          "id": "velha_infancia_5",
+          "title": "É Você",
+          "artists": [
+            "Tribalistas"
+          ],
+          "album": "Tribalistas",
+          "durationMs": 221000
+        }
+      ]
+    },
+    {
+      "line": "Trem-Bala",
+      "kind": "dominant",
+      "expectedId": "trem_bala_1",
+      "candidates": [
+        {
+          "id": "trem_bala_1",
+          "title": "Trem-Bala",
+          "artists": [
+            "Ana Vilela"
+          ],
+          "album": "Ana Vilela",
+          "durationMs": 232000
+        },
+        {
+          "id": "trem_bala_2",
+          "title": "Menina Solta",
+          "artists": [
+            "Ana Vilela"
+          ],
+          "album": "Ana Vilela",
+          "durationMs": 200000
+        },
+        {
+          "id": "trem_bala_3",
+          "title": "Fogueira",
+          "artists": [
+            "Ana Vilela"
+          ],
+          "album": "Ana Vilela",
+          "durationMs": 207000
+        },
+        {
+          "id": "trem_bala_4",
+          "title": "Pra Não Dizer Adeus",
+          "artists": [
+            "Ana Vilela"
+          ],
+          "album": "Ana Vilela",
+          "durationMs": 214000
+        },
+        {
+          "id": "trem_bala_5",
+          "title": "Ei, Você",
+          "artists": [
+            "Ana Vilela"
+          ],
+          "album": "Ana Vilela",
+          "durationMs": 221000
+        }
+      ]
+    },
+    {
+      "line": "Californication",
+      "kind": "dominant",
+      "expectedId": "californication_1",
+      "candidates": [
+        {
+          "id": "californication_1",
+          "title": "Californication",
+          "artists": [
+            "Red Hot Chili Peppers"
+          ],
+          "album": "Californication",
+          "durationMs": 329733
+        },
+        {
+          "id": "californication_2",
+          "title": "Under the Bridge",
+          "artists": [
+            "Red Hot Chili Peppers"
+          ],
+          "album": "Californication",
+          "durationMs": 200000
+        },
+        {
+          "id": "californication_3",
+          "title": "Scar Tissue",
+          "artists": [
+            "Red Hot Chili Peppers"
+          ],
+          "album": "Californication",
+          "durationMs": 207000
+        },
+        {
+          "id": "californication_4",
+          "title": "Otherside",
+          "artists": [
+            "Red Hot Chili Peppers"
+          ],
+          "album": "Californication",
+          "durationMs": 214000
+        },
+        {
+          "id": "californication_5",
+          "title": "Can't Stop",
+          "artists": [
+            "Red Hot Chili Peppers"
+          ],
+          "album": "Californication",
+          "durationMs": 221000
+        }
+      ]
+    },
+    {
+      "line": "Enter Sandman",
+      "kind": "dominant",
+      "expectedId": "enter_sandman_1",
+      "candidates": [
+        {
+          "id": "enter_sandman_1",
+          "title": "Enter Sandman",
+          "artists": [
+            "Metallica"
+          ],
+          "album": "Metallica",
+          "durationMs": 331200
+        },
+        {
+          "id": "enter_sandman_2",
+          "title": "Master of Puppets",
+          "artists": [
+            "Metallica"
+          ],
+          "album": "Metallica",
+          "durationMs": 200000
+        },
+        {
+          "id": "enter_sandman_3",
+          "title": "One",
+          "artists": [
+            "Metallica"
+          ],
+          "album": "Metallica",
+          "durationMs": 207000
+        },
+        {
+          "id": "enter_sandman_4",
+          "title": "Nothing Else Matters",
+          "artists": [
+            "Metallica"
+          ],
+          "album": "Metallica",
+          "durationMs": 214000
+        },
+        {
+          "id": "enter_sandman_5",
+          "title": "Fade to Black",
+          "artists": [
+            "Metallica"
+          ],
+          "album": "Metallica",
+          "durationMs": 221000
+        }
+      ]
+    },
+    {
+      "line": "Não Sei Viver Sem Ter Você",
+      "kind": "dominant",
+      "expectedId": "nao_sei_viver_1",
+      "candidates": [
+        {
+          "id": "nao_sei_viver_1",
+          "title": "Não Sei Viver Sem Ter Você",
+          "artists": [
+            "CPM 22"
+          ],
+          "album": "Chegou a Hora de Recomeçar",
+          "durationMs": 218000
+        },
+        {
+          "id": "nao_sei_viver_2",
+          "title": "Um Minuto Para o Fim do Mundo",
+          "artists": [
+            "CPM 22"
+          ],
+          "album": "Chegou a Hora de Recomeçar",
+          "durationMs": 200000
+        },
+        {
+          "id": "nao_sei_viver_3",
+          "title": "Regina Let’s Go!",
+          "artists": [
+            "CPM 22"
+          ],
+          "album": "Chegou a Hora de Recomeçar",
+          "durationMs": 207000
+        },
+        {
+          "id": "nao_sei_viver_4",
+          "title": "Dias Atrás",
+          "artists": [
+            "CPM 22"
+          ],
+          "album": "Chegou a Hora de Recomeçar",
+          "durationMs": 214000
+        },
+        {
+          "id": "nao_sei_viver_5",
+          "title": "Tarde de Outubro",
+          "artists": [
+            "CPM 22"
+          ],
+          "album": "Chegou a Hora de Recomeçar",
+          "durationMs": 221000
+        }
+      ]
+    },
+    {
+      "line": "Amor",
+      "kind": "generic",
+      "expectedId": "amor_1",
+      "candidates": [
+        {
+          "id": "amor_1",
+          "title": "Amor",
+          "artists": [
+            "Fábio Jr."
+          ],
+          "album": "Amor — Fábio Jr.",
+          "durationMs": 190000
+        },
+        {
+          "id": "amor_2",
+          "title": "Amor",
+          "artists": [
+            "Marisa Monte"
+          ],
+          "album": "Amor — Marisa Monte",
+          "durationMs": 201000
+        },
+        {
+          "id": "amor_3",
+          "title": "Amor",
+          "artists": [
+            "Roupa Nova"
+          ],
+          "album": "Amor — Roupa Nova",
+          "durationMs": 212000
+        },
+        {
+          "id": "amor_4",
+          "title": "Amor",
+          "artists": [
+            "Zeca Pagodinho"
+          ],
+          "album": "Amor — Zeca Pagodinho",
+          "durationMs": 223000
+        },
+        {
+          "id": "amor_5",
+          "title": "Amor",
+          "artists": [
+            "Anavitória"
+          ],
+          "album": "Amor — Anavitória",
+          "durationMs": 234000
+        }
+      ]
+    },
+    {
+      "line": "Hello",
+      "kind": "generic",
+      "expectedId": "hello_1",
+      "candidates": [
+        {
+          "id": "hello_1",
+          "title": "Hello",
+          "artists": [
+            "Adele"
+          ],
+          "album": "Hello — Adele",
+          "durationMs": 190000
+        },
+        {
+          "id": "hello_2",
+          "title": "Hello",
+          "artists": [
+            "Lionel Richie"
+          ],
+          "album": "Hello — Lionel Richie",
+          "durationMs": 201000
+        },
+        {
+          "id": "hello_3",
+          "title": "Hello",
+          "artists": [
+            "OMD"
+          ],
+          "album": "Hello — OMD",
+          "durationMs": 212000
+        },
+        {
+          "id": "hello_4",
+          "title": "Hello",
+          "artists": [
+            "Martin Solveig"
+          ],
+          "album": "Hello — Martin Solveig",
+          "durationMs": 223000
+        },
+        {
+          "id": "hello_5",
+          "title": "Hello",
+          "artists": [
+            "Evanescence"
+          ],
+          "album": "Hello — Evanescence",
+          "durationMs": 234000
+        }
+      ]
+    },
+    {
+      "line": "Perfect",
+      "kind": "generic",
+      "expectedId": "perfect_1",
+      "candidates": [
+        {
+          "id": "perfect_1",
+          "title": "Perfect",
+          "artists": [
+            "Ed Sheeran"
+          ],
+          "album": "Perfect — Ed Sheeran",
+          "durationMs": 190000
+        },
+        {
+          "id": "perfect_2",
+          "title": "Perfect",
+          "artists": [
+            "Simple Plan"
+          ],
+          "album": "Perfect — Simple Plan",
+          "durationMs": 201000
+        },
+        {
+          "id": "perfect_3",
+          "title": "Perfect",
+          "artists": [
+            "Pink"
+          ],
+          "album": "Perfect — Pink",
+          "durationMs": 212000
+        },
+        {
+          "id": "perfect_4",
+          "title": "Perfect",
+          "artists": [
+            "One Direction"
+          ],
+          "album": "Perfect — One Direction",
+          "durationMs": 223000
+        },
+        {
+          "id": "perfect_5",
+          "title": "Perfect",
+          "artists": [
+            "Fairground Attraction"
+          ],
+          "album": "Perfect — Fairground Attraction",
+          "durationMs": 234000
+        }
+      ]
+    },
+    {
+      "line": "Sozinho",
+      "kind": "generic",
+      "expectedId": "sozinho_1",
+      "candidates": [
+        {
+          "id": "sozinho_1",
+          "title": "Sozinho",
+          "artists": [
+            "Caetano Veloso"
+          ],
+          "album": "Sozinho — Caetano Veloso",
+          "durationMs": 190000
+        },
+        {
+          "id": "sozinho_2",
+          "title": "Sozinho",
+          "artists": [
+            "Peninha"
+          ],
+          "album": "Sozinho — Peninha",
+          "durationMs": 201000
+        },
+        {
+          "id": "sozinho_3",
+          "title": "Sozinho",
+          "artists": [
+            "Tim Maia"
+          ],
+          "album": "Sozinho — Tim Maia",
+          "durationMs": 212000
+        },
+        {
+          "id": "sozinho_4",
+          "title": "Sozinho",
+          "artists": [
+            "Jota Quest"
+          ],
+          "album": "Sozinho — Jota Quest",
+          "durationMs": 223000
+        },
+        {
+          "id": "sozinho_5",
+          "title": "Sozinho",
+          "artists": [
+            "Alcione"
+          ],
+          "album": "Sozinho — Alcione",
+          "durationMs": 234000
+        }
+      ]
+    },
+    {
+      "line": "Alone",
+      "kind": "generic",
+      "expectedId": "alone_1",
+      "candidates": [
+        {
+          "id": "alone_1",
+          "title": "Alone",
+          "artists": [
+            "Heart"
+          ],
+          "album": "Alone — Heart",
+          "durationMs": 190000
+        },
+        {
+          "id": "alone_2",
+          "title": "Alone",
+          "artists": [
+            "Alan Walker"
+          ],
+          "album": "Alone — Alan Walker",
+          "durationMs": 201000
+        },
+        {
+          "id": "alone_3",
+          "title": "Alone",
+          "artists": [
+            "Marshmello"
+          ],
+          "album": "Alone — Marshmello",
+          "durationMs": 212000
+        },
+        {
+          "id": "alone_4",
+          "title": "Alone",
+          "artists": [
+            "Halsey"
+          ],
+          "album": "Alone — Halsey",
+          "durationMs": 223000
+        },
+        {
+          "id": "alone_5",
+          "title": "Alone",
+          "artists": [
+            "Bee Gees"
+          ],
+          "album": "Alone — Bee Gees",
+          "durationMs": 234000
+        }
+      ]
+    },
+    {
+      "line": "Forever",
+      "kind": "generic",
+      "expectedId": "forever_1",
+      "candidates": [
+        {
+          "id": "forever_1",
+          "title": "Forever",
+          "artists": [
+            "Chris Brown"
+          ],
+          "album": "Forever — Chris Brown",
+          "durationMs": 190000
+        },
+        {
+          "id": "forever_2",
+          "title": "Forever",
+          "artists": [
+            "Drake"
+          ],
+          "album": "Forever — Drake",
+          "durationMs": 201000
+        },
+        {
+          "id": "forever_3",
+          "title": "Forever",
+          "artists": [
+            "Papa Roach"
+          ],
+          "album": "Forever — Papa Roach",
+          "durationMs": 212000
+        },
+        {
+          "id": "forever_4",
+          "title": "Forever",
+          "artists": [
+            "Kiss"
+          ],
+          "album": "Forever — Kiss",
+          "durationMs": 223000
+        },
+        {
+          "id": "forever_5",
+          "title": "Forever",
+          "artists": [
+            "Mumford & Sons"
+          ],
+          "album": "Forever — Mumford & Sons",
+          "durationMs": 234000
+        }
+      ]
+    },
+    {
+      "line": "Paradise",
+      "kind": "generic",
+      "expectedId": "paradise_1",
+      "candidates": [
+        {
+          "id": "paradise_1",
+          "title": "Paradise",
+          "artists": [
+            "Coldplay"
+          ],
+          "album": "Paradise — Coldplay",
+          "durationMs": 190000
+        },
+        {
+          "id": "paradise_2",
+          "title": "Paradise",
+          "artists": [
+            "Bazzi"
+          ],
+          "album": "Paradise — Bazzi",
+          "durationMs": 201000
+        },
+        {
+          "id": "paradise_3",
+          "title": "Paradise",
+          "artists": [
+            "Sade"
+          ],
+          "album": "Paradise — Sade",
+          "durationMs": 212000
+        },
+        {
+          "id": "paradise_4",
+          "title": "Paradise",
+          "artists": [
+            "George Ezra"
+          ],
+          "album": "Paradise — George Ezra",
+          "durationMs": 223000
+        },
+        {
+          "id": "paradise_5",
+          "title": "Paradise",
+          "artists": [
+            "Ozzy Osbourne"
+          ],
+          "album": "Paradise — Ozzy Osbourne",
+          "durationMs": 234000
+        }
+      ]
+    },
+    {
+      "line": "Coração",
+      "kind": "generic",
+      "expectedId": "coracao_1",
+      "candidates": [
+        {
+          "id": "coracao_1",
+          "title": "Coração",
+          "artists": [
+            "Marisa Monte"
+          ],
+          "album": "Coração — Marisa Monte",
+          "durationMs": 190000
+        },
+        {
+          "id": "coracao_2",
+          "title": "Coração",
+          "artists": [
+            "Vanessa da Mata"
+          ],
+          "album": "Coração — Vanessa da Mata",
+          "durationMs": 201000
+        },
+        {
+          "id": "coracao_3",
+          "title": "Coração",
+          "artists": [
+            "Nando Reis"
+          ],
+          "album": "Coração — Nando Reis",
+          "durationMs": 212000
+        },
+        {
+          "id": "coracao_4",
+          "title": "Coração",
+          "artists": [
+            "Kell Smith"
+          ],
+          "album": "Coração — Kell Smith",
+          "durationMs": 223000
+        },
+        {
+          "id": "coracao_5",
+          "title": "Coração",
+          "artists": [
+            "Pitty"
+          ],
+          "album": "Coração — Pitty",
+          "durationMs": 234000
+        }
+      ]
+    },
+    {
+      "line": "Angel",
+      "kind": "generic",
+      "expectedId": "angel_1",
+      "candidates": [
+        {
+          "id": "angel_1",
+          "title": "Angel",
+          "artists": [
+            "Sarah McLachlan"
+          ],
+          "album": "Angel — Sarah McLachlan",
+          "durationMs": 190000
+        },
+        {
+          "id": "angel_2",
+          "title": "Angel",
+          "artists": [
+            "Robbie Williams"
+          ],
+          "album": "Angel — Robbie Williams",
+          "durationMs": 201000
+        },
+        {
+          "id": "angel_3",
+          "title": "Angel",
+          "artists": [
+            "Shaggy"
+          ],
+          "album": "Angel — Shaggy",
+          "durationMs": 212000
+        },
+        {
+          "id": "angel_4",
+          "title": "Angel",
+          "artists": [
+            "Massive Attack"
+          ],
+          "album": "Angel — Massive Attack",
+          "durationMs": 223000
+        },
+        {
+          "id": "angel_5",
+          "title": "Angel",
+          "artists": [
+            "Aerosmith"
+          ],
+          "album": "Angel — Aerosmith",
+          "durationMs": 234000
+        }
+      ]
+    },
+    {
+      "line": "Liberdade",
+      "kind": "generic",
+      "expectedId": "liberdade_1",
+      "candidates": [
+        {
+          "id": "liberdade_1",
+          "title": "Liberdade",
+          "artists": [
+            "Charlie Brown Jr"
+          ],
+          "album": "Liberdade — Charlie Brown Jr",
+          "durationMs": 190000
+        },
+        {
+          "id": "liberdade_2",
+          "title": "Liberdade",
+          "artists": [
+            "Nando Reis"
+          ],
+          "album": "Liberdade — Nando Reis",
+          "durationMs": 201000
+        },
+        {
+          "id": "liberdade_3",
+          "title": "Liberdade",
+          "artists": [
+            "Ana Carolina"
+          ],
+          "album": "Liberdade — Ana Carolina",
+          "durationMs": 212000
+        },
+        {
+          "id": "liberdade_4",
+          "title": "Liberdade",
+          "artists": [
+            "O Rappa"
+          ],
+          "album": "Liberdade — O Rappa",
+          "durationMs": 223000
+        },
+        {
+          "id": "liberdade_5",
+          "title": "Liberdade",
+          "artists": [
+            "Skank"
+          ],
+          "album": "Liberdade — Skank",
+          "durationMs": 234000
+        }
+      ]
+    }
+  ]
+}

@@ -9,6 +9,8 @@
  * Puro: sem rede, sem DOM, sem armazenamento, sem relógio ambiente.
  */
 
+import { SPOTIFY_SOLO_MARGIN, YOUTUBE_SOLO_MARGIN } from './scoring/thresholds';
+
 export type ProviderId = 'spotify' | 'youtube';
 
 /**
@@ -47,7 +49,15 @@ export interface ProviderCapabilities {
   /** `false` esconde o campo de álbum e mostra canal (FR-024). YouTube: false. */
   showsAlbum: boolean;
   /** Limiares de confiança calibrados por catálogo (FR-023, research §7). */
-  thresholds: { confident: number; uncertain: number };
+  thresholds: {
+    confident: number;
+    uncertain: number;
+    /**
+     * Distância mínima da 2ª candidata para que uma linha **sem artista
+     * confirmado** possa ser marcada sozinha (`003/research §5`).
+     */
+    soloMargin: number;
+  };
 }
 
 /**
@@ -77,7 +87,7 @@ const CAPABILITIES: Record<ProviderId, ProviderCapabilities> = {
     quota: null,
     batchSize: 100,
     showsAlbum: true,
-    thresholds: { confident: 0.82, uncertain: 0.55 },
+    thresholds: { confident: 0.82, uncertain: 0.55, soloMargin: SPOTIFY_SOLO_MARGIN },
   },
   youtube: {
     // O implicit flow do Google não emite refresh token (research §1). A
@@ -87,8 +97,10 @@ const CAPABILITIES: Record<ProviderId, ProviderCapabilities> = {
     batchSize: 1,
     showsAlbum: false,
     // Mais exigente que o Spotify porque o erro caro no catálogo de vídeo não é
-    // "não achou", é "achou o cover" (research §7).
-    thresholds: { confident: 0.88, uncertain: 0.55 },
+    // "não achou", é "achou o cover" (research §7). A margem solo é maior pelo
+    // mesmo motivo: ali um título isolado devolve clipe, áudio, ao vivo e cover
+    // com títulos quase idênticos entre si (`003/research §5`).
+    thresholds: { confident: 0.88, uncertain: 0.55, soloMargin: YOUTUBE_SOLO_MARGIN },
   },
 };
 

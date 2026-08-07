@@ -52,23 +52,40 @@ export function consumptionToday(
 }
 
 /**
- * Custo nominal em unidades, **sem** margem (research §3):
+ * Custo nominal em unidades, **sem** margem (`002/research §3`,
+ * `003/research §8`):
  *
  * ```text
- * 100·N + ceil(5·N / 50)·1 + 1 + 50 + 50·S
+ * 100·N + 100·R + ceil(5·N / 50)·1 + 1 + 50 + 50·S
  * ```
  *
- * `N` são as linhas buscáveis e `S` os itens confirmados na revisão. O caminho
- * de fallback de busca não entra: embuti-lo no pior caso derrubaria o teto
- * prático de ~60 para ~39 linhas e barraria listas que na prática cabem.
+ * `N` são as linhas buscáveis, `S` os itens confirmados na revisão e `R` as
+ * linhas **elegíveis a retentativa**.
+ *
+ * `R` é novo na 003 e fecha um buraco de passagem que existia desde a 001: o
+ * fallback de busca era deliberadamente excluído da conta, e por isso o consumo
+ * real podia ultrapassar o que a estimativa prometeu — em uma lista de 50
+ * linhas, a margem de 10% cobria 7,5 buscas extras e a oitava já estourava.
+ * `R` não é um chute de fração: é a contagem exata das linhas cuja consulta
+ * alternativa difere de fato da primeira, conhecida antes de qualquer requisição
+ * porque depende só do texto (invariante O5).
+ *
+ * Omitir `retryReserve`, ou passá-lo como `0`, reproduz **exatamente** a fórmula
+ * anterior — é o que mantém os casos existentes de `quota.spec.ts` válidos.
  */
-export function nominalCost(model: QuotaModel, lineCount: number, selectedCount: number): number {
+export function nominalCost(
+  model: QuotaModel,
+  lineCount: number,
+  selectedCount: number,
+  retryReserve = 0,
+): number {
   const lines = Math.max(0, Math.trunc(lineCount));
   const selected = Math.max(0, Math.trunc(selectedCount));
+  const retries = Math.max(0, Math.trunc(retryReserve));
   const enrichCalls = Math.ceil((lines * CANDIDATES_PER_LINE) / ENRICH_BATCH_SIZE);
 
   return (
-    model.costs.search * lines +
+    model.costs.search * (lines + retries) +
     model.costs.enrich * enrichCalls +
     model.costs.listPlaylists +
     model.costs.createPlaylist +
@@ -81,8 +98,11 @@ export function costWithMargin(
   model: QuotaModel,
   lineCount: number,
   selectedCount: number,
+  retryReserve = 0,
 ): number {
-  return Math.ceil(nominalCost(model, lineCount, selectedCount) * (1 + model.safetyMargin));
+  return Math.ceil(
+    nominalCost(model, lineCount, selectedCount, retryReserve) * (1 + model.safetyMargin),
+  );
 }
 
 /**
@@ -90,21 +110,33 @@ export function costWithMargin(
  *
  * Usa a **mesma** medida do bloqueio, com margem. Se usasse o custo nominal, a
  * tela diria "cabem 66 linhas" e, ao reduzir para 66, o bloqueio apareceria de
- * novo — que é exatamente o laço que FR-029 existe para evitar.
+ * novo — que é exatamente o laço que `002/FR-029` existe para evitar.
+ *
+ * `retryRatio` é a fração de linhas elegíveis a retentativa **na lista atual**.
+ * A reserva encolhe junto com a lista, e ignorá-la aqui recriaria o mesmo laço
+ * por outra porta: a tela diria "cabem 40" e, ao reduzir para 40, a reserva
+ * proporcional voltaria a bloquear.
  *
  * O custo é monotônico em N, então a busca binária é exata.
  */
-export function maxLinesThatFit(model: QuotaModel, availableUnits: number): number {
+export function maxLinesThatFit(
+  model: QuotaModel,
+  availableUnits: number,
+  retryRatio = 0,
+): number {
+  const ratio = Math.min(1, Math.max(0, retryRatio));
+  const costOf = (n: number): number => costWithMargin(model, n, n, Math.ceil(n * ratio));
+
   if (availableUnits <= 0) return 0;
-  if (costWithMargin(model, 1, 1) > availableUnits) return 0;
+  if (costOf(1) > availableUnits) return 0;
 
   let low = 1;
   let high = Math.max(1, Math.ceil(availableUnits / Math.max(1, model.costs.search)));
-  while (costWithMargin(model, high, high) <= availableUnits) high *= 2;
+  while (costOf(high) <= availableUnits) high *= 2;
 
   while (low < high) {
     const mid = Math.ceil((low + high) / 2);
-    if (costWithMargin(model, mid, mid) <= availableUnits) low = mid;
+    if (costOf(mid) <= availableUnits) low = mid;
     else high = mid - 1;
   }
   return low;
@@ -117,6 +149,8 @@ export interface EstimateInput {
   selectedCount: number;
   record: DailyConsumption | null;
   now: number;
+  /** Linhas elegíveis a retentativa. Omitido = `0` (`003/research §8`). */
+  retryReserve?: number;
 }
 
 /**
@@ -128,18 +162,22 @@ export interface EstimateInput {
 export function estimateQuota(input: EstimateInput): QuotaEstimate {
   const { provider, model, lineCount, selectedCount, record, now } = input;
 
+  const lines = Math.max(0, Math.trunc(lineCount));
+  const retryReserve = Math.min(lines, Math.max(0, Math.trunc(input.retryReserve ?? 0)));
+
   const used = consumptionToday(record, now, model.resetTimeZone);
   const availableUnits = Math.max(0, model.dailyBudget - used);
-  const estimatedUnits = costWithMargin(model, lineCount, selectedCount);
+  const estimatedUnits = costWithMargin(model, lineCount, selectedCount, retryReserve);
 
   return {
     provider,
-    lineCount: Math.max(0, Math.trunc(lineCount)),
+    lineCount: lines,
     selectedCount: Math.max(0, Math.trunc(selectedCount)),
     estimatedUnits,
     availableUnits,
     blocked: estimatedUnits > availableUnits,
-    maxLinesThatFit: maxLinesThatFit(model, availableUnits),
+    maxLinesThatFit: maxLinesThatFit(model, availableUnits, lines === 0 ? 0 : retryReserve / lines),
+    retryReserve,
   };
 }
 

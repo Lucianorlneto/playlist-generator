@@ -12,8 +12,8 @@
 
 import type { ProviderId } from './providers';
 
-/** Versão do esquema serializado em disco (002/contracts/storage.md). */
-export const SCHEMA_VERSION = 2;
+/** Versão do esquema serializado em disco (003/contracts/storage.md). */
+export const SCHEMA_VERSION = 3;
 
 // ---------------------------------------------------------------------------
 // Credencial e sessão
@@ -65,6 +65,16 @@ export interface AuthRequest {
 
 export type ParseStatus = 'parsed' | 'unparsed';
 
+/**
+ * Como a linha foi escrita (`003/data-model §1`).
+ *
+ * `explicit`: houve corte por separador com os dois lados não vazios — o usuário
+ * **declarou** onde termina o título. `free`: todo o resto, inclusive o título
+ * isolado. A forma é o que decide como a linha é consultada e pontuada; sem ela,
+ * a mesma decisão viraria um `if` repetido em cada consumidor.
+ */
+export type LineShape = 'explicit' | 'free';
+
 export interface InputLine {
   /** Estável durante toda a sessão de trabalho; liga a linha às execuções. */
   id: string;
@@ -72,10 +82,15 @@ export interface InputLine {
   index: number;
   /** Texto original, sem alterações — é o que se copia na lista de falhas (FR-041). */
   raw: string;
+  /** `explicit`: lado esquerdo do corte. `free`: a linha inteira normalizável. */
   title: string;
+  /** Sempre `''` quando `shape === 'free'` — a forma livre não declara artista. */
   artist: string;
   /** Extraídos de `feat.` / `ft.` / `com`; reforçam a pontuação. */
   featuredArtists: string[];
+  /** Invariante L1: `free` ⟹ `artist === '' && featuredArtists.length === 0`. */
+  shape: LineShape;
+  /** Invariante L2: `unparsed` ⟺ `normalizeText(raw) === ''` (`003/FR-004`). */
   parseStatus: ParseStatus;
 }
 
@@ -132,6 +147,24 @@ export type MatchStatus =
 /** Os três status que a pontuação pode produzir (contracts/domain-api.md). */
 export type ScoredStatus = Extract<MatchStatus, 'confident' | 'uncertain' | 'not_found'>;
 
+/**
+ * Por que o item pede olhar humano (`003/FR-017`, research §10).
+ *
+ * O motivo é **dado**, calculado no domínio; a frase é da camada de i18n. É o
+ * que torna FR-017 verificável sem renderizar componente, e o que permite dizer
+ * "não tentei de novo" em vez de disfarçá-lo de "não encontrada" — a ação do
+ * usuário é diferente nos dois casos.
+ */
+export type AttentionReason =
+  /** Sem artista confirmado e sem candidata dominante (research §5). */
+  | 'no_artist_ambiguous'
+  /** Indício de que a candidata é outra versão da faixa (`002/FR-025`). */
+  | 'version_hint'
+  /** A busca não trouxe nada utilizável. */
+  | 'not_found'
+  /** Havia retentativa a fazer e a reserva de cota acabou (research §8). */
+  | 'retry_skipped_quota';
+
 export interface MatchItem {
   line: InputLine;
   status: MatchStatus;
@@ -147,6 +180,8 @@ export interface MatchItem {
   error: string | null;
   /** Estado anterior a `discarded`, para permitir a reinclusão. */
   previousStatus: MatchStatus | null;
+  /** Invariante M1: `null` quando o item não exige atenção (`confident` limpo). */
+  attentionReason: AttentionReason | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -249,6 +284,12 @@ export interface QuotaEstimate {
   blocked: boolean;
   /** Quantas linhas caberiam no saldo — alimenta "reduzir a lista" (FR-013). */
   maxLinesThatFit: number;
+  /**
+   * Linhas elegíveis a retentativa (`003/research §6`). É o teto de execução de
+   * `003/FR-010a`: invariante O4 — a execução nunca emite mais retentativas do
+   * que este número, e por isso SC-007 vale por construção, não por folga.
+   */
+  retryReserve: number;
 }
 
 export interface DailyConsumption {
@@ -289,6 +330,12 @@ export interface ServiceRun {
   /** `null` enquanto a execução não encerrou. Não-nulo congela tudo (R2). */
   outcome: RunOutcome | null;
   error: AppErrorInfo | null;
+  /**
+   * Retentativas já emitidas nesta execução. Nunca `> estimate.retryReserve`.
+   * Persistido: uma execução retomada após recarga não pode reiniciar o contador
+   * e gastar a reserva duas vezes (`003/data-model §5`).
+   */
+  retriesUsed: number;
 }
 
 export interface ExecutionQueue {
@@ -386,5 +433,6 @@ export function pendingItem(line: InputLine): MatchItem {
     duplicateOf: null,
     error: null,
     previousStatus: null,
+    attentionReason: null,
   };
 }

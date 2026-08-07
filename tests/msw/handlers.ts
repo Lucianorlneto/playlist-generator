@@ -6,12 +6,15 @@
  * `tests/setup.ts` roda com `onUnhandledRequest: 'error'` — qualquer requisição
  * para fora desta lista quebra o teste em vez de vazar (Princípio II).
  *
- * Os testes dirigem o mock por três alavancas:
+ * Os testes dirigem o mock por quatro alavancas:
  * - `setCatalog(...)` / `setYouTubeCatalog(...)`: o que a busca encontra;
  * - `setPlaylists(...)` / `setYouTubePlaylists(...)`: o que a listagem devolve
  *   (com paginação real nos dois provedores);
  * - `program(endpoint, ...respostas)`: fila de respostas anômalas (401, 403 com
- *   `reason`, 429, 5xx).
+ *   `reason`, 429, 5xx);
+ * - `programBelowFloor(endpoint, vezes)`: a busca responde `200` com candidatas
+ *   **irrelevantes** — resultado utilizável nenhum, mas lista não vazia. É o
+ *   gatilho de retentativa de `003/FR-009` que "zero resultados" não exercita.
  */
 
 import { http, HttpResponse, type HttpHandler } from 'msw';
@@ -109,6 +112,9 @@ const state = {
 
 const queues = new Map<EndpointKey, ProgrammedResponse[]>();
 
+/** Quantas respostas ainda saem só com ruído, por endpoint de busca. */
+const belowFloor = new Map<'search' | 'ytSearch', number>();
+
 export const requestLog: RecordedRequest[] = [];
 
 export function resetMockSpotify(): void {
@@ -129,7 +135,40 @@ export function resetMockSpotify(): void {
   state.ytPageSize = 50;
   state.ytAccessToken = 'ya29.token-1';
   queues.clear();
+  belowFloor.clear();
   requestLog.length = 0;
+}
+
+/**
+ * Faixas e vídeos deliberadamente irrelevantes: nenhum termo em comum com o
+ * catálogo de referência, e por isso pontuação bem abaixo do piso `uncertain`
+ * (0,55) contra qualquer linha real.
+ */
+const NOISE_TRACKS: MockTrack[] = [
+  { id: 'ruido_1', name: 'Zzyzx Prelúdio Nulo', artists: ['Ruído Alfa'], album: 'Nada', durationMs: 111_000 },
+  { id: 'ruido_2', name: 'Kkrrt Interlúdio Vazio', artists: ['Ruído Beta'], album: 'Nada', durationMs: 122_000 },
+];
+
+const NOISE_VIDEOS: MockVideo[] = [
+  { id: 'vid_ruido_1', title: 'Zzyzx Prelúdio Nulo', channel: 'Ruído Alfa', duration: 'PT1M51S' },
+  { id: 'vid_ruido_2', title: 'Kkrrt Interlúdio Vazio', channel: 'Ruído Beta', duration: 'PT2M2S' },
+];
+
+/**
+ * As próximas `times` buscas naquele endpoint devolvem **só ruído**: `200` com
+ * lista não vazia e nada acima do piso. Distingue-se de "zero resultados"
+ * justamente porque o gatilho de FR-009 é "nenhuma candidata utilizável", não
+ * "nenhuma candidata".
+ */
+export function programBelowFloor(endpoint: 'search' | 'ytSearch', times = 1): void {
+  belowFloor.set(endpoint, (belowFloor.get(endpoint) ?? 0) + Math.max(0, times));
+}
+
+function takeBelowFloor(endpoint: 'search' | 'ytSearch'): boolean {
+  const remaining = belowFloor.get(endpoint) ?? 0;
+  if (remaining <= 0) return false;
+  belowFloor.set(endpoint, remaining - 1);
+  return true;
 }
 
 export function setYouTubeCatalog(videos: MockVideo[]): void {
@@ -475,7 +514,9 @@ export const handlers: HttpHandler[] = [
     const url = new URL(request.url);
     const query = url.searchParams.get('q') ?? '';
     const limit = Number.parseInt(url.searchParams.get('limit') ?? '5', 10);
-    const items = matchCatalog(query, limit);
+    const items = takeBelowFloor('search')
+      ? NOISE_TRACKS.slice(0, limit).map(toTrackObject)
+      : matchCatalog(query, limit);
 
     return HttpResponse.json({
       tracks: { items, limit, offset: 0, total: items.length, next: null },
@@ -565,7 +606,10 @@ export const handlers: HttpHandler[] = [
     const url = new URL(request.url);
     const query = url.searchParams.get('q') ?? '';
     const maxResults = Number.parseInt(url.searchParams.get('maxResults') ?? '5', 10);
-    const items = matchVideos(query, maxResults).map((video) => ({
+    const found = takeBelowFloor('ytSearch')
+      ? NOISE_VIDEOS.slice(0, maxResults)
+      : matchVideos(query, maxResults);
+    const items = found.map((video) => ({
       id: { kind: 'youtube#video', videoId: video.id },
       snippet: {
         // A API devolve o título com entidades HTML — decodificá-lo é obrigação
@@ -592,7 +636,11 @@ export const handlers: HttpHandler[] = [
     }
 
     const items = ids
-      .map((id) => state.ytCatalog.find((video) => video.id === id))
+      .map(
+        (id) =>
+          state.ytCatalog.find((video) => video.id === id) ??
+          NOISE_VIDEOS.find((video) => video.id === id),
+      )
       .filter((video): video is MockVideo => video !== undefined)
       .map((video) => ({
         id: video.id,

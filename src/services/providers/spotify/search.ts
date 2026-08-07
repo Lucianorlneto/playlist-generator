@@ -1,9 +1,18 @@
 /**
- * Busca no catálogo do Spotify (001/contrato §6, research §5).
+ * Busca no catálogo do Spotify (`001/contrato §6`, research §5,
+ * `003/contracts/search-queries.md §1`).
  *
- * Busca **por campos** (`track:"…" artist:"…"`). Zero resultados dispara **um**
- * fallback de texto livre — o suficiente para recuperar grafia de artista
- * divergente sem dobrar o custo do caminho feliz.
+ * A consulta depende da **forma da linha**:
+ *
+ * - `explicit` → por campos (`track:"…" artist:"…"`), que é o que o usuário
+ *   ganha ao declarar onde termina o título;
+ * - `free` → texto livre com a linha inteira, porque não há campo a preencher.
+ *
+ * A segunda tentativa deixou de ser um fallback interno e escondido. Ela agora é
+ * **orquestrada pelo runner** (`003/FR-009`): o adaptador só declara qual seria a
+ * consulta alternativa, e quem decide emiti-la é quem também conta o orçamento.
+ * O fallback antigo gastava requisição sem aparecer em lugar nenhum da
+ * estimativa — era o buraco de passagem que `003/research §8` documenta.
  *
  * `limit=5` alimenta diretamente as cinco candidatas de FR-023, sem requisição
  * extra.
@@ -52,14 +61,29 @@ export function toCandidate(track: SpotifyTrackObject): TrackCandidateRaw {
   };
 }
 
-function fieldedQuery(line: InputLine): string {
+/** `track:"…" artist:"…"` — só faz sentido quando a linha declarou os campos. */
+export function fieldedQuery(line: InputLine): string {
   const title = line.title.replace(/"/gu, ' ').trim();
   const artist = line.artist.replace(/"/gu, ' ').trim();
   return artist === '' ? `track:"${title}"` : `track:"${title}" artist:"${artist}"`;
 }
 
-function freeTextQuery(line: InputLine): string {
-  return `${line.title} ${line.artist}`.trim();
+/** Texto livre com o que a linha tem: a linha inteira na forma livre. */
+export function freeTextQuery(line: InputLine): string {
+  return line.shape === 'free' ? line.title.trim() : `${line.title} ${line.artist}`.trim();
+}
+
+/** Consulta primária desta linha, decidida pela forma (contrato §1). */
+export function primaryQuery(line: InputLine): string {
+  return line.shape === 'explicit' ? fieldedQuery(line) : freeTextQuery(line);
+}
+
+/**
+ * Consulta alternativa: **a linha inteira**, como o usuário a escreveu. É o que
+ * recupera grafia de artista divergente, que a consulta por campos rejeita.
+ */
+export function retryQuery(line: InputLine): string {
+  return line.raw.trim();
 }
 
 async function runSearch(query: string, signal?: AbortSignal): Promise<TrackCandidateRaw[]> {
@@ -78,14 +102,22 @@ async function runSearch(query: string, signal?: AbortSignal): Promise<TrackCand
   return (response.tracks?.items ?? []).map(toCandidate);
 }
 
+/** Consulta **primária** da linha. Uma requisição, nunca duas (invariante O4). */
 export async function searchTrack(
   line: InputLine,
   signal?: AbortSignal,
 ): Promise<TrackCandidateRaw[]> {
-  const byField = await runSearch(fieldedQuery(line), signal);
-  if (byField.length > 0) return byField;
+  const query = primaryQuery(line);
+  if (query === '' || query === 'track:""') return [];
+  return runSearch(query, signal);
+}
 
-  const free = freeTextQuery(line);
-  if (free === '') return [];
-  return runSearch(free, signal);
+/** Consulta **alternativa**, emitida só quando o runner decide (`003/FR-009`). */
+export async function retryTrack(
+  line: InputLine,
+  signal?: AbortSignal,
+): Promise<TrackCandidateRaw[]> {
+  const query = retryQuery(line);
+  if (query === '') return [];
+  return runSearch(query, signal);
 }

@@ -22,6 +22,10 @@ export interface RunMatchOptions {
   signal: AbortSignal;
   /** Chamado a cada linha concluída, com a contagem acumulada. */
   onProgress?: (done: number, total: number) => void;
+  /** Teto de retentativas desta execução (`003/FR-010a`, invariante O4). */
+  retryBudget?: number;
+  /** Chamado quando uma retentativa é emitida — persiste `retriesUsed`. */
+  onRetry?: (total: number) => void;
 }
 
 /** Resolve uma única linha — usada na re-busca por linha da revisão. */
@@ -44,11 +48,13 @@ export async function runMatching(
   lines: InputLine[],
   options: RunMatchOptions,
 ): Promise<MatchItem[]> {
-  const { signal, onProgress } = options;
+  const { signal, onProgress, retryBudget, onRetry } = options;
 
   const items = await providerFor(provider).search(lines, {
     signal,
     ...(onProgress === undefined ? {} : { onProgress }),
+    ...(retryBudget === undefined ? {} : { retryBudget }),
+    ...(onRetry === undefined ? {} : { onRetry }),
   });
 
   return markDuplicates(items);

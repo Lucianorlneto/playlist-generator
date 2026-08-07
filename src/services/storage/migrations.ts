@@ -13,8 +13,10 @@
  * desfecho possível.
  */
 
-import type { ProviderId } from '@/domain/providers';
+import { parseLine } from '@/domain/parser';
+import { PROVIDER_ORDER, type ProviderId } from '@/domain/providers';
 import type {
+  AttentionReason,
   CreationProgress,
   ExecutionQueue,
   InputLine,
@@ -24,8 +26,14 @@ import type {
   WizardStep,
   WorkDraft,
 } from '@/domain/types';
+import { retryReserveOf } from '@/services/providers/retryPlan';
 
-import { validateCreation as validateV2Creation, validateItem, saveDraft } from './draftRepo';
+import {
+  validateCreation as validateV2Creation,
+  validateDraftShape,
+  validateItem,
+  saveDraftAs,
+} from './draftRepo';
 import {
   asBoolean,
   asFiniteNumber,
@@ -224,6 +232,7 @@ function buildRun(
     result: null,
     outcome: null,
     error: null,
+    retriesUsed: 0,
   };
 }
 
@@ -288,7 +297,9 @@ function migrateDraft(): { migrated: boolean; discarded: boolean } {
     queue,
   };
 
-  if (saveDraft(draft) === 'failed') return { migrated: false, discarded: false };
+  // Carimbado como **2**, não como a versão corrente: quem termina a conversão
+  // é `migrateToV3`, logo em seguida no bootstrap.
+  if (saveDraftAs(draft, 2) === 'failed') return { migrated: false, discarded: false };
 
   discard('local', LEGACY_KEYS.draft);
   return { migrated: true, discarded: false };
@@ -328,4 +339,143 @@ export function migrateToV2(): MigrationReport {
     draft: draft.migrated,
     draftDiscarded: draft.discarded,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Migração v2 → v3 (003/contracts/storage.md §3)
+// ---------------------------------------------------------------------------
+
+/** Só o rascunho carrega `schemaVersion`; nenhuma outra chave muda na v3. */
+const V2_SCHEMA_VERSION = 2;
+const V3_SCHEMA_VERSION = 3;
+
+export interface V3MigrationReport {
+  /** Havia rascunho v2 a converter. */
+  ran: boolean;
+  migrated: boolean;
+  /** Conteúdo ilegível ou de versão desconhecida: descartado com aviso. */
+  discarded: boolean;
+}
+
+const V3_EMPTY: V3MigrationReport = { ran: false, migrated: false, discarded: false };
+
+/**
+ * Motivo de atenção derivado do `status` **já gravado** — nunca inventado.
+ *
+ * A tabela é a de `003/data-model §6`. O rascunho v2 não sabe por que um item
+ * ficou incerto, mas sabe se havia indício de versão na candidata escolhida, e
+ * essa é a única distinção que o dado antigo sustenta honestamente.
+ */
+function reasonFromStatus(item: MatchItem): AttentionReason | null {
+  if (item.status === 'not_found') return 'not_found';
+  if (item.status !== 'uncertain') return null;
+
+  const selected = item.candidates.find((candidate) => candidate.uri === item.selectedUri);
+  const hints = selected?.versionHints ?? [];
+  return hints.length > 0 ? 'version_hint' : 'no_artist_ambiguous';
+}
+
+/**
+ * Reanálise da linha sob as regras novas.
+ *
+ * Só a linha que estava **inválida** é reanalisada: uma linha `parsed` já tem
+ * título e artista corretos, e reprocessá-la poderia mexer em um recorte que o
+ * usuário já viu e aceitou. A restrição também é o que torna a invariante W5
+ * verdadeira por construção — a migração só pode reduzir o número de inválidas.
+ */
+function upgradeLine(line: InputLine): InputLine {
+  if (line.parseStatus === 'parsed') return line;
+  return parseLine(line.raw, line.index, line.id);
+}
+
+/**
+ * O salto semântico da v3, isolado do transporte.
+ *
+ * Puro de propósito: recebe e devolve `WorkDraft`, sem tocar em armazenamento.
+ * É o que torna a invariante W4 (idempotência) e a W5 (a migração só reduz
+ * linhas inválidas) verificáveis sem `localStorage`.
+ */
+export function upgradeDraftToV3(draft: WorkDraft): WorkDraft {
+  const lines = draft.lines.map(upgradeLine);
+  const byId = new Map(lines.map((line) => [line.id, line]));
+
+  const runs = {} as Record<ProviderId, ServiceRun>;
+  for (const provider of PROVIDER_ORDER) {
+    const run = draft.queue.runs[provider];
+    if (run === undefined) continue;
+
+    // A execução concluída é imutável (`002/SC-018`): o relato de quem terminou
+    // não pode mudar porque o esquema mudou.
+    if (run.outcome !== null) {
+      runs[provider] = { ...run, retriesUsed: run.retriesUsed };
+      continue;
+    }
+
+    const runLines = run.lineIds
+      .map((id) => byId.get(id))
+      .filter((line): line is InputLine => line !== undefined);
+
+    runs[provider] = {
+      ...run,
+      items: run.items.map((item) => ({
+        ...item,
+        line: byId.get(item.line.id) ?? upgradeLine(item.line),
+        attentionReason: item.attentionReason ?? reasonFromStatus(item),
+      })),
+      // Zerado: a execução retomada não sabe quantas retentativas gastou. O
+      // consumo real continua no Registro de Consumo Diário, que a migração não
+      // toca — o risco é superestimar o que ainda cabe, nunca estourar sem aviso
+      // (`003/data-model §6`).
+      retriesUsed: 0,
+      estimate:
+        run.estimate === null
+          ? null
+          : { ...run.estimate, retryReserve: retryReserveOf(provider, runLines) },
+    };
+  }
+
+  return {
+    ...draft,
+    schemaVersion: V3_SCHEMA_VERSION,
+    lines,
+    queue: { ...draft.queue, runs },
+  };
+}
+
+/**
+ * Converte o rascunho v2 em v3 (`003/FR-001`, research §11).
+ *
+ * Idempotente (invariante W4): um rascunho já v3 é deixado exatamente como está.
+ * **Nunca lança**: conteúdo ilegível ou de versão desconhecida é descartado com
+ * aviso, jamais lido às cegas.
+ *
+ * Roda depois de `migrateToV2`, no mesmo ponto de bootstrap — a cadeia
+ * v1→v2→v3 é sequencial.
+ */
+export function migrateToV3(): V3MigrationReport {
+  const raw = peekRaw('local', STORAGE_KEYS.draft);
+  if (raw === null) return V3_EMPTY;
+
+  const version = raw['schemaVersion'];
+  if (version === V3_SCHEMA_VERSION) return V3_EMPTY;
+
+  if (version !== V2_SCHEMA_VERSION) {
+    discard('local', STORAGE_KEYS.draft);
+    emitStorageWarning({ key: STORAGE_KEYS.draft, reason: 'unknown_version' });
+    return { ran: true, migrated: false, discarded: true };
+  }
+
+  const draft = validateDraftShape(raw);
+  if (draft === null) {
+    discard('local', STORAGE_KEYS.draft);
+    emitStorageWarning({ key: STORAGE_KEYS.draft, reason: 'invalid_shape' });
+    return { ran: true, migrated: false, discarded: true };
+  }
+
+  // Gravação falhando **preserva** o original: perder o trabalho do usuário
+  // porque o armazenamento encheu no meio da conversão seria o pior desfecho.
+  const outcome = saveDraftAs(upgradeDraftToV3(draft), V3_SCHEMA_VERSION);
+  if (outcome === 'failed') return { ran: true, migrated: false, discarded: false };
+
+  return { ran: true, migrated: true, discarded: false };
 }

@@ -7,10 +7,17 @@
  * e Jaccard perde quando há erro de digitação dentro de uma palavra.
  */
 
-import { normalizeText, tokenize } from '@/domain/normalize';
-import type { InputLine, ScoredStatus, TrackCandidateRaw, VersionHint } from '@/domain/types';
+import { coverage, normalizeText, tokenSet, tokenize } from '@/domain/normalize';
+import type {
+  AttentionReason,
+  InputLine,
+  ScoredStatus,
+  TrackCandidateRaw,
+  VersionHint,
+} from '@/domain/types';
 
 import {
+  ARTIST_CLAIM_RATIO,
   ARTIST_WEIGHT,
   CHANNEL_TOPIC_BONUS,
   CHANNEL_VEVO_BONUS,
@@ -89,6 +96,98 @@ export function scoreCandidate(line: InputLine, track: TrackCandidateRaw): numbe
   return Math.min(1, Math.max(0, score));
 }
 
+// ---------------------------------------------------------------------------
+// Via da forma livre — cobertura combinada (003/research §3 e §4)
+// ---------------------------------------------------------------------------
+
+/** Termos da linha buscável: a linha inteira na forma livre, título + artista na explícita. */
+function lineTokens(line: InputLine): string[] {
+  return tokenSet(line.shape === 'free' ? line.title : `${line.title} ${line.artist}`);
+}
+
+/**
+ * Comparação combinada por **cobertura assimétrica**, para a linha sem campos
+ * declarados (`003/FR-013`, research §3).
+ *
+ * ```text
+ * cL = |L ∩ (T ∪ A)| / |L|   quanto da linha a candidata explica
+ * cT = |T ∩ L|       / |T|   quanto do título a linha reivindica
+ *      2·cL·cT / (cL + cT)   média harmônica
+ * ```
+ *
+ * As duas assimetrias são o ponto. `cL` não tem os termos do artista que a linha
+ * não escreveu, então a ausência deles **não pesa contra ela** — que é FR-013
+ * ao pé da letra. `cT` impede que `amor` case 1,0 com `Amor Perfeito`: a linha
+ * não reivindicou metade do título.
+ *
+ * A média **harmônica**, e não a aritmética, porque ela zera quando qualquer
+ * uma das coberturas zera. É o que descarta a linha que é só o nome do artista
+ * (`cpm 22`: explica-se inteira, mas não reivindica nada do título) sem precisar
+ * de regra especial para esse caso.
+ */
+export function scoreCombined(line: InputLine, track: TrackCandidateRaw): number {
+  const lineSet = lineTokens(line);
+  const titleSet = tokenSet(track.title);
+  const artistSet = tokenSet(track.artists.join(' '));
+
+  if (lineSet.length === 0 || titleSet.length === 0) return 0;
+
+  const lineCoverage = coverage(lineSet, [...titleSet, ...artistSet]);
+  const titleCoverage = coverage(titleSet, lineSet);
+
+  if (lineCoverage === 0 || titleCoverage === 0) return 0;
+  return (2 * lineCoverage * titleCoverage) / (lineCoverage + titleCoverage);
+}
+
+/**
+ * A linha reivindicou o artista **desta** candidata? (`003/research §4`)
+ *
+ * Decidido a partir dos dados, e não declarado pelo usuário — que é a única
+ * forma possível: sem separador não há como saber de antemão se o artista está
+ * na linha. Quando a melhor candidata tem o artista reivindicado, a linha é
+ * tratada como se o tivesse declarado, e a regra de margem não se aplica.
+ *
+ * É o que distingue os dois exemplos do pedido sem separador algum:
+ * `nao sei viver sem ter voce cpm 22` confirma `CPM 22` e ganha o tratamento de
+ * uma linha explícita; `Não sei viver sem ter voce` não confirma nada e entra na
+ * regra de margem.
+ */
+export function artistClaimed(line: InputLine, track: Pick<TrackCandidateRaw, 'artists'>): boolean {
+  const artistSet = tokenSet(track.artists.join(' '));
+  if (artistSet.length === 0) return false;
+  return coverage(artistSet, lineTokens(line)) >= ARTIST_CLAIM_RATIO;
+}
+
+/**
+ * Pontuação final da candidata, escolhida pela **forma** da linha.
+ *
+ * - `explicit` mantém `0,6·título + 0,4·artista`, byte a byte como na 001. É o
+ *   que SC-011 exige: zero mudanças de classe no formato explícito.
+ * - `free` usa a cobertura combinada de §3.
+ *
+ * **Reparo de falso corte** (`003/research §7`): uma linha `explicit` cuja
+ * pontuação fica **abaixo do piso** é reavaliada pela comparação combinada sobre
+ * a linha inteira, e prevalece a maior das duas. `Marília Mendonça - Ao Vivo` é
+ * cortada em título `Marília Mendonça` e artista `Ao Vivo`; pela via declarada a
+ * candidata certa pontua mal, porque o "título" comparado é o nome da artista.
+ *
+ * O reparo é restrito à faixa abaixo do piso de propósito: aplicá-lo sempre
+ * mudaria a pontuação de linhas hoje corretamente classificadas, e a exigência é
+ * zero mudanças de classe. Restringindo-o, só linhas hoje **perdidas** podem
+ * mudar de classe — e para melhor. Custo em rede: zero.
+ */
+export function scoreForShape(
+  line: InputLine,
+  track: TrackCandidateRaw,
+  uncertainThreshold: number,
+): number {
+  if (line.shape === 'free') return scoreCombined(line, track);
+
+  const declared = scoreCandidate(line, track);
+  if (declared >= uncertainThreshold) return declared;
+  return Math.max(declared, scoreCombined(line, track));
+}
+
 /**
  * Bônus de canal canônico (research §7).
  *
@@ -126,6 +225,113 @@ export function classify(score: number): ScoredStatus {
     confident: SPOTIFY_CONFIDENT_THRESHOLD,
     uncertain: UNCERTAIN_THRESHOLD,
   });
+}
+
+// ---------------------------------------------------------------------------
+// Classificação da linha inteira, com margem (003/contracts/domain-api.md §3)
+// ---------------------------------------------------------------------------
+
+export interface SoloThresholds {
+  confident: number;
+  uncertain: number;
+  soloMargin: number;
+}
+
+export interface LineClassification {
+  status: ScoredStatus;
+  attentionReason: AttentionReason | null;
+}
+
+/**
+ * Precedência fixa de `003/data-model §3` (invariante M3).
+ *
+ * Sem ordem declarada, o motivo exibido dependeria da ordem de avaliação e o
+ * teste seria frágil. A ordem também não é arbitrária: ela vai da causa que o
+ * usuário menos consegue adivinhar para a que ele mais consegue.
+ */
+const REASON_PRECEDENCE: readonly AttentionReason[] = [
+  'retry_skipped_quota',
+  'not_found',
+  'version_hint',
+  'no_artist_ambiguous',
+];
+
+function highestPrecedence(reasons: readonly AttentionReason[]): AttentionReason | null {
+  return REASON_PRECEDENCE.find((reason) => reasons.includes(reason)) ?? null;
+}
+
+/**
+ * Classifica uma linha **inteira**, a partir das candidatas já ordenadas.
+ *
+ * Substitui `classifyFor` como ponto de entrada do runner por um motivo
+ * estrutural: a regra de margem exige conhecer a **segunda** candidata, e uma
+ * função de pontuação isolada só vê uma por vez.
+ *
+ * As seis regras do contrato, na ordem em que o código as aplica:
+ *
+ * 1. sem candidata → `not_found`;
+ * 2. `hasDeclaredArtist` = explícita com artista **ou** livre cujo artista a
+ *    melhor candidata teve reivindicado (§4);
+ * 3. com artista declarado → comportamento idêntico ao de hoje;
+ * 4. sem artista declarado → `confident` exige limiar **e** margem; candidata
+ *    única vira `uncertain` (FR-014b), porque não há segunda contra a qual medir;
+ * 5. **nos dois ramos**, qualquer indício de versão rebaixa `confident` para
+ *    `uncertain` (invariante K2, FR-015). Um indício em linha sem artista
+ *    declarado é, se algo, mais grave: não há artista para desempatar entre a
+ *    gravação oficial e o cover;
+ * 6. o motivo de atenção segue a precedência M3.
+ *
+ * `retryPending` diz que havia retentativa a fazer e a reserva de cota acabou.
+ * O `status` continua sendo `not_found`, mas a **causa** muda o que o usuário
+ * deve fazer: a linha pode estar certa e o app é que desistiu (research §10).
+ */
+export function classifyLine(
+  line: InputLine,
+  candidates: readonly { score: number; versionHints?: VersionHint[]; artists: string[] }[],
+  thresholds: SoloThresholds,
+  retryPending = false,
+): LineClassification {
+  const best = candidates[0];
+
+  if (best === undefined) {
+    return {
+      status: 'not_found',
+      attentionReason: retryPending ? 'retry_skipped_quota' : 'not_found',
+    };
+  }
+
+  const hints = best.versionHints ?? [];
+  const hasDeclaredArtist =
+    line.shape === 'explicit'
+      ? line.artist !== ''
+      : artistClaimed(line, best);
+
+  const meetsThreshold = best.score >= thresholds.confident;
+  const second = candidates[1];
+
+  // Regra 4: sem artista declarado, passar o limiar não basta — a melhor
+  // precisa se destacar da segunda. Candidata única não tem de quê se destacar.
+  const meetsMargin =
+    hasDeclaredArtist ||
+    (second !== undefined && best.score - second.score >= thresholds.soloMargin);
+
+  let status: ScoredStatus;
+  if (meetsThreshold && meetsMargin) status = 'confident';
+  else if (best.score >= thresholds.uncertain) status = 'uncertain';
+  else status = 'not_found';
+
+  // Regra 5: o indício de versão rebaixa nos **dois** ramos.
+  if (status === 'confident' && hints.length > 0) status = 'uncertain';
+
+  if (status === 'confident') return { status, attentionReason: null };
+
+  const reasons: AttentionReason[] = [];
+  if (retryPending) reasons.push('retry_skipped_quota');
+  if (status === 'not_found') reasons.push('not_found');
+  if (hints.length > 0) reasons.push('version_hint');
+  if (!hasDeclaredArtist) reasons.push('no_artist_ambiguous');
+
+  return { status, attentionReason: highestPrecedence(reasons) };
 }
 
 export {

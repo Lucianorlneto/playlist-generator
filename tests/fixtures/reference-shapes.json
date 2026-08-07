@@ -1,0 +1,705 @@
+{
+  "description": "Lista de referência das três formas de escrita (research §13). As MESMAS 50 faixas de reference-50.json, cada uma escrita como `título - artista` (explicit), `título artista` sem separador (free), a mesma forma livre sem acento e em caixa baixa (freePlain), e só o título (titleOnly). `expectedId` é o id da candidata correta que o teste monta — as concorrentes (karaokê, tributo, outra faixa do mesmo artista) são geradas pelo teste, como em scoring-reference.spec.ts. Alimenta SC-002, SC-003, SC-005 e SC-006.",
+  "entries": [
+    {
+      "explicit": "Bohemian Rhapsody - Queen",
+      "free": "Bohemian Rhapsody Queen",
+      "freePlain": "bohemian rhapsody queen",
+      "titleOnly": "Bohemian Rhapsody",
+      "expectedId": "correta",
+      "title": "Bohemian Rhapsody",
+      "artists": [
+        "Queen"
+      ],
+      "album": "A Night at the Opera",
+      "durationMs": 354320,
+      "otherTitle": "Under Pressure"
+    },
+    {
+      "explicit": "Imagine - John Lennon",
+      "free": "Imagine John Lennon",
+      "freePlain": "imagine john lennon",
+      "titleOnly": "Imagine",
+      "expectedId": "correta",
+      "title": "Imagine",
+      "artists": [
+        "John Lennon"
+      ],
+      "album": "Imagine",
+      "durationMs": 187000,
+      "otherTitle": "Woman"
+    },
+    {
+      "explicit": "Smells Like Teen Spirit - Nirvana",
+      "free": "Smells Like Teen Spirit Nirvana",
+      "freePlain": "smells like teen spirit nirvana",
+      "titleOnly": "Smells Like Teen Spirit",
+      "expectedId": "correta",
+      "title": "Smells Like Teen Spirit",
+      "artists": [
+        "Nirvana"
+      ],
+      "album": "Nevermind",
+      "durationMs": 301920,
+      "otherTitle": "Come As You Are"
+    },
+    {
+      "explicit": "Hey Jude - The Beatles",
+      "free": "Hey Jude The Beatles",
+      "freePlain": "hey jude the beatles",
+      "titleOnly": "Hey Jude",
+      "expectedId": "correta",
+      "title": "Hey Jude",
+      "artists": [
+        "The Beatles"
+      ],
+      "album": "1",
+      "durationMs": 431333,
+      "otherTitle": "Let It Be"
+    },
+    {
+      "explicit": "Billie Jean - Michael Jackson",
+      "free": "Billie Jean Michael Jackson",
+      "freePlain": "billie jean michael jackson",
+      "titleOnly": "Billie Jean",
+      "expectedId": "correta",
+      "title": "Billie Jean",
+      "artists": [
+        "Michael Jackson"
+      ],
+      "album": "Thriller",
+      "durationMs": 294226,
+      "otherTitle": "Beat It"
+    },
+    {
+      "explicit": "Like a Rolling Stone - Bob Dylan",
+      "free": "Like a Rolling Stone Bob Dylan",
+      "freePlain": "like a rolling stone bob dylan",
+      "titleOnly": "Like a Rolling Stone",
+      "expectedId": "correta",
+      "title": "Like a Rolling Stone",
+      "artists": [
+        "Bob Dylan"
+      ],
+      "album": "Highway 61 Revisited",
+      "durationMs": 369600,
+      "otherTitle": "Blowin' in the Wind"
+    },
+    {
+      "explicit": "Hotel California - Eagles",
+      "free": "Hotel California Eagles",
+      "freePlain": "hotel california eagles",
+      "titleOnly": "Hotel California",
+      "expectedId": "correta",
+      "title": "Hotel California",
+      "artists": [
+        "Eagles"
+      ],
+      "album": "Hotel California",
+      "durationMs": 391376,
+      "otherTitle": "Take It Easy"
+    },
+    {
+      "explicit": "Stairway to Heaven - Led Zeppelin",
+      "free": "Stairway to Heaven Led Zeppelin",
+      "freePlain": "stairway to heaven led zeppelin",
+      "titleOnly": "Stairway to Heaven",
+      "expectedId": "correta",
+      "title": "Stairway to Heaven",
+      "artists": [
+        "Led Zeppelin"
+      ],
+      "album": "Led Zeppelin IV",
+      "durationMs": 482830,
+      "otherTitle": "Whole Lotta Love"
+    },
+    {
+      "explicit": "Sweet Child O' Mine - Guns N' Roses",
+      "free": "Sweet Child O' Mine Guns N' Roses",
+      "freePlain": "sweet child o' mine guns n' roses",
+      "titleOnly": "Sweet Child O' Mine",
+      "expectedId": "correta",
+      "title": "Sweet Child O' Mine",
+      "artists": [
+        "Guns N' Roses"
+      ],
+      "album": "Appetite for Destruction",
+      "durationMs": 356000,
+      "otherTitle": "Welcome to the Jungle"
+    },
+    {
+      "explicit": "Wonderwall - Oasis",
+      "free": "Wonderwall Oasis",
+      "freePlain": "wonderwall oasis",
+      "titleOnly": "Wonderwall",
+      "expectedId": "correta",
+      "title": "Wonderwall",
+      "artists": [
+        "Oasis"
+      ],
+      "album": "(What's the Story) Morning Glory?",
+      "durationMs": 258906,
+      "otherTitle": "Don't Look Back in Anger"
+    },
+    {
+      "explicit": "Losing My Religion - R.E.M.",
+      "free": "Losing My Religion R.E.M.",
+      "freePlain": "losing my religion r.e.m.",
+      "titleOnly": "Losing My Religion",
+      "expectedId": "correta",
+      "title": "Losing My Religion",
+      "artists": [
+        "R.E.M."
+      ],
+      "album": "Out of Time",
+      "durationMs": 268000,
+      "otherTitle": "Everybody Hurts"
+    },
+    {
+      "explicit": "Creep - Radiohead",
+      "free": "Creep Radiohead",
+      "freePlain": "creep radiohead",
+      "titleOnly": "Creep",
+      "expectedId": "correta",
+      "title": "Creep",
+      "artists": [
+        "Radiohead"
+      ],
+      "album": "Pablo Honey",
+      "durationMs": 238640,
+      "otherTitle": "Karma Police"
+    },
+    {
+      "explicit": "Rolling in the Deep - Adele",
+      "free": "Rolling in the Deep Adele",
+      "freePlain": "rolling in the deep adele",
+      "titleOnly": "Rolling in the Deep",
+      "expectedId": "correta",
+      "title": "Rolling in the Deep",
+      "artists": [
+        "Adele"
+      ],
+      "album": "21",
+      "durationMs": 228293,
+      "otherTitle": "Set Fire to the Rain"
+    },
+    {
+      "explicit": "Shape of You - Ed Sheeran",
+      "free": "Shape of You Ed Sheeran",
+      "freePlain": "shape of you ed sheeran",
+      "titleOnly": "Shape of You",
+      "expectedId": "correta",
+      "title": "Shape of You",
+      "artists": [
+        "Ed Sheeran"
+      ],
+      "album": "÷",
+      "durationMs": 233712,
+      "otherTitle": "Perfect"
+    },
+    {
+      "explicit": "Blinding Lights - The Weeknd",
+      "free": "Blinding Lights The Weeknd",
+      "freePlain": "blinding lights the weeknd",
+      "titleOnly": "Blinding Lights",
+      "expectedId": "correta",
+      "title": "Blinding Lights",
+      "artists": [
+        "The Weeknd"
+      ],
+      "album": "After Hours",
+      "durationMs": 200040,
+      "otherTitle": "Save Your Tears"
+    },
+    {
+      "explicit": "Bad Guy - Billie Eilish",
+      "free": "bad guy Billie Eilish",
+      "freePlain": "bad guy billie eilish",
+      "titleOnly": "bad guy",
+      "expectedId": "correta",
+      "title": "bad guy",
+      "artists": [
+        "Billie Eilish"
+      ],
+      "album": "WHEN WE ALL FALL ASLEEP, WHERE DO WE GO?",
+      "durationMs": 194087,
+      "otherTitle": "bury a friend"
+    },
+    {
+      "explicit": "Someone Like You - Adele",
+      "free": "Someone Like You Adele",
+      "freePlain": "someone like you adele",
+      "titleOnly": "Someone Like You",
+      "expectedId": "correta",
+      "title": "Someone Like You",
+      "artists": [
+        "Adele"
+      ],
+      "album": "21",
+      "durationMs": 285000,
+      "otherTitle": "Hello"
+    },
+    {
+      "explicit": "Viva La Vida - Coldplay",
+      "free": "Viva La Vida Coldplay",
+      "freePlain": "viva la vida coldplay",
+      "titleOnly": "Viva La Vida",
+      "expectedId": "correta",
+      "title": "Viva La Vida",
+      "artists": [
+        "Coldplay"
+      ],
+      "album": "Viva la Vida or Death and All His Friends",
+      "durationMs": 242373,
+      "otherTitle": "The Scientist"
+    },
+    {
+      "explicit": "Yellow - Coldplay",
+      "free": "Yellow Coldplay",
+      "freePlain": "yellow coldplay",
+      "titleOnly": "Yellow",
+      "expectedId": "correta",
+      "title": "Yellow",
+      "artists": [
+        "Coldplay"
+      ],
+      "album": "Parachutes",
+      "durationMs": 266773,
+      "otherTitle": "Fix You"
+    },
+    {
+      "explicit": "Take On Me - a-ha",
+      "free": "Take On Me a-ha",
+      "freePlain": "take on me a-ha",
+      "titleOnly": "Take On Me",
+      "expectedId": "correta",
+      "title": "Take On Me",
+      "artists": [
+        "a-ha"
+      ],
+      "album": "Hunting High and Low",
+      "durationMs": 225280,
+      "otherTitle": "The Sun Always Shines on T.V."
+    },
+    {
+      "explicit": "Africa - Toto",
+      "free": "Africa Toto",
+      "freePlain": "africa toto",
+      "titleOnly": "Africa",
+      "expectedId": "correta",
+      "title": "Africa",
+      "artists": [
+        "Toto"
+      ],
+      "album": "Toto IV",
+      "durationMs": 295893,
+      "otherTitle": "Hold the Line"
+    },
+    {
+      "explicit": "Every Breath You Take - The Police",
+      "free": "Every Breath You Take The Police",
+      "freePlain": "every breath you take the police",
+      "titleOnly": "Every Breath You Take",
+      "expectedId": "correta",
+      "title": "Every Breath You Take",
+      "artists": [
+        "The Police"
+      ],
+      "album": "Synchronicity",
+      "durationMs": 253946,
+      "otherTitle": "Roxanne"
+    },
+    {
+      "explicit": "Purple Rain - Prince",
+      "free": "Purple Rain Prince",
+      "freePlain": "purple rain prince",
+      "titleOnly": "Purple Rain",
+      "expectedId": "correta",
+      "title": "Purple Rain",
+      "artists": [
+        "Prince"
+      ],
+      "album": "Purple Rain",
+      "durationMs": 520920,
+      "otherTitle": "When Doves Cry"
+    },
+    {
+      "explicit": "What's Going On - Marvin Gaye",
+      "free": "What's Going On Marvin Gaye",
+      "freePlain": "what's going on marvin gaye",
+      "titleOnly": "What's Going On",
+      "expectedId": "correta",
+      "title": "What's Going On",
+      "artists": [
+        "Marvin Gaye"
+      ],
+      "album": "What's Going On",
+      "durationMs": 233000,
+      "otherTitle": "Let's Get It On"
+    },
+    {
+      "explicit": "Respect - Aretha Franklin",
+      "free": "Respect Aretha Franklin",
+      "freePlain": "respect aretha franklin",
+      "titleOnly": "Respect",
+      "expectedId": "correta",
+      "title": "Respect",
+      "artists": [
+        "Aretha Franklin"
+      ],
+      "album": "I Never Loved a Man the Way I Love You",
+      "durationMs": 147000,
+      "otherTitle": "Think"
+    },
+    {
+      "explicit": "Superstition - Stevie Wonder",
+      "free": "Superstition Stevie Wonder",
+      "freePlain": "superstition stevie wonder",
+      "titleOnly": "Superstition",
+      "expectedId": "correta",
+      "title": "Superstition",
+      "artists": [
+        "Stevie Wonder"
+      ],
+      "album": "Talking Book",
+      "durationMs": 265933,
+      "otherTitle": "Isn't She Lovely"
+    },
+    {
+      "explicit": "Wish You Were Here - Pink Floyd",
+      "free": "Wish You Were Here Pink Floyd",
+      "freePlain": "wish you were here pink floyd",
+      "titleOnly": "Wish You Were Here",
+      "expectedId": "correta",
+      "title": "Wish You Were Here",
+      "artists": [
+        "Pink Floyd"
+      ],
+      "album": "Wish You Were Here",
+      "durationMs": 334743,
+      "otherTitle": "Money"
+    },
+    {
+      "explicit": "Comfortably Numb - Pink Floyd",
+      "free": "Comfortably Numb Pink Floyd",
+      "freePlain": "comfortably numb pink floyd",
+      "titleOnly": "Comfortably Numb",
+      "expectedId": "correta",
+      "title": "Comfortably Numb",
+      "artists": [
+        "Pink Floyd"
+      ],
+      "album": "The Wall",
+      "durationMs": 382296,
+      "otherTitle": "Another Brick in the Wall"
+    },
+    {
+      "explicit": "Nothing Else Matters - Metallica",
+      "free": "Nothing Else Matters Metallica",
+      "freePlain": "nothing else matters metallica",
+      "titleOnly": "Nothing Else Matters",
+      "expectedId": "correta",
+      "title": "Nothing Else Matters",
+      "artists": [
+        "Metallica"
+      ],
+      "album": "Metallica",
+      "durationMs": 388800,
+      "otherTitle": "One"
+    },
+    {
+      "explicit": "Enter Sandman - Metallica",
+      "free": "Enter Sandman Metallica",
+      "freePlain": "enter sandman metallica",
+      "titleOnly": "Enter Sandman",
+      "expectedId": "correta",
+      "title": "Enter Sandman",
+      "artists": [
+        "Metallica"
+      ],
+      "album": "Metallica",
+      "durationMs": 331200,
+      "otherTitle": "Master of Puppets"
+    },
+    {
+      "explicit": "Zombie - The Cranberries",
+      "free": "Zombie The Cranberries",
+      "freePlain": "zombie the cranberries",
+      "titleOnly": "Zombie",
+      "expectedId": "correta",
+      "title": "Zombie",
+      "artists": [
+        "The Cranberries"
+      ],
+      "album": "No Need to Argue",
+      "durationMs": 307000,
+      "otherTitle": "Linger"
+    },
+    {
+      "explicit": "Boulevard of Broken Dreams - Green Day",
+      "free": "Boulevard of Broken Dreams Green Day",
+      "freePlain": "boulevard of broken dreams green day",
+      "titleOnly": "Boulevard of Broken Dreams",
+      "expectedId": "correta",
+      "title": "Boulevard of Broken Dreams",
+      "artists": [
+        "Green Day"
+      ],
+      "album": "American Idiot",
+      "durationMs": 260786,
+      "otherTitle": "Basket Case"
+    },
+    {
+      "explicit": "In the End - Linkin Park",
+      "free": "In the End Linkin Park",
+      "freePlain": "in the end linkin park",
+      "titleOnly": "In the End",
+      "expectedId": "correta",
+      "title": "In the End",
+      "artists": [
+        "Linkin Park"
+      ],
+      "album": "Hybrid Theory",
+      "durationMs": 216880,
+      "otherTitle": "Crawling"
+    },
+    {
+      "explicit": "Numb - Linkin Park",
+      "free": "Numb Linkin Park",
+      "freePlain": "numb linkin park",
+      "titleOnly": "Numb",
+      "expectedId": "correta",
+      "title": "Numb",
+      "artists": [
+        "Linkin Park"
+      ],
+      "album": "Meteora",
+      "durationMs": 185560,
+      "otherTitle": "Faint"
+    },
+    {
+      "explicit": "Californication - Red Hot Chili Peppers",
+      "free": "Californication Red Hot Chili Peppers",
+      "freePlain": "californication red hot chili peppers",
+      "titleOnly": "Californication",
+      "expectedId": "correta",
+      "title": "Californication",
+      "artists": [
+        "Red Hot Chili Peppers"
+      ],
+      "album": "Californication",
+      "durationMs": 329733,
+      "otherTitle": "Under the Bridge"
+    },
+    {
+      "explicit": "Garota de Ipanema - Tom Jobim",
+      "free": "Garota de Ipanema Tom Jobim",
+      "freePlain": "garota de ipanema tom jobim",
+      "titleOnly": "Garota de Ipanema",
+      "expectedId": "correta",
+      "title": "Garota de Ipanema",
+      "artists": [
+        "Tom Jobim"
+      ],
+      "album": "Getz/Gilberto",
+      "durationMs": 325000,
+      "otherTitle": "Corcovado"
+    },
+    {
+      "explicit": "Águas de Março - Elis Regina",
+      "free": "Águas de Março Elis Regina",
+      "freePlain": "aguas de marco elis regina",
+      "titleOnly": "Águas de Março",
+      "expectedId": "correta",
+      "title": "Águas de Março",
+      "artists": [
+        "Elis Regina"
+      ],
+      "album": "Elis & Tom",
+      "durationMs": 213000,
+      "otherTitle": "Como Nossos Pais"
+    },
+    {
+      "explicit": "Construção - Chico Buarque",
+      "free": "Construção Chico Buarque",
+      "freePlain": "construcao chico buarque",
+      "titleOnly": "Construção",
+      "expectedId": "correta",
+      "title": "Construção",
+      "artists": [
+        "Chico Buarque"
+      ],
+      "album": "Construção",
+      "durationMs": 380000,
+      "otherTitle": "Cálice"
+    },
+    {
+      "explicit": "Alegria, Alegria - Caetano Veloso",
+      "free": "Alegria, Alegria Caetano Veloso",
+      "freePlain": "alegria, alegria caetano veloso",
+      "titleOnly": "Alegria, Alegria",
+      "expectedId": "correta",
+      "title": "Alegria, Alegria",
+      "artists": [
+        "Caetano Veloso"
+      ],
+      "album": "Caetano Veloso",
+      "durationMs": 165000,
+      "otherTitle": "Sampa"
+    },
+    {
+      "explicit": "Sozinho - Caetano Veloso",
+      "free": "Sozinho Caetano Veloso",
+      "freePlain": "sozinho caetano veloso",
+      "titleOnly": "Sozinho",
+      "expectedId": "correta",
+      "title": "Sozinho",
+      "artists": [
+        "Caetano Veloso"
+      ],
+      "album": "Prenda Minha",
+      "durationMs": 232000,
+      "otherTitle": "Você é Linda"
+    },
+    {
+      "explicit": "Trem-Bala - Ana Vilela",
+      "free": "Trem-Bala Ana Vilela",
+      "freePlain": "trem-bala ana vilela",
+      "titleOnly": "Trem-Bala",
+      "expectedId": "correta",
+      "title": "Trem-Bala",
+      "artists": [
+        "Ana Vilela"
+      ],
+      "album": "Ana Vilela",
+      "durationMs": 232000,
+      "otherTitle": "Menina Solta"
+    },
+    {
+      "explicit": "País Tropical - Jorge Ben Jor",
+      "free": "País Tropical Jorge Ben Jor",
+      "freePlain": "pais tropical jorge ben jor",
+      "titleOnly": "País Tropical",
+      "expectedId": "correta",
+      "title": "País Tropical",
+      "artists": [
+        "Jorge Ben Jor"
+      ],
+      "album": "Jorge Ben",
+      "durationMs": 180000,
+      "otherTitle": "Taj Mahal"
+    },
+    {
+      "explicit": "Mas Que Nada - Jorge Ben Jor",
+      "free": "Mas Que Nada Jorge Ben Jor",
+      "freePlain": "mas que nada jorge ben jor",
+      "titleOnly": "Mas Que Nada",
+      "expectedId": "correta",
+      "title": "Mas Que Nada",
+      "artists": [
+        "Jorge Ben Jor"
+      ],
+      "album": "Samba Esquema Novo",
+      "durationMs": 158000,
+      "otherTitle": "Chove Chuva"
+    },
+    {
+      "explicit": "Detalhes - Roberto Carlos",
+      "free": "Detalhes Roberto Carlos",
+      "freePlain": "detalhes roberto carlos",
+      "titleOnly": "Detalhes",
+      "expectedId": "correta",
+      "title": "Detalhes",
+      "artists": [
+        "Roberto Carlos"
+      ],
+      "album": "Detalhes",
+      "durationMs": 268000,
+      "otherTitle": "Como É Grande o Meu Amor por Você"
+    },
+    {
+      "explicit": "Emoções - Roberto Carlos",
+      "free": "Emoções Roberto Carlos",
+      "freePlain": "emocoes roberto carlos",
+      "titleOnly": "Emoções",
+      "expectedId": "correta",
+      "title": "Emoções",
+      "artists": [
+        "Roberto Carlos"
+      ],
+      "album": "Roberto Carlos",
+      "durationMs": 251000,
+      "otherTitle": "Jesus Cristo"
+    },
+    {
+      "explicit": "Ainda Bem - Marisa Monte",
+      "free": "Ainda Bem Marisa Monte",
+      "freePlain": "ainda bem marisa monte",
+      "titleOnly": "Ainda Bem",
+      "expectedId": "correta",
+      "title": "Ainda Bem",
+      "artists": [
+        "Marisa Monte"
+      ],
+      "album": "O Que Você Quer Saber de Verdade",
+      "durationMs": 215000,
+      "otherTitle": "Amor I Love You"
+    },
+    {
+      "explicit": "Velha Infância - Tribalistas",
+      "free": "Velha Infância Tribalistas",
+      "freePlain": "velha infancia tribalistas",
+      "titleOnly": "Velha Infância",
+      "expectedId": "correta",
+      "title": "Velha Infância",
+      "artists": [
+        "Tribalistas"
+      ],
+      "album": "Tribalistas",
+      "durationMs": 215000,
+      "otherTitle": "Já Sei Namorar"
+    },
+    {
+      "explicit": "Pais e Filhos - Legião Urbana",
+      "free": "Pais e Filhos Legião Urbana",
+      "freePlain": "pais e filhos legiao urbana",
+      "titleOnly": "Pais e Filhos",
+      "expectedId": "correta",
+      "title": "Pais e Filhos",
+      "artists": [
+        "Legião Urbana"
+      ],
+      "album": "As Quatro Estações",
+      "durationMs": 319000,
+      "otherTitle": "Tempo Perdido"
+    },
+    {
+      "explicit": "Eduardo e Mônica - Legião Urbana",
+      "free": "Eduardo e Mônica Legião Urbana",
+      "freePlain": "eduardo e monica legiao urbana",
+      "titleOnly": "Eduardo e Mônica",
+      "expectedId": "correta",
+      "title": "Eduardo e Mônica",
+      "artists": [
+        "Legião Urbana"
+      ],
+      "album": "Dois",
+      "durationMs": 268000,
+      "otherTitle": "Faroeste Caboclo"
+    },
+    {
+      "explicit": "Oceano - Djavan",
+      "free": "Oceano Djavan",
+      "freePlain": "oceano djavan",
+      "titleOnly": "Oceano",
+      "expectedId": "correta",
+      "title": "Oceano",
+      "artists": [
+        "Djavan"
+      ],
+      "album": "Novena",
+      "durationMs": 262000,
+      "otherTitle": "Flor de Lis"
+    }
+  ]
+}

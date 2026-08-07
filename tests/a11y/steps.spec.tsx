@@ -8,7 +8,7 @@
  * contraste é responsabilidade dos tokens de `src/styles/index.css`.
  */
 
-import { render } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import axe from 'axe-core';
 import { beforeEach, describe, expect, it } from 'vitest';
 
@@ -21,6 +21,7 @@ import { QuotaEstimateScreen } from '@/features/quota/QuotaEstimateScreen';
 import { ResultScreen } from '@/features/result/ResultScreen';
 import { ReviewScreen } from '@/features/review/ReviewScreen';
 import { SummaryScreen } from '@/features/summary/SummaryScreen';
+import { t } from '@/i18n/pt-BR';
 import { configureProviderClient } from '@/services/providers/http';
 import { createRefresher } from '@/services/providers/spotify/auth';
 import { useAppStore } from '@/store';
@@ -28,6 +29,7 @@ import { useAppStore } from '@/store';
 import {
   makeCandidate,
   makeCredentials,
+  makeFreeLine,
   makeItem,
   makeLine,
   makeQueue,
@@ -40,10 +42,33 @@ import {
 const CLIENT_ID = 'a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6';
 const YT_CLIENT_ID = '123-abc.apps.googleusercontent.com';
 
+const REGRAS = { 'color-contrast': { enabled: false } };
+
+/**
+ * Roda o axe e exige zero violações.
+ *
+ * O `catch` cobre uma limitação do ambiente, não do produto: para montar o
+ * seletor CSS que aponta o nó, o axe emite algo como
+ * `input[aria-label="Incluir \"Amor\" na playlist"]`, e o motor de seletores do
+ * happy-dom recusa a aspa escapada. Quando isso acontece, a análise é refeita
+ * **sem** gerar seletor — as regras avaliadas são exatamente as mesmas, só a
+ * localização do nó na mensagem de falha se perde.
+ *
+ * Engolir a exceção sem repetir seria pior: a suíte passaria sem ter analisado
+ * nada.
+ */
 async function semViolacoes(container: HTMLElement): Promise<void> {
-  const resultado = await axe.run(container, {
-    rules: { 'color-contrast': { enabled: false } },
-  });
+  let resultado: axe.AxeResults;
+  try {
+    resultado = await axe.run(container, { rules: REGRAS });
+  } catch {
+    resultado = await axe.run(container, {
+      rules: REGRAS,
+      selectors: false,
+      ancestry: false,
+      xpath: false,
+    });
+  }
 
   const descricao = resultado.violations
     .map((violation) => `${violation.id}: ${violation.help}`)
@@ -155,6 +180,7 @@ describe('Acessibilidade do fluxo (FR-047)', () => {
               availableUnits: 10_000,
               blocked: false,
               maxLinesThatFit: 66,
+              retryReserve: 0,
             },
           }),
         },
@@ -183,6 +209,7 @@ describe('Acessibilidade do fluxo (FR-047)', () => {
               availableUnits: 10_000,
               blocked: true,
               maxLinesThatFit: 66,
+              retryReserve: 40,
             },
           }),
         },
@@ -226,6 +253,81 @@ describe('Acessibilidade do fluxo (FR-047)', () => {
     });
 
     const { container } = render(<ReviewScreen provider="spotify" />);
+    await semViolacoes(container);
+  });
+
+  /**
+   * `003/FR-017`: a revisão de uma lista só de títulos isolados, onde **todo**
+   * item traz motivo de atenção. É o cenário mais denso de texto da tela nova, e
+   * o que verifica que o motivo é anunciado — não sinalizado só por cor.
+   */
+  it('revisão com títulos isolados e os quatro motivos de atenção', async () => {
+    const soloLinhas = [
+      makeFreeLine({ id: 'sl0', index: 0, raw: 'Amor' }),
+      makeFreeLine({ id: 'sl1', index: 1, raw: 'Imagine' }),
+      makeFreeLine({ id: 'sl2', index: 2, raw: 'Hello' }),
+      makeFreeLine({ id: 'sl3', index: 3, raw: 'Perfect' }),
+    ];
+
+    const soloItens = [
+      makeItem({
+        line: soloLinhas[0]!,
+        status: 'uncertain',
+        attentionReason: 'no_artist_ambiguous',
+        candidates: [makeCandidate({ id: 'amor-a' }), makeCandidate({ id: 'amor-b' })],
+        included: false,
+      }),
+      makeItem({
+        line: soloLinhas[1]!,
+        status: 'uncertain',
+        attentionReason: 'version_hint',
+        candidates: [makeCandidate({ id: 'imagine-live', versionHints: ['live'] })],
+        included: false,
+      }),
+      makeItem({
+        line: soloLinhas[2]!,
+        status: 'not_found',
+        attentionReason: 'not_found',
+        candidates: [],
+        selectedUri: null,
+        included: false,
+      }),
+      makeItem({
+        line: soloLinhas[3]!,
+        status: 'not_found',
+        attentionReason: 'retry_skipped_quota',
+        candidates: [],
+        selectedUri: null,
+        included: false,
+      }),
+    ];
+
+    useAppStore.setState({
+      sessions: makeSessions({ spotify: makeSession('spotify') }),
+      existingNames: [],
+      lines: soloLinhas,
+      destinations: { selected: ['spotify'], locked: false },
+      queue: makeQueue(['spotify'], {
+        currentIndex: 0,
+        runs: {
+          spotify: makeRun('spotify', {
+            phase: 'review',
+            lineIds: soloLinhas.map((line) => line.id),
+            items: soloItens,
+          }),
+        },
+      }),
+    });
+
+    const { container } = render(<ReviewScreen provider="spotify" />);
+
+    // O motivo é texto de verdade na árvore acessível, não `aria-label` de um
+    // ícone nem uma classe de cor.
+    expect(screen.getByText(t.review.attentionReason.noArtistAmbiguous)).toBeInTheDocument();
+    expect(screen.getByText(t.review.attentionReason.retrySkippedQuota)).toBeInTheDocument();
+    // A distinção que FR-017 exige: "não encontrada" ≠ "não tentei de novo".
+    expect(t.review.attentionReason.retrySkippedQuota).not.toBe(t.review.attentionReason.notFound);
+
     await semViolacoes(container);
   });
 
