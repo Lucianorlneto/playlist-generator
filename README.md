@@ -231,6 +231,44 @@ problema.
 
 ---
 
+## 6.1 Quando a autorização cai no meio do trabalho
+
+Perder a autorização **para** a execução; não a encerra. O que acontece:
+
+- **Um aviso, não cem falhas.** A perda de sessão derruba a execução inteira e
+  abre um pedido de reconexão nomeando o serviço. Antes, o erro era tratado linha
+  a linha e virava "Não encontrada" em cada uma delas — a mensagem certa escrita
+  cem vezes, enterrada no detalhe de cada fileira, enquanto o cabeçalho seguia
+  mostrando a conta como conectada.
+- **O que já foi feito sobrevive.** As linhas já buscadas continuam com o seu
+  resultado; as que não chegaram a ser buscadas voltam como pendentes — nunca
+  como "não encontrada", porque ninguém chegou a procurar por elas.
+- **A retomada paga só pelo que falta.** Ao reconectar, apenas as linhas
+  pendentes são buscadas, e o custo em cota mostrado no aviso é calculado sobre
+  exatamente esse subconjunto. O consumo total de uma execução interrompida e
+  retomada nunca passa o de uma execução ininterrupta.
+- **Durante a criação, nada é reescrito.** A playlist já criada não é removida,
+  recriada nem renomeada, e a adição retoma do item seguinte ao último
+  confirmado — sem duplicar nem pular faixa. Se você reconectar a uma **conta
+  diferente**, a retomada não é possível: o serviço é encerrado como parcial, com
+  a contagem real do que entrou, e nenhuma segunda playlist é criada.
+- **Adiar não é perder.** Fechar o aviso mantém a etapa com as duas saídas —
+  reconectar ou pular este serviço — e recarregar a página reapresenta o pedido.
+- **Sempre há uma saída visível.** O cabeçalho lista todo serviço escolhido com
+  credencial salva, conectado ou não, sempre oferecendo **Reconectar**. Antes, o
+  serviço sumia do cabeçalho justamente quando a sessão caía, levando junto o seu
+  único ponto de interação.
+
+Uma requisição recusada por credencial inválida **não** consome cota, e o app
+deixou de contabilizá-la: antes, uma lista de 100 linhas com o token morto
+registrava 10.000 unidades fantasma — o orçamento diário inteiro — e você
+reconectaria para ser barrado por um esgotamento que não provocou.
+
+Esgotamento de cota continua sendo outra coisa: ele encerra o serviço sem
+repetir, e **não** oferece reconexão. Reconectar não devolveria orçamento algum.
+
+---
+
 ## 7. Estrutura
 
 ```text
