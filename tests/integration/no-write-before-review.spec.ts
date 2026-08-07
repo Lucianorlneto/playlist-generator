@@ -25,6 +25,7 @@ import { useAppStore } from '@/store';
 
 import {
   makeCandidate,
+  makeFreeLine,
   makeItem,
   makeLine,
   makeQueue,
@@ -51,9 +52,15 @@ function writeRequests() {
   );
 }
 
+/**
+ * `003/FR-022`: a lista mistura as duas formas de propósito. A garantia de
+ * "nenhuma escrita antes da confirmação" não pode depender de como a linha foi
+ * escrita — era herança presumida até esta feature, e agora é verificada.
+ */
 const linhas = [
   makeLine({ id: 'l0', index: 0, raw: 'Bohemian Rhapsody - Queen' }),
   makeLine({ id: 'l1', index: 1, raw: 'Imagine - John Lennon' }),
+  makeFreeLine({ id: 'l2', index: 2, raw: 'nao sei viver sem ter voce cpm 22' }),
 ];
 
 function itemsFor(provider: ProviderId) {

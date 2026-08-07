@@ -14,9 +14,8 @@
  */
 
 import { capabilitiesOf } from '@/domain/providers';
-import { channelBonus } from '@/domain/scoring';
+import { channelBonus, scoreForShape } from '@/domain/scoring';
 import { stripDecorations, versionHints } from '@/domain/versionHints';
-import { scoreCandidate } from '@/domain/scoring';
 import type { InputLine, MatchItem, ProviderSession, TrackCandidateRaw } from '@/domain/types';
 import { runProviderSearch } from '@/services/providers/searchRunner';
 import type { CallbackParams, CreateParams, PlaylistProvider } from '@/services/providers/types';
@@ -24,7 +23,7 @@ import type { CallbackParams, CreateParams, PlaylistProvider } from '@/services/
 import { buildAuthorizeUrl, completeAuthorization } from './auth';
 import { addItems, createPlaylist, effectivePath, listPlaylistNames } from './playlists';
 import { estimate, recordConsumption } from './quota';
-import { searchVideo } from './search';
+import { retryVideo, searchVideo } from './search';
 import { enrichCandidates } from './videos';
 
 const PROVIDER = 'youtube' as const;
@@ -32,10 +31,20 @@ const PROVIDER = 'youtube' as const;
 /**
  * Pontua contra o título **limpo** de decorações editoriais, sem alterar o
  * título exibido. Sem isso, "Bohemian Rhapsody (Official Music Video)" perderia
- * pontos por ruído que não diz nada sobre a gravação (research §7).
+ * pontos por ruído que não diz nada sobre a gravação (`002/research §7`).
+ *
+ * A via é a de `scoreForShape`, não a fórmula por campos: a limpeza do título é
+ * o que este adaptador tem de próprio, e a escolha entre comparar campos
+ * declarados ou a linha inteira continua sendo do domínio. Chamar
+ * `scoreCandidate` aqui devolveria a linha livre ao teto de 0,65 que
+ * `003/research §2` existe para eliminar.
  */
 function scoreOf(line: InputLine, candidate: TrackCandidateRaw): number {
-  return scoreCandidate(line, { ...candidate, title: stripDecorations(candidate.title) });
+  return scoreForShape(
+    line,
+    { ...candidate, title: stripDecorations(candidate.title) },
+    capabilitiesOf(PROVIDER).thresholds.uncertain,
+  );
 }
 
 function bonusOf(candidate: TrackCandidateRaw): number {
@@ -73,6 +82,10 @@ export const youtubeProvider: PlaylistProvider = {
     runProviderSearch(lines, ctx, {
       provider: PROVIDER,
       searchLine: searchVideo,
+      retryLine: retryVideo,
+      // O teto vem da estimativa já exibida ao usuário. Sem ele, a retentativa
+      // gastaria unidades fora do que foi prometido (invariante O4, SC-007).
+      ...(ctx.retryBudget === undefined ? {} : { retryBudget: ctx.retryBudget }),
       enrich: enrichCandidates,
       scoreOf,
       bonusOf,

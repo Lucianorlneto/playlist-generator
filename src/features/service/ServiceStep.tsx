@@ -13,6 +13,7 @@ import { refreshExistingNames } from '@/features/review/nameCheck';
 import { ReviewScreen } from '@/features/review/ReviewScreen';
 import { format, t } from '@/i18n/pt-BR';
 import { providerFor } from '@/services/providers/registry';
+import { retryReserveOf } from '@/services/providers/retryPlan';
 import { toErrorInfo, toAppError } from '@/services/providers/errors';
 import { useAppStore } from '@/store';
 import { Button } from '@/ui/Button';
@@ -80,7 +81,17 @@ export function ServiceStep() {
       }
       // Custo nominal supondo **todas** as linhas confirmadas: é o cenário mais
       // caro, e por isso não há segunda checagem depois da revisão (FR-029).
-      const estimate = adapter.estimate(run.lineIds.length, run.lineIds.length, Date.now());
+      //
+      // A reserva de retentativa entra aqui, contada exatamente a partir do
+      // texto das linhas deste destino (`003/FR-010`, invariante O5). É o mesmo
+      // número que vira teto de execução mais abaixo — contá-lo duas vezes por
+      // caminhos diferentes é o que faria SC-007 depender de sorte.
+      const estimate = adapter.estimate(
+        run.lineIds.length,
+        run.lineIds.length,
+        Date.now(),
+        retryReserveOf(provider, linesFor(lines, run.lineIds)),
+      );
       store.dispatchRun({ type: 'estimate_ready', estimate }, provider);
       // Avançar sozinho aqui deixaria a estimativa invisível — SC-011 exige que
       // ela seja **exibida** antes de qualquer busca, em 100% das execuções que
@@ -96,10 +107,22 @@ export function ServiceStep() {
       const target = linesFor(lines, run.lineIds);
       store.startSearch(target.length, controller);
 
+      // Teto de retentativas desta execução (invariante O4): o que a estimativa
+      // reservou, menos o que uma execução anterior já gastou. Sem descontar
+      // `retriesUsed`, uma busca retomada após recarga gastaria a reserva duas
+      // vezes e o consumo real passaria do estimado.
+      const reserved = run.estimate?.retryReserve;
+      const remainingRetries =
+        reserved === undefined ? undefined : Math.max(0, reserved - run.retriesUsed);
+
       void runMatching(provider, target, {
         signal: controller.signal,
         onProgress: (done) => {
           useAppStore.getState().reportSearchProgress(done);
+        },
+        ...(remainingRetries === undefined ? {} : { retryBudget: remainingRetries }),
+        onRetry: (total) => {
+          useAppStore.getState().recordRetries(provider, run.retriesUsed + total);
         },
       })
         .then((items) => {

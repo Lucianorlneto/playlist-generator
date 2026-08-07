@@ -21,7 +21,7 @@ import { createRefresher } from '@/services/providers/spotify/auth';
 import { configureProviderClient } from '@/services/providers/http';
 import { providerFor } from '@/services/providers/registry';
 import { loadAllCredentials } from '@/services/storage/credentialRepo';
-import { migrateToV2 } from '@/services/storage/migrations';
+import { migrateToV2, migrateToV3 } from '@/services/storage/migrations';
 import { onStorageWarning } from '@/services/storage/schema';
 import { classifyYouTubeError } from '@/services/providers/youtube/errors';
 import { clearSession, loadAllSessions, saveSession } from '@/services/storage/sessionRepo';
@@ -86,8 +86,12 @@ export function useBootstrap(): void {
     if (done.current) return;
     done.current = true;
 
-    // 1. Migração antes de qualquer restauração de estado (FR-042).
+    // 1. Migrações antes de qualquer restauração de estado (`002/FR-042`).
+    //    A cadeia é sequencial: um rascunho da 001 passa por v1→v2→v3 aqui,
+    //    e sai com as linhas que estavam condenadas por falta de separador
+    //    novamente buscáveis (`003/research §11`).
     const migration = migrateToV2();
+    const v3 = migrateToV3();
 
     wireProviderClients();
 
@@ -96,7 +100,7 @@ export function useBootstrap(): void {
     useAppStore.setState({ credentials, sessions });
     useAppStore.getState().reconcileDestinations();
 
-    const restored = restoreDraft(migration.draft);
+    const restored = restoreDraft(migration.draft || v3.migrated);
 
     const clientIds: Partial<Record<ProviderId, string | null>> = {};
     for (const provider of PROVIDER_ORDER) {

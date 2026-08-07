@@ -30,6 +30,16 @@ export interface SearchContext {
   signal?: AbortSignal;
   /** Chamado a cada linha concluída — alimenta o progresso visível da busca. */
   onProgress?: (done: number, total: number) => void;
+  /**
+   * Retentativas ainda disponíveis nesta execução (`003/FR-010a`, invariante
+   * O4). Vem de `estimate.retryReserve − run.retriesUsed`, e é o que torna
+   * "consumo real nunca acima do estimado" verdadeiro por construção.
+   *
+   * Ausente = sem teto. É o caso do Spotify, que não tem orçamento diário.
+   */
+  retryBudget?: number;
+  /** Chamado quando uma retentativa é de fato emitida — persiste `retriesUsed`. */
+  onRetry?: (total: number) => void;
 }
 
 export interface CreateParams {
@@ -81,7 +91,13 @@ export interface PlaylistProvider {
 
   // --- Cota (só quando `capabilities.quota !== null`) -----------------------
 
-  estimate?(lineCount: number, selectedCount: number, now: number): QuotaEstimate;
+  estimate?(
+    lineCount: number,
+    selectedCount: number,
+    now: number,
+    /** Linhas elegíveis a retentativa naquele catálogo (`003/FR-010`). */
+    retryReserve?: number,
+  ): QuotaEstimate;
   /** Registra consumo após cada resposta, de forma síncrona (research §5). */
   recordConsumption?(operation: QuotaOperation, count?: number): void;
 }

@@ -64,23 +64,36 @@ describe('Busca por campos (contrato §6, FR-020)', () => {
     expect(candidate?.coverUrl).toBeNull();
   });
 
-  it('cai para texto livre quando a busca por campos volta vazia (research §5)', async () => {
-    // O artista escrito não casa com o catálogo; só o texto livre encontra.
+  /**
+   * `003/FR-009`: a segunda tentativa **saiu** do adaptador e virou decisão do
+   * runner, que é quem conta o orçamento. `searchTrack` emite uma requisição e
+   * só uma; a recuperação por texto livre continua existindo e está verificada
+   * em `search-retry.spec.ts`, agora com o custo visível.
+   */
+  it('emite exatamente uma requisição — a segunda tentativa é do runner', async () => {
     setCatalog([catalogTrack({ artists: ['Queen'] })]);
 
     const candidatos = await searchTrack(parseLine('Bohemian Rhapsody - Kwin', 0, 'l0'));
 
-    expect(searchRequests()).toHaveLength(2);
-    expect(new URL(searchRequests()[1]?.url ?? '').searchParams.get('q')).toBe(
-      'Bohemian Rhapsody Kwin',
-    );
-    expect(candidatos).toHaveLength(1);
+    expect(searchRequests()).toHaveLength(1);
+    expect(candidatos).toHaveLength(0);
   });
 
   it('não repete a busca livre quando a busca por campos já achou', async () => {
     setCatalog([catalogTrack()]);
     await searchTrack(parseLine('Bohemian Rhapsody - Queen', 0, 'l0'));
     expect(searchRequests()).toHaveLength(1);
+  });
+
+  /** `003/contracts/search-queries.md §1`: a linha livre consulta texto livre. */
+  it('linha sem separador consulta a linha inteira, sem qualificador de campo', async () => {
+    setCatalog([catalogTrack()]);
+
+    await searchTrack(parseLine('bohemian rhapsody queen', 0, 'l0'));
+
+    const url = new URL(searchRequests()[0]?.url ?? '');
+    expect(url.searchParams.get('q')).toBe('bohemian rhapsody queen');
+    expect(url.searchParams.get('q')).not.toContain('track:');
   });
 });
 
@@ -166,10 +179,17 @@ describe('Falha de uma linha não aborta as demais (contrato §6)', () => {
     expect(items.map((item) => item.status)).toEqual(['confident', 'confident', 'confident']);
   });
 
-  it('linha sem separador nem chega a consultar o catálogo', async () => {
+  /**
+   * `003/FR-011`: o que continua **não** custando requisição é a linha sem
+   * conteúdo alfanumérico. A linha sem separador passou a ser buscada — era
+   * exatamente o portão que esta feature removeu.
+   */
+  it('linha sem conteúdo alfanumérico nem chega a consultar o catálogo', async () => {
     setCatalog([catalogTrack()]);
 
-    const items = await runMatching('spotify', [parseLine('linha sem separador', 0, 'l0')], { signal: new AbortController().signal });
+    const items = await runMatching('spotify', [parseLine('---', 0, 'l0')], {
+      signal: new AbortController().signal,
+    });
 
     expect(items[0]?.status).toBe('unparsed');
     expect(searchRequests()).toHaveLength(0);

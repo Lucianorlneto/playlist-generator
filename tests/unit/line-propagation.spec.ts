@@ -16,7 +16,7 @@ import { applyTextCorrection } from '@/domain/run/lines';
 import { reduceRun } from '@/domain/run/machine';
 import type { InputLine } from '@/domain/types';
 
-import { makeCandidate, makeItem, makeLine, makeRun, makeVideoCandidate } from '../fixtures/factories';
+import { makeCandidate, makeFreeLine, makeItem, makeLine, makeRun, makeVideoCandidate } from '../fixtures/factories';
 
 const linhas: InputLine[] = [
   makeLine({ id: 'l0', index: 0, raw: 'Bohemin Rapsody - Quen', title: 'Bohemin Rapsody', artist: 'Quen' }),
@@ -69,12 +69,13 @@ describe('FR-014 — correção de texto propaga para os serviços seguintes', (
 
   it('reanalisa parseStatus: corrigir uma linha ilegível a torna buscável', () => {
     const ilegivel = [
-      makeLine({ id: 'lx', index: 0, raw: 'linha sem separador', title: '', artist: '', parseStatus: 'unparsed' }),
+      makeLine({ id: 'lx', index: 0, raw: '---', title: '', artist: '', shape: 'free', parseStatus: 'unparsed' }),
     ];
 
     const next = applyTextCorrection(ilegivel, 'lx', {
       title: 'Wonderwall',
       artist: 'Oasis',
+      shape: 'explicit',
     });
 
     // Sem isto a busca devolveria a linha intocada para sempre, e a edição —
@@ -82,10 +83,63 @@ describe('FR-014 — correção de texto propaga para os serviços seguintes', (
     expect(next[0]?.parseStatus).toBe('parsed');
   });
 
-  it('volta a unparsed quando a correção esvazia um dos campos', () => {
-    const next = applyTextCorrection(linhas, 'l0', { artist: '   ' });
+  /**
+   * `003/FR-004`: a regra de invalidez mudou. Esvaziar o artista **não**
+   * condena mais a linha — ela vira forma livre e continua buscável, que é
+   * exatamente o que esta feature passou a permitir. Só a ausência de conteúdo
+   * alfanumérico invalida.
+   */
+  it('esvaziar o artista deixa a linha na forma livre, ainda buscável', () => {
+    const next = applyTextCorrection(linhas, 'l0', { artist: '   ', shape: 'free' });
+
+    expect(next[0]?.parseStatus).toBe('parsed');
+    expect(next[0]?.shape).toBe('free');
+    expect(next[0]?.artist).toBe('');
+  });
+
+  it('só volta a unparsed quando não sobra conteúdo alfanumérico (L2)', () => {
+    const next = applyTextCorrection(linhas, 'l0', { title: '---', artist: '', shape: 'free' });
 
     expect(next[0]?.parseStatus).toBe('unparsed');
+  });
+
+  /** Invariante L1: a forma livre nunca carrega artista declarado. */
+  it('L1 — corrigir para a forma livre limpa artista e artistas secundários', () => {
+    const comFeat = [
+      makeLine({
+        id: 'lf',
+        index: 0,
+        raw: 'Stay (feat. Justin Bieber) - The Kid LAROI',
+        title: 'Stay',
+        artist: 'The Kid LAROI',
+        featuredArtists: ['Justin Bieber'],
+        shape: 'explicit',
+      }),
+    ];
+
+    const next = applyTextCorrection(comFeat, 'lf', { title: 'stay the kid laroi', shape: 'free' });
+
+    expect(next[0]?.artist).toBe('');
+    expect(next[0]?.featuredArtists).toEqual([]);
+  });
+
+  /**
+   * `003/FR-022`: a propagação entre serviços vale igualmente para a forma
+   * livre — era herança presumida, sem verificação.
+   */
+  it('FR-022 — a correção de uma linha livre propaga como qualquer outra', () => {
+    const livres = [
+      makeFreeLine({ id: 'lv', index: 0, raw: 'nao sei viver sem ter voce cpm 22' }),
+      makeFreeLine({ id: 'lw', index: 1, raw: 'zoio de lula charlie brown jr' }),
+    ];
+
+    const next = applyTextCorrection(livres, 'lv', { title: 'Não Sei Viver Sem Ter Você CPM 22' });
+
+    expect(next[0]?.title).toBe('Não Sei Viver Sem Ter Você CPM 22');
+    expect(next[0]?.shape).toBe('free');
+    expect(next[0]?.raw).toBe('nao sei viver sem ter voce cpm 22');
+    // As demais linhas ficam intocadas, inclusive por identidade de referência.
+    expect(next[1]).toBe(livres[1]);
   });
 });
 

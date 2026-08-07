@@ -84,6 +84,23 @@ export const createRunSlice: SliceCreator<RunSlice> = (set, get) => ({
       return { queue: replaceRun(state.queue, { ...run, estimate }) };
     }),
 
+  /**
+   * Persiste quantas retentativas esta execução já emitiu (`003/data-model §5`).
+   *
+   * É gravado durante a busca, não no fim: uma recarga no meio da execução não
+   * pode fazer a retomada acreditar que a reserva está intacta e gastá-la de
+   * novo. `Math.max` protege contra um relato fora de ordem — o contador só
+   * pode subir.
+   */
+  recordRetries: (provider, total) =>
+    set((state) => {
+      const run = state.queue.runs[provider];
+      if (run === undefined || run.outcome !== null) return state;
+      const next = Math.max(run.retriesUsed, total);
+      if (next === run.retriesUsed) return state;
+      return { queue: replaceRun(state.queue, { ...run, retriesUsed: next }) };
+    }),
+
   setCreation: (provider, creation) =>
     set((state) => {
       const run = state.queue.runs[provider];

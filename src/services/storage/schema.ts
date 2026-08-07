@@ -15,7 +15,17 @@
  */
 
 import type { ProviderId } from '@/domain/providers';
-import { SCHEMA_VERSION } from '@/domain/types';
+
+/**
+ * Versão das estruturas **planas** — credencial, sessão e consumo de cota.
+ *
+ * Estável desde a 002 e deliberadamente separada de `SCHEMA_VERSION`, que
+ * governa só o rascunho (`003/contracts/storage.md §2`). Amarrar as duas faria
+ * cada mudança no formato do rascunho invalidar a credencial e a sessão do
+ * usuário — desconectá-lo do serviço por uma razão que não tem nada a ver com
+ * ele.
+ */
+export const RECORD_SCHEMA_VERSION = 2;
 
 export const STORAGE_KEYS = {
   credential: (provider: ProviderId): string => `tp.v2.credential.${provider}`,
@@ -134,7 +144,7 @@ export function readVersioned<T>(
   validate: ShapeValidator<T>,
   options: VersionedOptions = {},
 ): T | null {
-  const { versioned = true, expectedVersion = SCHEMA_VERSION } = options;
+  const { versioned = true, expectedVersion = RECORD_SCHEMA_VERSION } = options;
 
   const storage = storageFor(area);
   if (storage === null) {
@@ -216,7 +226,7 @@ export function writeVersioned(
   payload: Record<string, unknown>,
   options: VersionedOptions = {},
 ): WriteOutcome {
-  const { versioned = true, expectedVersion = SCHEMA_VERSION } = options;
+  const { versioned = true, expectedVersion = RECORD_SCHEMA_VERSION } = options;
 
   const storage = storageFor(area);
   if (storage === null) {

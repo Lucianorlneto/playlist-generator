@@ -1,10 +1,15 @@
 /**
  * Busca no catálogo de vídeos (contracts/youtube-api.md §3, research §7).
  *
- * Consulta de **texto livre** `"{título} {artista}"`: a API de busca de vídeo
- * não tem qualificadores de campo, então a busca por campos que resolve o
- * Spotify não é aplicável. Zero resultados dispara **um** fallback com o título
- * isolado — e nada além disso, porque cada busca custa 100 unidades.
+ * Consulta de **texto livre**: a API de busca de vídeo não tem qualificadores de
+ * campo, então a busca por campos que resolve o Spotify não é aplicável. Linha
+ * `explicit` consulta `"{título} {artista}"`; linha `free` consulta a linha
+ * inteira (`003/contracts/search-queries.md §1`).
+ *
+ * O fallback interno com o título isolado **saiu**. A segunda tentativa passou a
+ * ser decisão do runner, e só é emitida quando a consulta alternativa difere de
+ * fato da primeira (`003/research §6`) e há orçamento — cada busca custa 100
+ * unidades, e repetir a mesma consulta não é retentativa.
  *
  * Duas traduções obrigatórias antes de qualquer pontuação:
  *
@@ -102,17 +107,36 @@ async function runSearch(query: string, signal?: AbortSignal): Promise<TrackCand
     .filter((candidate): candidate is TrackCandidateRaw => candidate !== null);
 }
 
+/** Consulta primária desta linha, decidida pela forma (contrato §1). */
+export function primaryQuery(line: InputLine): string {
+  return line.shape === 'explicit' ? `${line.title} ${line.artist}`.trim() : line.title.trim();
+}
+
+/**
+ * Consulta alternativa: a linha inteira. Na maioria das linhas explícitas ela
+ * normaliza para a **mesma** string da primária, e por isso `planQueries` a
+ * descarta antes de custar unidade alguma (research §6).
+ */
+export function retryQuery(line: InputLine): string {
+  return line.raw.trim();
+}
+
+/** Consulta **primária** da linha. Uma requisição, nunca duas (invariante O4). */
 export async function searchVideo(
   line: InputLine,
   signal?: AbortSignal,
 ): Promise<TrackCandidateRaw[]> {
-  const full = `${line.title} ${line.artist}`.trim();
-  if (full !== '') {
-    const found = await runSearch(full, signal);
-    if (found.length > 0) return found;
-  }
+  const query = primaryQuery(line);
+  if (query === '') return [];
+  return runSearch(query, signal);
+}
 
-  const titleOnly = line.title.trim();
-  if (titleOnly === '' || titleOnly === full) return [];
-  return runSearch(titleOnly, signal);
+/** Consulta **alternativa**, emitida só quando o runner decide (`003/FR-009`). */
+export async function retryVideo(
+  line: InputLine,
+  signal?: AbortSignal,
+): Promise<TrackCandidateRaw[]> {
+  const query = retryQuery(line);
+  if (query === '') return [];
+  return runSearch(query, signal);
 }

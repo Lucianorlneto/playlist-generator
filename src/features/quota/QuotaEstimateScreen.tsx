@@ -1,10 +1,10 @@
 import { useState } from 'react';
 
 import { linesFor } from '@/domain/run/lines';
-import type { ProviderId } from '@/domain/providers';
+import { capabilitiesOf, type ProviderId } from '@/domain/providers';
 import { nameOf } from '@/features/credential/providerText';
 import { ListReduction } from '@/features/input/ListReduction';
-import { format, t } from '@/i18n/pt-BR';
+import { format, plural, t } from '@/i18n/pt-BR';
 import { useAppStore } from '@/store';
 import { Button } from '@/ui/Button';
 
@@ -40,6 +40,10 @@ export function QuotaEstimateScreen({ provider }: QuotaEstimateScreenProps) {
   const estimate = run?.estimate ?? null;
 
   if (run === null || estimate === null) return null;
+
+  // O custo de uma busca no provedor, para converter a reserva de **linhas** em
+  // unidades — que é a moeda em que o resto da tela fala.
+  const QUOTA_SEARCH_COST = capabilitiesOf(provider).quota?.costs.search ?? 0;
 
   if (reducing) {
     return (
@@ -83,7 +87,28 @@ export function QuotaEstimateScreen({ provider }: QuotaEstimateScreenProps) {
             {estimate.availableUnits} {t.quota.unit}
           </dd>
         </div>
+        {/*
+          A reserva de segunda tentativa aparece **no contexto do provedor que
+          tem cota** (seção "Assimetria entre provedores" da constituição). Ela
+          já está dentro do consumo previsto acima; exibi-la separada é o que
+          impede o número total de parecer inexplicavelmente maior.
+        */}
+        <div>
+          <dt className="text-ink-muted">{t.quota.retryReserveLabel}</dt>
+          <dd className="text-ink font-semibold">
+            {estimate.retryReserve * QUOTA_SEARCH_COST} {t.quota.unit}
+          </dd>
+        </div>
       </dl>
+
+      <p className="field-message">
+        {estimate.retryReserve === 0
+          ? format(t.quota.retryReserveNoneOne, { total: estimate.lineCount })
+          : format(
+              plural(estimate.retryReserve, t.quota.retryReserveOne, t.quota.retryReserveOther),
+              { count: estimate.retryReserve, total: estimate.lineCount },
+            )}
+      </p>
 
       {!estimate.blocked && (
         <p className="field-message">{format(t.quota.fractionLabel, { percent })}</p>

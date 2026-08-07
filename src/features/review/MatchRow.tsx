@@ -12,7 +12,7 @@ import { Alternatives } from './Alternatives';
 import { formatDuration } from './formatDuration';
 import { LineEditor } from './LineEditor';
 import { REVIEW_GRID } from './reviewGrid';
-import { StatusBadge, statusHint } from './StatusBadge';
+import { attentionText, StatusBadge, statusHint } from './StatusBadge';
 
 export interface MatchRowProps {
   item: MatchItem;
@@ -43,6 +43,7 @@ export function MatchRow({ item, provider }: MatchRowProps) {
   const showsAlbum = capabilitiesOf(provider).showsAlbum;
   const service = nameOf(provider);
   const hints = selected?.versionHints ?? [];
+  const attention = attentionText(item.attentionReason);
 
   if (editing) {
     return (
@@ -119,6 +120,17 @@ export function MatchRow({ item, provider }: MatchRowProps) {
         </div>
       </div>
 
+      {/*
+        Motivo de atenção (`003/FR-017`): **texto**, não cor nem ícone. O
+        `<strong>` rotulado é o que dá ao leitor de tela o mesmo contexto que o
+        selo colorido dá a quem enxerga — a cor sozinha não é informação
+        acessível, e este é o dado que diz ao usuário o que fazer a seguir.
+      */}
+      {attention !== null && (
+        <p className="field-message">
+          <strong className="font-semibold">{t.review.attentionReason.label}:</strong> {attention}
+        </p>
+      )}
       {hints.length > 0 && <p className="field-message">{t.review.statusHint.versionHint}</p>}
       {hint !== null && <p className="field-message">{hint}</p>}
       {item.error !== null && <p className="field-message text-status-not-found">{item.error}</p>}

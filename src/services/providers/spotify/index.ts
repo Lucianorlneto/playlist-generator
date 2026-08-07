@@ -18,7 +18,7 @@ import { takeAuthRequest } from '@/services/storage/authRequestRepo';
 import { buildAuthorizeUrl, buildSession, exchangeCode, refreshSession } from './auth';
 import { addTracks, createPlaylist, listMyPlaylistNames } from './playlists';
 import { getProfileWithToken } from './profile';
-import { searchTrack } from './search';
+import { retryTrack, searchTrack } from './search';
 
 const PROVIDER = 'spotify' as const;
 
@@ -69,8 +69,15 @@ export const spotifyProvider: PlaylistProvider = {
   completeAuthorization,
   refresh: refreshSession,
 
+  // Sem `retryBudget`: o Spotify não impõe orçamento diário, então a segunda
+  // tentativa não precisa de teto — só de ser contabilizada, que é o que o
+  // runner agora faz (`003/research §8`).
   search: (lines: InputLine[], ctx): Promise<MatchItem[]> =>
-    runProviderSearch(lines, ctx, { provider: PROVIDER, searchLine: searchTrack }),
+    runProviderSearch(lines, ctx, {
+      provider: PROVIDER,
+      searchLine: searchTrack,
+      retryLine: retryTrack,
+    }),
 
   listPlaylistNames: (session, signal) => listMyPlaylistNames(session.user.id, signal),
 

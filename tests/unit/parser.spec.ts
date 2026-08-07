@@ -84,14 +84,20 @@ describe('Análise de linhas (FR-012 a FR-015)', () => {
     expect(lines.map((line) => line.index)).toEqual([0, 1]);
   });
 
-  it('marca linha sem separador como unparsed sem interromper as demais (FR-015)', () => {
+  /**
+   * `003/FR-001`: a linha sem separador deixou de ser reprovada. Ela vira
+   * `shape: 'free'` e continua **válida** — antes desta feature ela nem chegava
+   * a ser buscada.
+   */
+  it('linha sem separador é válida na forma livre, sem interromper as demais', () => {
     const lines = parseInput(
       'Bohemian Rhapsody - Queen\nlinha sem separador nenhum\nImagine - John Lennon',
     );
 
     expect(lines).toHaveLength(3);
-    expect(lines[1]?.parseStatus).toBe('unparsed');
-    expect(lines[1]?.title).toBe('');
+    expect(lines[1]?.parseStatus).toBe('parsed');
+    expect(lines[1]?.shape).toBe('free');
+    expect(lines[1]?.title).toBe('linha sem separador nenhum');
     expect(lines[1]?.raw).toBe('linha sem separador nenhum');
     expect(lines[0]?.parseStatus).toBe('parsed');
     expect(lines[2]?.parseStatus).toBe('parsed');
@@ -102,9 +108,16 @@ describe('Análise de linhas (FR-012 a FR-015)', () => {
     expect(line?.raw).toBe('  1. Águas de Março (Official Video) - Elis Regina  ');
   });
 
-  it('marca como unparsed quando falta título ou artista', () => {
-    expect(parseLine('- Queen', 0, 'l0').parseStatus).toBe('unparsed');
-    expect(parseLine('Bohemian Rhapsody - ', 0, 'l0').parseStatus).toBe('unparsed');
+  it('corte com um lado vazio cai na forma livre, não em inválida', () => {
+    const semTitulo = parseLine('- Queen', 0, 'l0');
+    expect(semTitulo.parseStatus).toBe('parsed');
+    expect(semTitulo.shape).toBe('free');
+    // `- ` é prefixo de numeração e sai antes do corte.
+    expect(semTitulo.title).toBe('Queen');
+
+    const semArtista = parseLine('Bohemian Rhapsody - ', 0, 'l0');
+    expect(semArtista.parseStatus).toBe('parsed');
+    expect(semArtista.shape).toBe('free');
   });
 
   it('parseLine preserva o id da linha na re-análise (FR-017)', () => {
@@ -121,5 +134,103 @@ describe('Análise de linhas (FR-012 a FR-015)', () => {
     expect(() => parseInput('---')).not.toThrow();
     expect(() => parseInput('()[]{}')).not.toThrow();
     expect(parseInput('')).toEqual([]);
+  });
+});
+
+/**
+ * A tabela de derivação de `003/data-model §1`, caso a caso. É o contrato do
+ * parser depois de o separador deixar de ser portão de admissão.
+ */
+describe('003/§1 — forma declarada e invalidez (FR-001 a FR-004)', () => {
+  const casos: {
+    entrada: string;
+    shape: 'explicit' | 'free';
+    title: string;
+    artist: string;
+    parseStatus: 'parsed' | 'unparsed';
+  }[] = [
+    {
+      entrada: 'Zoio de Lula - Charlie Brown Jr',
+      shape: 'explicit',
+      title: 'Zoio de Lula',
+      artist: 'Charlie Brown Jr',
+      parseStatus: 'parsed',
+    },
+    {
+      entrada: 'nao sei viver sem ter voce cpm 22',
+      shape: 'free',
+      title: 'nao sei viver sem ter voce cpm 22',
+      artist: '',
+      parseStatus: 'parsed',
+    },
+    {
+      entrada: 'Não sei viver sem ter voce',
+      shape: 'free',
+      title: 'Não sei viver sem ter voce',
+      artist: '',
+      parseStatus: 'parsed',
+    },
+    { entrada: '- Artista', shape: 'free', title: 'Artista', artist: '', parseStatus: 'parsed' },
+    { entrada: '---', shape: 'free', title: '', artist: '', parseStatus: 'unparsed' },
+    { entrada: '3.', shape: 'free', title: '', artist: '', parseStatus: 'unparsed' },
+    { entrada: '🎵', shape: 'free', title: '', artist: '', parseStatus: 'unparsed' },
+  ];
+
+  it.each(casos)('$entrada → $shape / $parseStatus', ({ entrada, ...esperado }) => {
+    const line = parseLine(entrada, 0, 'l0');
+    expect(line.shape).toBe(esperado.shape);
+    expect(line.title).toBe(esperado.title);
+    expect(line.artist).toBe(esperado.artist);
+    expect(line.parseStatus).toBe(esperado.parseStatus);
+  });
+
+  /**
+   * `003/FR-003`, US3/AC2. O hífen **dentro** do nome do artista não é
+   * separador — exigir espaços em volta é o que impede `Jay-Z` de virar
+   * `Jay` + `Z`, e continua valendo com o portão removido.
+   */
+  it('hífen sem espaços dentro do nome do artista não corta a linha', () => {
+    const line = parseLine('99 Problems - Jay-Z', 0, 'l0');
+    expect(line.shape).toBe('explicit');
+    expect(line.title).toBe('99 Problems');
+    expect(line.artist).toBe('Jay-Z');
+  });
+
+  /** Invariante L1: a forma livre não extrai artista nem _featured_. */
+  it('L1 — forma livre nunca declara artista nem artista secundário', () => {
+    const line = parseLine('song feat. Fulano de Tal e mais alguem', 0, 'l0');
+    expect(line.shape).toBe('free');
+    expect(line.artist).toBe('');
+    expect(line.featuredArtists).toEqual([]);
+  });
+
+  /**
+   * Invariante L2 nos dois sentidos. O caso `--- - ---` é o que quebraria se a
+   * decisão de corte viesse antes da checagem de conteúdo: há separador e dois
+   * lados não vazios, mas nenhuma música.
+   */
+  it('L2 — unparsed ⟺ nenhum caractere alfanumérico', () => {
+    for (const lixo of ['---', '   -   ', '••', '()[]{}', '--- - ---', '🎵🎶']) {
+      expect(parseLine(lixo, 0, 'l0').parseStatus, lixo).toBe('unparsed');
+    }
+    for (const valida of ['3. Imagine', 'a', 'Zoio de Lula - Charlie Brown Jr', '99']) {
+      expect(parseLine(valida, 0, 'l0').parseStatus, valida).toBe('parsed');
+    }
+  });
+
+  it('uma frase inteira colada por engano continua buscável, não inválida', () => {
+    const frase =
+      'coloquei aqui a lista toda de musicas que eu queria ouvir hoje de manha no caminho do trabalho';
+    const line = parseLine(frase, 0, 'l0');
+    expect(line.parseStatus).toBe('parsed');
+    expect(line.shape).toBe('free');
+    expect(line.title).toBe(frase);
+  });
+
+  /** Invariante L3: `raw` é byte a byte o original, em todas as formas. */
+  it('L3 — raw preservado nas três formas', () => {
+    for (const entrada of ['  1. Águas de Março (Official Video) - Elis Regina  ', '  🎵  ', ' só título ']) {
+      expect(parseLine(entrada, 0, 'l0').raw).toBe(entrada);
+    }
   });
 });

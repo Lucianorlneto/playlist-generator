@@ -27,11 +27,13 @@ import type { ProviderId } from '@/domain/providers';
 import { PROVIDER_ORDER, isProviderId } from '@/domain/providers';
 import type {
   AppErrorInfo,
+  AttentionReason,
   CreationProgress,
   CreationResult,
   DestinationSelection,
   ExecutionQueue,
   InputLine,
+  LineShape,
   MatchItem,
   MatchStatus,
   PlaylistConfig,
@@ -44,7 +46,7 @@ import type {
   WizardStep,
   WorkDraft,
 } from '@/domain/types';
-import { WIZARD_STEPS } from '@/domain/types';
+import { SCHEMA_VERSION, WIZARD_STEPS } from '@/domain/types';
 
 import {
   asBoolean,
@@ -84,6 +86,13 @@ const RUN_PHASES: readonly RunPhase[] = [
 ];
 
 const RUN_OUTCOMES: readonly RunOutcome[] = ['completed', 'partial', 'failed', 'skipped'];
+
+const ATTENTION_REASONS: readonly AttentionReason[] = [
+  'no_artist_ambiguous',
+  'version_hint',
+  'not_found',
+  'retry_skipped_quota',
+];
 
 const VERSION_HINTS: readonly VersionHint[] = [
   'live',
@@ -134,6 +143,7 @@ function serializeLine(line: InputLine) {
     title: line.title,
     artist: line.artist,
     featuredArtists: line.featuredArtists,
+    shape: line.shape,
     parseStatus: line.parseStatus,
   };
 }
@@ -152,6 +162,7 @@ function serializeItem(item: MatchItem, keepAlternatives: boolean) {
     duplicateOf: item.duplicateOf,
     error: item.error,
     previousStatus: item.previousStatus,
+    attentionReason: item.attentionReason,
   };
 }
 
@@ -164,6 +175,7 @@ function serializeEstimate(estimate: QuotaEstimate) {
     availableUnits: estimate.availableUnits,
     blocked: estimate.blocked,
     maxLinesThatFit: estimate.maxLinesThatFit,
+    retryReserve: estimate.retryReserve,
   };
 }
 
@@ -217,6 +229,7 @@ function serializeRun(run: ServiceRun, trim: Trim) {
     result: run.result === null ? null : serializeResult(run.result),
     outcome: run.outcome,
     error: run.error === null ? null : serializeErrorInfo(run.error),
+    retriesUsed: run.retriesUsed,
   };
 }
 
@@ -326,7 +339,19 @@ function validateLine(raw: unknown): InputLine | null {
     return null;
   }
 
-  return { id, index, raw: rawText, title, artist, featuredArtists, parseStatus };
+  // `shape` ausente é conteúdo anterior à v3, alcançado apenas pelas migrações
+  // (a leitura normal já teria descartado por `schemaVersion`). A derivação é a
+  // da tabela de `003/data-model §6`: no esquema antigo, `parsed` implicava
+  // separador reconhecido com os dois lados preenchidos.
+  const shapeRaw = obj['shape'];
+  const shape: LineShape =
+    shapeRaw === 'explicit' || shapeRaw === 'free'
+      ? shapeRaw
+      : parseStatus === 'parsed'
+        ? 'explicit'
+        : 'free';
+
+  return { id, index, raw: rawText, title, artist, featuredArtists, shape, parseStatus };
 }
 
 function validateLines(raw: unknown): InputLine[] | null {
@@ -371,6 +396,11 @@ export function validateItem(raw: unknown): MatchItem | null {
         ? (previousStatusRaw as MatchStatus)
         : null;
 
+  const reasonRaw = obj['attentionReason'];
+  const attentionReason = ATTENTION_REASONS.includes(reasonRaw as AttentionReason)
+    ? (reasonRaw as AttentionReason)
+    : null;
+
   return {
     line,
     status: status as MatchStatus,
@@ -380,6 +410,7 @@ export function validateItem(raw: unknown): MatchItem | null {
     duplicateOf: duplicateOf ?? null,
     error: error ?? null,
     previousStatus,
+    attentionReason,
   };
 }
 
@@ -455,6 +486,9 @@ function validateEstimate(raw: unknown): QuotaEstimate | null {
     availableUnits,
     blocked,
     maxLinesThatFit,
+    // Ausente em conteúdo anterior à v3. A migração recalcula das linhas
+    // (invariante O5), então zero aqui é um valor de passagem, não o final.
+    retryReserve: Math.max(0, asFiniteNumber(obj['retryReserve']) ?? 0),
   };
 }
 
@@ -549,6 +583,7 @@ function validateRun(raw: unknown, provider: ProviderId): ServiceRun | null {
     result: obj['result'] === null ? null : validateResult(obj['result']),
     outcome,
     error: obj['error'] === null ? null : validateErrorInfo(obj['error']),
+    retriesUsed: Math.max(0, asFiniteNumber(obj['retriesUsed']) ?? 0),
   };
 }
 
@@ -593,7 +628,13 @@ function validateQueue(raw: unknown): ExecutionQueue | null {
   return { order, currentIndex, runs };
 }
 
-function validate(raw: Record<string, unknown>): WorkDraft | null {
+/**
+ * Guarda de forma do rascunho. Exportada porque a migração v2→v3 precisa
+ * interpretar o conteúdo antigo com **as mesmas** regras da leitura normal — os
+ * validadores acima já toleram os campos que a v2 não tinha, derivando o padrão
+ * documentado em `003/data-model §6`.
+ */
+export function validateDraftShape(raw: Record<string, unknown>): WorkDraft | null {
   const savedAt = asFiniteNumber(raw['savedAt']);
   const step = raw['step'];
   const rawText = asString(raw['rawText']);
@@ -615,7 +656,7 @@ function validate(raw: Record<string, unknown>): WorkDraft | null {
   }
 
   return {
-    schemaVersion: asFiniteNumber(raw['schemaVersion']) ?? 2,
+    schemaVersion: asFiniteNumber(raw['schemaVersion']) ?? SCHEMA_VERSION,
     savedAt,
     step: step as WizardStep,
     rawText,
@@ -630,8 +671,14 @@ function validate(raw: Record<string, unknown>): WorkDraft | null {
 // API
 // ---------------------------------------------------------------------------
 
+/**
+ * Lê o rascunho **na versão corrente**. Conteúdo de outra versão é descartado
+ * pela leitura — quem converte é a migração, no bootstrap, antes disto.
+ */
 export function loadDraft(): WorkDraft | null {
-  return readVersioned('local', STORAGE_KEYS.draft, validate);
+  return readVersioned('local', STORAGE_KEYS.draft, validateDraftShape, {
+    expectedVersion: SCHEMA_VERSION,
+  });
 }
 
 /**
@@ -642,7 +689,19 @@ export function loadDraft(): WorkDraft | null {
  * - `failed`: não coube; quem chama **deve** avisar o usuário.
  */
 export function saveDraft(draft: WorkDraft): SaveDraftOutcome {
-  const full = writeVersioned('local', STORAGE_KEYS.draft, serializeDraft(draft, 'none'));
+  return saveDraftAs(draft, SCHEMA_VERSION);
+}
+
+/**
+ * Grava carimbando uma versão **explícita**. Só a migração usa, e por um motivo
+ * preciso: `migrateToV2` produz conteúdo v2, e carimbá-lo como v3 faria
+ * `migrateToV3` pulá-lo como se já estivesse convertido. A cadeia v1→v2→v3
+ * precisa ser sequencial de verdade (`003/contracts/storage.md §3`).
+ */
+export function saveDraftAs(draft: WorkDraft, version: number): SaveDraftOutcome {
+  const options = { expectedVersion: version };
+
+  const full = writeVersioned('local', STORAGE_KEYS.draft, serializeDraft(draft, 'none'), options);
   if (full === 'ok') return 'ok';
   if (full === 'unavailable') return 'failed';
 
@@ -650,11 +709,17 @@ export function saveDraft(draft: WorkDraft): SaveDraftOutcome {
     'local',
     STORAGE_KEYS.draft,
     serializeDraft(draft, 'finished'),
+    options,
   );
   if (withoutFinished === 'ok') return 'degraded';
   if (withoutFinished === 'unavailable') return 'failed';
 
-  const withoutAny = writeVersioned('local', STORAGE_KEYS.draft, serializeDraft(draft, 'all'));
+  const withoutAny = writeVersioned(
+    'local',
+    STORAGE_KEYS.draft,
+    serializeDraft(draft, 'all'),
+    options,
+  );
   return withoutAny === 'ok' ? 'degraded' : 'failed';
 }
 

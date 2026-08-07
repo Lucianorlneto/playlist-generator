@@ -238,15 +238,23 @@ const messages = {
 
   input: {
     heading: 'Cole sua lista',
-    intro: 'Uma música por linha, no formato "Música - Artista".',
+    intro: 'Uma música por linha. Escrever o artista ajuda, mas não é obrigatório.',
     textareaLabel: 'Lista de músicas',
-    placeholder: 'Bohemian Rhapsody - Queen\nImagine - John Lennon\nHey Jude by The Beatles',
-    separatorsHint: 'Separadores reconhecidos: hífen (-), travessão (– —) e a palavra "by".',
+    placeholder:
+      'Bohemian Rhapsody - Queen\nnao sei viver sem ter voce cpm 22\nGarota de Ipanema',
+    // FR-006: o separador virou informação opcional, não condição de admissão.
+    separatorsHint:
+      'O separador é opcional. Separar com hífen (-), travessão (– —) ou a palavra "by" diz ao app onde termina o título e aumenta o acerto automático; sem ele, a linha inteira é pesquisada.',
     lineCountOne: '1 linha',
     lineCountOther: '{count} linhas',
     emptyHint: 'Cole ou digite pelo menos uma linha para continuar.',
     largeListWarning:
       'Sua lista tem {count} linhas. A busca pode levar vários minutos — o progresso fica visível e você pode cancelar a qualquer momento.',
+    // US4/AC1: previsão de esforço antes de começar.
+    manualEffortOne: '1 linha provavelmente vai exigir que você escolha entre as candidatas.',
+    manualEffortOther:
+      '{count} linhas provavelmente vão exigir que você escolha entre as candidatas.',
+    manualEffortNone: 'Nenhuma linha deve exigir escolha manual.',
     search: 'Buscar correspondências',
     searching: 'Buscando…',
     start: 'Começar',
@@ -311,6 +319,14 @@ const messages = {
     availableLabel: 'Saldo estimado de hoje',
     unit: 'unidades',
     fractionLabel: 'Isso é cerca de {percent}% do orçamento diário.',
+    // FR-010: a reserva entra no número exibido, e o usuário sabe por quê.
+    retryReserveLabel: 'Reserva para segunda tentativa',
+    retryReserveNoneOne: 'Nenhuma das {total} linhas deve precisar de segunda busca.',
+    retryReserveNoneOther: 'Nenhuma das {total} linhas deve precisar de segunda busca.',
+    retryReserveOne:
+      '1 das {total} linhas pode precisar de uma segunda busca, e o consumo previsto já a inclui. Se não for usada, a cota não é gasta.',
+    retryReserveOther:
+      '{count} das {total} linhas podem precisar de uma segunda busca, e o consumo previsto já as inclui. As que não forem usadas não gastam cota.',
     premise:
       'O cálculo parte sempre do orçamento padrão do serviço, menos o que este app já consumiu hoje neste dispositivo. Ampliar a cota junto ao {service} não altera este cálculo.',
     resetNotice: 'O orçamento é renovado à meia-noite no fuso do provedor.',
@@ -385,7 +401,7 @@ const messages = {
       confident: 'Confiante',
       uncertain: 'Incerta',
       notFound: 'Não encontrada',
-      unparsed: 'Formato não reconhecido',
+      unparsed: 'Sem conteúdo para buscar',
       discarded: 'Descartada',
       duplicate: 'Duplicata',
       error: 'Falha na busca',
@@ -394,9 +410,29 @@ const messages = {
       confident: 'Correspondência forte. Já marcada para entrar na playlist.',
       uncertain: 'Confirme visualmente antes de incluir.',
       notFound: 'Nenhuma faixa suficientemente parecida. Edite a linha e tente de novo.',
-      unparsed: 'Não encontramos um separador nesta linha. Corrija para "Música - Artista".',
+      // `003/FR-004`: a linha só é inválida quando não tem nada pesquisável.
+      unparsed: 'Esta linha não tem letras nem números para buscar. Escreva o nome da música.',
       duplicate: 'Repetida na sua lista. Desmarcada para não duplicar na playlist.',
       versionHint: 'Pode ser outra versão da faixa. Confirme antes de incluir.',
+    },
+
+    /**
+     * Por que o item pede atenção (`003/FR-017`).
+     *
+     * O par mais importante é `notFound` × `retrySkippedQuota`: o primeiro pede
+     * que o usuário corrija o texto, o segundo diz que o texto pode estar certo
+     * e foi o app que desistiu. Apresentar um como o outro faria o usuário
+     * reescrever uma linha correta.
+     */
+    attentionReason: {
+      label: 'Por que pede atenção',
+      noArtistAmbiguous:
+        'Sua linha não diz o artista, e mais de uma gravação combina igualmente bem. Escolha entre as candidatas ou acrescente o artista à linha.',
+      versionHint:
+        'A candidata escolhida parece ser outra versão da gravação. Confira antes de incluir.',
+      notFound: 'Nenhuma candidata suficientemente parecida. Edite a linha e busque de novo.',
+      retrySkippedQuota:
+        'A primeira busca não trouxe nada e a reserva de cota do dia acabou — não houve segunda tentativa. Sua linha pode estar correta: tente de novo amanhã ou busque só esta linha.',
     },
   },
 
