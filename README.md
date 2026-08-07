@@ -1,11 +1,18 @@
 # Importador de Playlist por Texto
 
-Cole uma lista no formato `Música - Artista`, escolha os destinos, confira as
+Cole uma lista de músicas — uma por linha —, escolha os destinos, confira as
 correspondências e crie a playlist no **Spotify**, no **YouTube** ou nos dois.
 Aplicação de página única, **100% cliente**: não há servidor, banco de dados nem
 telemetria. Nada sai do seu navegador além das requisições para os serviços
 oficiais de cada provedor.
 
+- **O separador é opcional.** `Bohemian Rhapsody - Queen`, `bohemian rhapsody
+  queen` e `Bohemian Rhapsody` são todas linhas válidas. Separar com hífen,
+  travessão ou `by` diz ao app onde termina o título — e é isso que permite
+  comparar o artista campo a campo, aumentando o acerto automático. Sem
+  separador, a linha inteira é pesquisada; sem artista, o app pede que você
+  escolha entre as candidatas quando mais de uma gravação combina igualmente
+  bem. Só é recusada a linha sem nenhuma letra ou número.
 - Fluxo linear de cinco etapas: **Configuração → Destinos → Entrada → Serviço →
   Resumo**. A etapa "Serviço" é um ciclo completo por destino, um de cada vez.
 - A revisão é obrigatória **em cada serviço**: nada é escrito na sua conta antes
