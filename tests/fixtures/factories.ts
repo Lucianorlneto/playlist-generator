@@ -1,5 +1,6 @@
 import { PROVIDER_ORDER, type ProviderId } from '@/domain/providers';
 import {
+  pendingItem,
   SCHEMA_VERSION,
   type CreationProgress,
   type CreationResult,
@@ -111,6 +112,7 @@ export function makeCreation(overrides: Partial<CreationProgress> = {}): Creatio
     batchSize: 100,
     committedItems: 0,
     failedAt: null,
+    accountId: null,
     ...overrides,
   };
 }
@@ -143,8 +145,50 @@ export function makeRun(provider: ProviderId, overrides: Partial<ServiceRun> = {
     outcome: null,
     error: null,
     retriesUsed: 0,
+    resumeFrom: null,
     ...overrides,
   };
+}
+
+/**
+ * Execução parada à espera de reautorização, nas **duas** origens de retomada
+ * (`004/T013`).
+ *
+ * Monta o par `phase`/`resumeFrom` junto, porque separá-los é o que produz o
+ * estado impossível que o invariante A2 proíbe — e um teste montado sobre estado
+ * impossível verifica um sistema que não existe.
+ *
+ * `from: 'search'` marca as linhas ainda não resolvidas como `pending`, que é o
+ * que a busca interrompida de fato deixa para trás: `resolved` é `false` para
+ * elas, e `toItem` devolve o item pendente (A3).
+ */
+export function makeAwaitingReauth(
+  provider: ProviderId,
+  from: 'search' | 'creating',
+  overrides: Partial<ServiceRun> = {},
+): ServiceRun {
+  return makeRun(provider, {
+    phase: 'awaiting_reauth',
+    resumeFrom: from,
+    ...(from === 'creating' ? { creation: makeCreation() } : {}),
+    ...overrides,
+  });
+}
+
+/**
+ * Busca interrompida na linha `resolvedCount`: as anteriores saem com resultado
+ * e as demais voltam `pending` — nunca `not_found` (invariante A3, FR-013a).
+ */
+export function makePartialSearchItems(
+  lines: InputLine[],
+  resolvedCount: number,
+  resolvedOverrides: Partial<MatchItem> = {},
+): MatchItem[] {
+  return lines.map((line, index) =>
+    index < resolvedCount
+      ? makeItem({ line, status: 'confident', ...resolvedOverrides })
+      : pendingItem(line),
+  );
 }
 
 /**

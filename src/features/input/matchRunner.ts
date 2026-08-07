@@ -15,7 +15,12 @@
 
 import { markDuplicates } from '@/domain/dedupe';
 import type { ProviderId } from '@/domain/providers';
-import { pendingItem, type InputLine, type MatchItem } from '@/domain/types';
+import {
+  pendingItem,
+  type InputLine,
+  type MatchItem,
+  type SearchOutcome,
+} from '@/domain/types';
 import { providerFor } from '@/services/providers/registry';
 
 export interface RunMatchOptions {
@@ -28,34 +33,49 @@ export interface RunMatchOptions {
   onRetry?: (total: number) => void;
 }
 
-/** Resolve uma única linha — usada na re-busca por linha da revisão. */
+/**
+ * Resolve uma única linha — usada na re-busca por linha da revisão.
+ *
+ * **Lança** quando a execução foi interrompida por falha de sessão: re-buscar
+ * uma linha é ação pontual do usuário, e propagar o erro é o que faz o editor
+ * mostrar a falha real em vez de uma "não encontrada" silenciosa
+ * (`004/provider-contract §1`).
+ */
 export async function matchLine(
   provider: ProviderId,
   line: InputLine,
   signal: AbortSignal,
 ): Promise<MatchItem> {
   if (line.parseStatus === 'unparsed') return pendingItem(line);
-  const [item] = await providerFor(provider).search([line], { signal });
-  return item ?? pendingItem(line);
+  const outcome = await providerFor(provider).search([line], { signal });
+  if (outcome.interruption !== null) throw outcome.interruption;
+  return outcome.items[0] ?? pendingItem(line);
 }
 
 /**
  * Resolve a lista inteira. Os itens saem na ordem original — a concorrência
  * está na execução, não no resultado.
+ *
+ * Devolve a interrupção junto dos itens em vez de escondê-la: é quem chama que
+ * sabe se a perda de sessão vira pedido de reautorização (a etapa do serviço) ou
+ * erro propagado (a re-busca de uma linha).
  */
 export async function runMatching(
   provider: ProviderId,
   lines: InputLine[],
   options: RunMatchOptions,
-): Promise<MatchItem[]> {
+): Promise<SearchOutcome> {
   const { signal, onProgress, retryBudget, onRetry } = options;
 
-  const items = await providerFor(provider).search(lines, {
+  const outcome = await providerFor(provider).search(lines, {
     signal,
     ...(onProgress === undefined ? {} : { onProgress }),
     ...(retryBudget === undefined ? {} : { retryBudget }),
     ...(onRetry === undefined ? {} : { onRetry }),
   });
 
-  return markDuplicates(items);
+  // A duplicidade é recalculada sobre o conjunto **completo**, interrompido ou
+  // não (FR-013d): marcar só o pedaço resolvido faria a retomada reintroduzir
+  // uma duplicata que a execução anterior já tinha descartado.
+  return { items: markDuplicates(outcome.items), interruption: outcome.interruption };
 }

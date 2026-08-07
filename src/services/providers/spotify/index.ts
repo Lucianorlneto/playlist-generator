@@ -8,7 +8,7 @@
  */
 
 import { capabilitiesOf } from '@/domain/providers';
-import type { InputLine, MatchItem, ProviderSession } from '@/domain/types';
+import type { InputLine, ProviderSession, SearchOutcome } from '@/domain/types';
 import { t } from '@/i18n/pt-BR';
 import { AppError, fromAuthorizeError } from '@/services/providers/errors';
 import { runProviderSearch } from '@/services/providers/searchRunner';
@@ -72,7 +72,7 @@ export const spotifyProvider: PlaylistProvider = {
   // Sem `retryBudget`: o Spotify não impõe orçamento diário, então a segunda
   // tentativa não precisa de teto — só de ser contabilizada, que é o que o
   // runner agora faz (`003/research §8`).
-  search: (lines: InputLine[], ctx): Promise<MatchItem[]> =>
+  search: (lines: InputLine[], ctx): Promise<SearchOutcome> =>
     runProviderSearch(lines, ctx, {
       provider: PROVIDER,
       searchLine: searchTrack,

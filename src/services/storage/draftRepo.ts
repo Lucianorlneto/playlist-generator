@@ -80,10 +80,22 @@ const RUN_PHASES: readonly RunPhase[] = [
   'search',
   'review',
   'creating',
+  'awaiting_reauth',
   'done',
   'skipped',
   'failed',
 ];
+
+/**
+ * Pontos válidos de retomada (`004/data-model §8`).
+ *
+ * `SCHEMA_VERSION` **não** muda por causa deste campo, e não há migração: o
+ * rascunho antigo simplesmente não o traz e lê como `null`, e o código antigo
+ * lendo um rascunho novo já o ignora. Um bump invalidaria o rascunho de quem
+ * atualizasse no meio do trabalho — provocando a perda que esta feature existe
+ * para evitar.
+ */
+const RESUME_POINTS: readonly NonNullable<ServiceRun['resumeFrom']>[] = ['search', 'creating'];
 
 const RUN_OUTCOMES: readonly RunOutcome[] = ['completed', 'partial', 'failed', 'skipped'];
 
@@ -187,6 +199,7 @@ function serializeCreation(creation: CreationProgress) {
     batchSize: creation.batchSize,
     committedItems: creation.committedItems,
     failedAt: creation.failedAt,
+    accountId: creation.accountId,
   };
 }
 
@@ -230,6 +243,7 @@ function serializeRun(run: ServiceRun, trim: Trim) {
     outcome: run.outcome,
     error: run.error === null ? null : serializeErrorInfo(run.error),
     retriesUsed: run.retriesUsed,
+    resumeFrom: run.resumeFrom,
   };
 }
 
@@ -452,6 +466,8 @@ export function validateCreation(raw: unknown): CreationProgress | null {
     batchSize,
     committedItems,
     failedAt: failedAt ?? null,
+    // Ausente em rascunho anterior à 004: desconhecido não bloqueia a retomada.
+    accountId: asNonEmptyString(obj['accountId']),
   };
 }
 
@@ -584,6 +600,12 @@ function validateRun(raw: unknown, provider: ProviderId): ServiceRun | null {
     outcome,
     error: obj['error'] === null ? null : validateErrorInfo(obj['error']),
     retriesUsed: Math.max(0, asFiniteNumber(obj['retriesUsed']) ?? 0),
+    // Validado contra a lista fechada: qualquer outro conteúdo — ausente,
+    // corrompido ou de uma versão futura — lê como `null`. Descartar o campo é
+    // seguro; descartar o rascunho por causa dele não seria.
+    resumeFrom: RESUME_POINTS.includes(obj['resumeFrom'] as NonNullable<ServiceRun['resumeFrom']>)
+      ? (obj['resumeFrom'] as NonNullable<ServiceRun['resumeFrom']>)
+      : null,
   };
 }
 

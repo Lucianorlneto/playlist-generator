@@ -1,10 +1,14 @@
 import { useEffect, useRef } from 'react';
 
-import { linesFor } from '@/domain/run/lines';
+import { markDuplicates } from '@/domain/dedupe';
+import { linesFor, remainingLineIds } from '@/domain/run/lines';
 import { nameOf } from '@/features/credential/providerText';
 import { AuthError } from '@/features/connect/AuthError';
 import { ConnectButton } from '@/features/connect/ConnectButton';
+import { ReauthDialog } from '@/features/connect/ReauthDialog';
+import { handleSessionLoss } from '@/features/connect/reconnect';
 import { runMatching } from '@/features/input/matchRunner';
+import { retryRemaining } from '@/features/result/creationRunner';
 import { QueueIndicator } from '@/features/queue/QueueIndicator';
 import { QuotaEstimateScreen } from '@/features/quota/QuotaEstimateScreen';
 import { ResultScreen } from '@/features/result/ResultScreen';
@@ -16,8 +20,38 @@ import { providerFor } from '@/services/providers/registry';
 import { retryReserveOf } from '@/services/providers/retryPlan';
 import { toErrorInfo, toAppError } from '@/services/providers/errors';
 import { useAppStore } from '@/store';
+import { flushDraftNow } from '@/store/draftPersistence';
 import { Button } from '@/ui/Button';
 import { StepHeading } from '@/ui/StepHeading';
+
+import type { MatchItem, ServiceRun } from '@/domain/types';
+
+/**
+ * Junta o que a retomada acabou de resolver ao que a execução interrompida já
+ * tinha (FR-013a, FR-013d).
+ *
+ * Sem isto, `search_done` **substituiria** a lista e apagaria justamente as
+ * linhas que a feature existe para preservar — a retomada devolve item apenas
+ * para o subconjunto que foi rebuscado.
+ *
+ * A ordem de saída é a de `run.lineIds`, não a de chegada: a concorrência da
+ * busca não pode reordenar a revisão (invariante A4, FR-013d).
+ */
+function mergeItems(run: ServiceRun, fresh: MatchItem[]): MatchItem[] {
+  if (run.items.length === 0) return fresh;
+
+  const byLine = new Map(run.items.map((item) => [item.line.id, item]));
+  for (const item of fresh) byLine.set(item.line.id, item);
+
+  const merged = run.lineIds
+    .map((id) => byLine.get(id))
+    .filter((item): item is MatchItem => item !== undefined);
+
+  // A duplicidade é recalculada sobre o conjunto **completo** (FR-013d):
+  // `runMatching` só enxergou o subconjunto rebuscado, e uma faixa repetida
+  // entre as duas metades passaria despercebida.
+  return markDuplicates(merged);
+}
 
 /**
  * Etapa 4: o ciclo de **um** serviço por vez (FR-016 a FR-021, FR-043).
@@ -101,10 +135,34 @@ export function ServiceStep() {
       return;
     }
 
+    // A execução está parada à espera de autorização. Assim que uma sessão
+    // válida aparece — a volta do consentimento apenas a repõe, sem despachar
+    // nada —, a retomada dispara sozinha, exatamente como o ramo `connect` faz.
+    //
+    // Sem sessão, **nada** acontece (R4, FR-016): o pedido continua exibido e
+    // quem age é o usuário, reconectando ou pulando (T1, FR-012).
+    //
+    // **A atribuição de `startedFor` é obrigatória**, como em todos os outros
+    // ramos (T2). Sem ela a chave permaneceria `provider:search`, e a volta a
+    // `search` não reiniciaria a busca: FR-014 quebraria em **silêncio**, sem
+    // erro algum na tela. Só V19 pega isso, porque retoma sem recarregar — na
+    // navegação real o `ref` zera e o defeito ficaria escondido.
+    if (run.phase === 'awaiting_reauth') {
+      if (sessions[provider] !== null) {
+        startedFor.current = key;
+        store.dispatchRun({ type: 'authorized' }, provider);
+      }
+      return;
+    }
+
     if (run.phase === 'search') {
       startedFor.current = key;
       const controller = new AbortController();
-      const target = linesFor(lines, run.lineIds);
+      // Na retomada, busca **apenas** o que falta (T3, FR-013b) — a mesma fonte
+      // que o diálogo usou para dizer o custo. Numa execução que nunca foi
+      // interrompida, `remainingLineIds` devolve a lista inteira, e o caminho
+      // sem interrupção fica literalmente inalterado (FR-013e).
+      const target = linesFor(lines, remainingLineIds(run));
       store.startSearch(target.length, controller);
 
       // Teto de retentativas desta execução (invariante O4): o que a estimativa
@@ -125,7 +183,26 @@ export function ServiceStep() {
           useAppStore.getState().recordRetries(provider, run.retriesUsed + total);
         },
       })
-        .then((items) => {
+        .then((outcome) => {
+          const items = mergeItems(run, outcome.items);
+
+          if (outcome.interruption !== null) {
+            // A ordem é a de FR-001 a FR-003 e **importa**: `handleSessionLoss`
+            // grava o rascunho **antes** de qualquer mudança de estado, depois
+            // limpa a sessão só daquele serviço e registra a causa. Gravar
+            // depois deixaria uma janela em que fechar a aba perderia tudo.
+            handleSessionLoss(provider, outcome.interruption);
+            useAppStore.getState().finishSearch(true);
+            useAppStore
+              .getState()
+              .dispatchRun({ type: 'session_lost', from: 'search', items }, provider);
+            // Segunda gravação, agora com o resultado parcial e a fase nova: é o
+            // que faz recarregar sem reconectar reapresentar o pedido pelo
+            // caminho de restauração já existente (A6, FR-018).
+            flushDraftNow();
+            return;
+          }
+
           useAppStore.getState().dispatchRun({ type: 'search_done', items }, provider);
           useAppStore.getState().finishSearch(controller.signal.aborted);
         })
@@ -151,7 +228,13 @@ export function ServiceStep() {
 
     if (run.phase === 'creating') {
       startedFor.current = key;
-      void startCreation();
+      // T4, FR-029/FR-032: voltar de `awaiting_reauth` retoma a adição a partir
+      // do lote seguinte ao último confirmado, **sem** nova confirmação de
+      // revisão — a escrita retomada é a mesma que o usuário já autorizou.
+      // `retryRemaining` parte do `playlistId` gravado e nunca cria uma segunda
+      // playlist (invariante N2).
+      if (run.creation !== null) void retryRemaining();
+      else void startCreation();
     }
   }, [provider, run, sessions, lines]);
 
@@ -187,6 +270,35 @@ export function ServiceStep() {
       )}
 
       {run.phase === 'estimate' && <QuotaEstimateScreen provider={provider} />}
+
+      {/*
+        T1, FR-012: fechar o modal **não** é caminho destrutivo nem armadilha. A
+        etapa continua exibindo o pedido, com as duas saídas reais — reconectar
+        ou pular este serviço. Sem isto, dispensar o diálogo deixaria o usuário
+        em uma tela sem ação possível sobre uma execução que não encerrou.
+      */}
+      {run.phase === 'awaiting_reauth' && (
+        <>
+          <StepHeading
+            title={format(t.connect.reauthTitle, { service })}
+            description={format(t.connect.reauthStillPending, { service })}
+            focusToken={stepToken}
+          />
+          <AuthError error={authError} />
+          <ConnectButton provider={provider} />
+          <div>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                useAppStore.getState().dispatchRun({ type: 'skipped' }, provider);
+              }}
+            >
+              {format(t.queue.skipService, { service })}
+            </Button>
+          </div>
+          <ReauthDialog provider={provider} />
+        </>
+      )}
 
       {(run.phase === 'search' || run.phase === 'review') && <ReviewScreen provider={provider} />}
 

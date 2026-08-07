@@ -5,6 +5,7 @@ import {
   ateEntrada,
   botaoConectar,
   botaoCriar,
+  botaoReconectar,
   fmt,
   incluirPendentes,
   SPOTIFY,
@@ -222,7 +223,7 @@ test.describe('US3 — dois destinos, um depois do outro', () => {
     await ateRevisaoDoYouTube(page);
 
     // As duas contas aparecem no cabeçalho ao mesmo tempo.
-    const contas = page.getByRole('list', { name: t.connect.sessionsLabel });
+    const contas = page.getByRole('list', { name: t.connect.accountsLabel });
     await expect(contas).toContainText(DISPLAY_NAME);
     await expect(contas).toContainText(YT_CHANNEL_NAME);
 
@@ -232,6 +233,12 @@ test.describe('US3 — dois destinos, um depois do outro', () => {
       .click();
     await expect(contas).not.toContainText(DISPLAY_NAME);
     await expect(contas).toContainText(YT_CHANNEL_NAME);
+
+    // `004/FR-025`, SC-004: o serviço desconectado **continua listado**, com
+    // ação de reconexão. Antes ele sumia do cabeçalho levando junto o seu único
+    // ponto de interação.
+    await expect(contas).toContainText(t.connect.disconnectedState);
+    await expect(botaoReconectar(page, SPOTIFY)).toBeVisible();
 
     // E o ciclo do YouTube continua exatamente onde estava.
     await expect(tituloRevisao(page, YOUTUBE)).toBeVisible();

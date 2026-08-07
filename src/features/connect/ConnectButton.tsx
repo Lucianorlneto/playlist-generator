@@ -12,6 +12,16 @@ export interface ConnectButtonProps {
   provider: ProviderId;
   /** Injetável para teste: em produção é a navegação real do navegador. */
   navigate?: (url: string) => void;
+  /**
+   * Apresentação compacta, para o cabeçalho de contas (`004/US3`): rótulo de
+   * **reconexão** e sem os avisos de escopo e credencial, que já foram lidos na
+   * etapa de conexão e viram ruído repetido em toda tela.
+   *
+   * O comportamento é o mesmo — este é o único caminho de autorização do app, e
+   * é isso que garante que reconectar do cabeçalho grave o rascunho antes de
+   * navegar exatamente como reconectar do diálogo (FR-024, H8).
+   */
+  compact?: boolean;
 }
 
 /**
@@ -21,7 +31,7 @@ export interface ConnectButtonProps {
  * torna impossível, por construção, pedir consentimento a um serviço que não
  * está na vez.
  */
-export function ConnectButton({ provider, navigate }: ConnectButtonProps) {
+export function ConnectButton({ provider, navigate, compact = false }: ConnectButtonProps) {
   const credential = useAppStore((state) => state.credentials[provider]);
   const connecting = useAppStore((state) => state.connecting === provider);
   const setConnecting = useAppStore((state) => state.setConnecting);
@@ -47,6 +57,19 @@ export function ConnectButton({ provider, navigate }: ConnectButtonProps) {
     } catch (error) {
       setAuthError(toAppError(error, provider));
     }
+  }
+
+  if (compact) {
+    return (
+      <Button
+        size="sm"
+        variant="secondary"
+        disabled={credential === null || connecting}
+        onClick={() => void connect()}
+      >
+        {format(connecting ? t.connect.connecting : t.connect.reconnect, { service })}
+      </Button>
+    );
   }
 
   return (

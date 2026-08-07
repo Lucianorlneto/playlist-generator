@@ -68,7 +68,7 @@ describe('US4 cenário 1 — sessão expirada no meio da busca', () => {
     setRefreshBehaviour({ accessToken: 'access-token-renovado' });
     program('search', RESPONSES.unauthorized());
 
-    const items = await runMatching('spotify', parseInput(TEXTO), {
+    const { items } = await runMatching('spotify', parseInput(TEXTO), {
       signal: new AbortController().signal
     });
 
@@ -114,14 +114,30 @@ describe('US4 cenário 1 — sessão expirada no meio da busca', () => {
     expect(contar('token')).toBe(1);
   });
 
-  it('um segundo 401 não entra em laço de renovação', async () => {
+  /**
+   * O invariante deste caso é **a ausência do laço**: uma renovação, duas
+   * buscas, e para.
+   *
+   * O que a 004 mudou é o **desfecho**, não o laço. Antes, a segunda recusa
+   * virava `error` naquela linha — "Não encontrada" para uma sessão que morreu.
+   * FR-001 e FR-002 substituem isso: a execução relata a interrupção e a linha
+   * volta `pending`, porque ninguém chegou a saber se ela existe no catálogo.
+   * Marcar como "não encontrada" uma linha que nunca foi buscada é a desonestia
+   * que a feature existe para remover.
+   */
+  it('um segundo 401 não entra em laço de renovação e vira interrupção', async () => {
     program('search', RESPONSES.unauthorized(), RESPONSES.unauthorized());
 
-    const items = await runMatching('spotify', parseInput('Imagine - John Lennon'), {
-      signal: new AbortController().signal
-    });
+    const { items, interruption } = await runMatching(
+      'spotify',
+      parseInput('Imagine - John Lennon'),
+      { signal: new AbortController().signal },
+    );
 
-    expect(items[0]?.error).not.toBeNull();
+    expect(interruption).not.toBeNull();
+    expect(items[0]?.status).toBe('pending');
+    expect(items[0]?.error).toBeNull();
+    // O que este caso sempre guardou, intocado:
     expect(contar('token')).toBe(1);
     expect(contar('search')).toBe(2);
   });

@@ -84,7 +84,7 @@ describe('Spotify — a consulta por campos sem resultado dispara UMA retentativ
     // A primeira consulta sai só com ruído; a segunda encontra a faixa.
     programBelowFloor('search', 1);
 
-    const [item] = await runMatching('spotify', linha('Zoio de Lula - Charlie Brown Jr'), {
+    const { items: [item] } = await runMatching('spotify', linha('Zoio de Lula - Charlie Brown Jr'), {
       signal: signal(),
     });
 
@@ -161,7 +161,7 @@ describe('a retentativa não afeta as demais linhas', () => {
       parseLine('zoio de lula charlie brown jr', 2, 'l2'),
     ];
 
-    const items = await runMatching('spotify', lista, { signal: signal() });
+    const { items } = await runMatching('spotify', lista, { signal: signal() });
 
     // l0 acha de primeira (1), l1 falha e retenta (2), l2 é livre e não retenta (1).
     expect(requestsTo('search')).toHaveLength(4);

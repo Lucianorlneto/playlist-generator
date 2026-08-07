@@ -12,9 +12,9 @@
 import type { ProviderCapabilities, ProviderId, QuotaOperation } from '@/domain/providers';
 import type {
   InputLine,
-  MatchItem,
   ProviderSession,
   QuotaEstimate,
+  SearchOutcome,
 } from '@/domain/types';
 
 /** Retorno do consentimento: query (Spotify) ou fragmento (YouTube). */
@@ -77,8 +77,17 @@ export interface PlaylistProvider {
 
   // --- Catálogo ------------------------------------------------------------
 
-  /** Candidatas já pontuadas e ordenadas, no máximo 5 por linha (FR-023). */
-  search(lines: InputLine[], ctx: SearchContext): Promise<MatchItem[]>;
+  /**
+   * Candidatas já pontuadas e ordenadas, no máximo 5 por linha (FR-023), mais a
+   * interrupção que porventura tenha derrubado a execução (`004/P1` a `P6`).
+   *
+   * O retorno deixou de ser a lista nua porque **falha de sessão não é falha de
+   * linha**: engolir o `401` linha a linha escrevia "Não encontrada" cem vezes e
+   * escondia que o usuário só precisava reautorizar. `items` continua sempre
+   * completo — a interrupção não encurta a lista, ela só faz mais itens saírem
+   * `pending`.
+   */
+  search(lines: InputLine[], ctx: SearchContext): Promise<SearchOutcome>;
 
   // --- Playlists -----------------------------------------------------------
 

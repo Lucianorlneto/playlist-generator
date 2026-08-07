@@ -27,7 +27,7 @@ import {
   makeSessions,
   makeVideoCandidate,
 } from '../fixtures/factories';
-import { PASS_THROUGH, program, requestsTo, YT_RESPONSES } from '../msw/handlers';
+import { PASS_THROUGH, program, programUnauthorized, requestsTo, YT_RESPONSES } from '../msw/handlers';
 import { useFastLimiters } from './support/clients';
 
 const TOTAL = 5;
@@ -151,5 +151,49 @@ describe('SC-009 — esgotamento de cota encerra sem repetir', () => {
     expect(requestsTo('ytPlaylistItems')).toHaveLength(0);
     expect(ytRun()?.outcome).toBe('failed');
     expect(ytRun()?.result).toBeNull();
+  });
+});
+
+/**
+ * V14 — a precedência da cota sobre a reconexão (`004/research §12`).
+ *
+ * As duas falhas encerram a execução, e é justamente por isso que a ordem
+ * precisa ser explícita: cota esgotada **não** é perda de sessão, e reconectar
+ * não devolve orçamento algum. Oferecer o modal de reconexão aqui mandaria o
+ * usuário refazer a autorização para bater na mesma parede — e a segunda parede
+ * seria mais confusa que a primeira.
+ *
+ * `isSessionLevel` erra afirmativamente por isso: `quota_exhausted` está fora da
+ * lista fechada por decisão estrutural, não por esquecimento (E2).
+ */
+describe('004/V14 — cota esgotada não vira pedido de reconexão', () => {
+  it('encerra sem passar por awaiting_reauth', async () => {
+    program('ytPlaylistItems', PASS_THROUGH, YT_RESPONSES.quotaExceeded());
+
+    await startCreation();
+
+    expect(ytRun()?.phase).not.toBe('awaiting_reauth');
+    expect(ytRun()?.resumeFrom).toBeNull();
+    expect(ytRun()?.outcome).toBe('partial');
+  });
+
+  it('a sessão do serviço **não** é encerrada por esgotamento de cota', async () => {
+    program('ytPlaylistItems', YT_RESPONSES.quotaExceeded());
+
+    await startCreation();
+
+    // Perder a sessão aqui faria o usuário reautorizar sem necessidade.
+    expect(useAppStore.getState().sessions.youtube).not.toBeNull();
+    expect(useAppStore.getState().authError).toBeNull();
+  });
+
+  it('credencial inválida, ao contrário, vira pedido de reconexão', async () => {
+    programUnauthorized('ytPlaylistItems', 1);
+
+    await startCreation();
+
+    // O contraste que define a regra: mesmo ponto do código, desfechos opostos.
+    expect(ytRun()?.phase).toBe('awaiting_reauth');
+    expect(ytRun()?.outcome).toBeNull();
   });
 });

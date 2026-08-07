@@ -210,7 +210,16 @@ export async function apiRequest<T>(
     }
 
     // A resposta chegou: o provedor contabilizou a operação, então nós também.
-    if (operation !== undefined) deps.recordConsumption?.(operation);
+    //
+    // **Menos no `401`** (`004/Q1`, provider-contract §4). A premissa acima é
+    // verdadeira para `403` e `5xx` — a requisição foi processada e cobrada — e
+    // falsa para credencial inválida: o provedor a rejeita antes de executá-la e
+    // não a debita. Registrar aqui gravava 100 unidades por linha em uma lista
+    // inteira que nunca chegou a ser buscada, e o usuário reconectava para ser
+    // barrado por um esgotamento que não provocou.
+    if (operation !== undefined && response.status !== 401) {
+      deps.recordConsumption?.(operation);
+    }
 
     if (response.ok) {
       if (response.status === 204) return undefined as T;

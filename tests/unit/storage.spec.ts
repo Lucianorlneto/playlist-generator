@@ -208,6 +208,66 @@ describe('contracts/storage.md — invariante 2: o rascunho nunca contém token'
   });
 });
 
+/**
+ * A6 — o pedido de reautorização sobrevive à recarga (`004/data-model §8`).
+ *
+ * É o que faz "recarregar sem reconectar" (US4 cenário 3 e US2 cenário 4)
+ * funcionar pelo caminho de restauração **já existente**, sem caminho
+ * alternativo (FR-018). `SCHEMA_VERSION` não muda de propósito: um bump
+ * invalidaria o rascunho de quem atualizasse no meio do trabalho, provocando
+ * exatamente a perda que esta feature existe para evitar.
+ */
+describe('004/A6 — awaiting_reauth e resumeFrom atravessam a gravação', () => {
+  for (const origem of ['search', 'creating'] as const) {
+    it(`rascunho parado vindo de ${origem} relê a mesma fase e o mesmo ponto`, () => {
+      const draft = makeDraft();
+      const run = draft.queue.runs.spotify;
+      if (run !== undefined) {
+        run.phase = 'awaiting_reauth';
+        run.resumeFrom = origem;
+      }
+
+      saveDraft(draft);
+      const carregado = loadDraft();
+
+      expect(carregado?.queue.runs.spotify?.phase).toBe('awaiting_reauth');
+      expect(carregado?.queue.runs.spotify?.resumeFrom).toBe(origem);
+    });
+  }
+
+  it('conteúdo inválido em resumeFrom lê como null, sem derrubar o rascunho', () => {
+    saveDraft(makeDraft());
+
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEYS.draft) ?? '{}') as {
+      queue: { runs: Record<string, { resumeFrom?: unknown }> };
+    };
+    stored.queue.runs['spotify'] = {
+      ...stored.queue.runs['spotify'],
+      resumeFrom: 'fase_que_nao_existe',
+    };
+    localStorage.setItem(STORAGE_KEYS.draft, JSON.stringify(stored));
+
+    const carregado = loadDraft();
+
+    // Descarte seguro do campo, não do rascunho: perder o trabalho por um valor
+    // desconhecido seria a própria falha que a feature combate.
+    expect(carregado).not.toBeNull();
+    expect(carregado?.queue.runs.spotify?.resumeFrom).toBeNull();
+  });
+
+  it('rascunho antigo, sem o campo, lê como null', () => {
+    saveDraft(makeDraft());
+
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEYS.draft) ?? '{}') as {
+      queue: { runs: Record<string, Record<string, unknown>> };
+    };
+    delete stored.queue.runs['spotify']?.['resumeFrom'];
+    localStorage.setItem(STORAGE_KEYS.draft, JSON.stringify(stored));
+
+    expect(loadDraft()?.queue.runs.spotify?.resumeFrom).toBeNull();
+  });
+});
+
 describe('contracts/storage.md — invariante 3: nunca lança', () => {
   it('JSON corrompido devolve null e avisa', () => {
     const avisos: string[] = [];
