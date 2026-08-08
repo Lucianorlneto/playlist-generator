@@ -12,6 +12,7 @@ import { t } from '@/i18n/pt-BR';
 import { useAppStore } from '@/store';
 
 import { DraftRecoveryBanner } from './DraftRecoveryBanner';
+import { ResetFlow } from './ResetFlow';
 import { StepIndicator } from './StepIndicator';
 
 const SCREENS: Record<WizardStep, () => JSX.Element | null> = {
@@ -58,10 +59,15 @@ export function Wizard() {
             O controle de tema entra à esquerda do `SessionHeader`, no fim do
             cabeçalho: é a única adição à ordem de tabulação que esta feature faz
             (SC-016), e ela acontece antes do conteúdo principal, não no meio dele.
+
+            `ResetFlow` entra por último no grupo (`006/FR-013`, ui-contract §1).
+            É o único ponto renderizado em **todas** as etapas, que é o que o
+            requisito pede — e some sozinho quando não há trabalho a descartar.
           */}
           <div className="flex items-center gap-3">
             <ThemeControl />
             <SessionHeader />
+            <ResetFlow />
           </div>
         </div>
         <StepIndicator current={step} />

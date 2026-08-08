@@ -54,7 +54,7 @@ test.describe('003 — lista sem separador vira playlist', () => {
       page.getByText(fmt(t.input.manualEffortOther, { count: 3 })),
     ).toBeVisible();
 
-    await page.getByRole('button', { name: t.input.start }).click();
+    await page.getByRole('button', { name: t.input.start, exact: true }).click();
     await botaoConectar(page, SPOTIFY).click();
     await expect(tituloRevisao(page, SPOTIFY)).toBeVisible();
 
@@ -107,7 +107,7 @@ test.describe('003 — lista sem separador vira playlist', () => {
     await page.getByRole('button', { name: t.common.next, exact: true }).click();
     await page.getByRole('button', { name: t.common.next, exact: true }).click();
     await page.getByLabel(t.input.textareaLabel).fill('zoio de lula charlie brown jr\n---\n🎵');
-    await page.getByRole('button', { name: t.input.start }).click();
+    await page.getByRole('button', { name: t.input.start, exact: true }).click();
     await botaoConectar(page, SPOTIFY).click();
     await expect(tituloRevisao(page, SPOTIFY)).toBeVisible();
 

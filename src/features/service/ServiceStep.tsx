@@ -15,13 +15,13 @@ import { ResultScreen } from '@/features/result/ResultScreen';
 import { startCreation } from '@/features/result/creationRunner';
 import { refreshExistingNames } from '@/features/review/nameCheck';
 import { ReviewScreen } from '@/features/review/ReviewScreen';
+import { SkipButton } from '@/features/service/SkipButton';
 import { format, t } from '@/i18n/pt-BR';
 import { providerFor } from '@/services/providers/registry';
 import { retryReserveOf } from '@/services/providers/retryPlan';
 import { toErrorInfo, toAppError } from '@/services/providers/errors';
 import { useAppStore } from '@/store';
 import { flushDraftNow } from '@/store/draftPersistence';
-import { Button } from '@/ui/Button';
 import { StepHeading } from '@/ui/StepHeading';
 
 import type { MatchItem, ServiceRun } from '@/domain/types';
@@ -257,14 +257,7 @@ export function ServiceStep() {
           <AuthError error={authError} />
           <ConnectButton provider={provider} />
           <div>
-            <Button
-              variant="ghost"
-              onClick={() => {
-                useAppStore.getState().dispatchRun({ type: 'skipped' }, provider);
-              }}
-            >
-              {format(t.queue.skipService, { service })}
-            </Button>
+            <SkipButton provider={provider} />
           </div>
         </>
       )}
@@ -287,14 +280,7 @@ export function ServiceStep() {
           <AuthError error={authError} />
           <ConnectButton provider={provider} />
           <div>
-            <Button
-              variant="ghost"
-              onClick={() => {
-                useAppStore.getState().dispatchRun({ type: 'skipped' }, provider);
-              }}
-            >
-              {format(t.queue.skipService, { service })}
-            </Button>
+            <SkipButton provider={provider} />
           </div>
           <ReauthDialog provider={provider} />
         </>

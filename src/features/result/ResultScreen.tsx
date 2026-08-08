@@ -5,6 +5,7 @@ import type { ProviderId } from '@/domain/providers';
 import { linesFor } from '@/domain/run/lines';
 import { nameOf, textFor } from '@/features/credential/providerText';
 import { ListReduction } from '@/features/input/ListReduction';
+import { SkipButton } from '@/features/service/SkipButton';
 import { format, t } from '@/i18n/pt-BR';
 import { useAppStore } from '@/store';
 import { Button } from '@/ui/Button';
@@ -230,18 +231,14 @@ export function ResultScreen({ provider }: ResultScreenProps) {
             >
               {t.result.adjustList}
             </Button>
-            <Button
-              variant="ghost"
-              onClick={() => {
-                // Pular o destino seguinte **não** desfaz nem oculta o que já foi
-                // criado neste (FR-020).
-                useAppStore.getState().dispatchRun({ type: 'skipped' }, nextProvider);
-                advance();
-                goToStep('summary');
-              }}
-            >
-              {format(t.queue.skipService, { service: nameOf(nextProvider) })}
-            </Button>
+            {/*
+              Pular o destino seguinte **não** desfaz nem oculta o que já foi
+              criado neste (FR-020). `exitAfterSkip` devolve `summary` aqui,
+              porque o destino de onde o usuário olha rodou — e é por isso que
+              este caminho, o único dos seis que já funcionava, sai da `006` com
+              o comportamento inalterado (`006/ui-contract §4`).
+            */}
+            <SkipButton provider={nextProvider} />
           </>
         )}
       </div>

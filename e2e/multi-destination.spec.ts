@@ -303,3 +303,82 @@ test.describe('US3 — dois destinos, um depois do outro', () => {
     await expect(page.getByRole('heading', { name: t.summary.heading })).toHaveCount(0);
   });
 });
+
+/**
+ * V17 — o beco sem saída, de ponta a ponta (`006/SC-001`, SC-002, FR-004,
+ * FR-007).
+ *
+ * Antes da `006`, com **um** destino, pular na revisão levava a "Criando
+ * playlist no Spotify…" — de um serviço que não ia criar nada — e o único botão
+ * de lá levava a uma página sem cabeçalho e sem botão. A única saída era
+ * recarregar (`006/research §2`).
+ *
+ * Este bloco fica fora do `describe` acima de propósito: é fluxo de destino
+ * único, e o arquivo existe para o de dois. Mora aqui por ser o mesmo assunto —
+ * o que acontece quando um destino sai da fila.
+ */
+test.describe('006 — pular sem tela fantasma', () => {
+  test('destino único: pular encerra o fluxo na seleção de serviços', async ({ page }) => {
+    const spotifyState = await mockSpotify(page);
+    await seedCredential(page, CLIENT_ID, 'spotify');
+
+    await ateEntrada(page, LISTA);
+    await botaoConectar(page, SPOTIFY).click();
+    await expect(tituloRevisao(page, SPOTIFY)).toBeVisible();
+
+    await page
+      .getByRole('button', { name: fmt(t.queue.skipService, { service: SPOTIFY }) })
+      .click();
+
+    // A confirmação existe porque este é o único caminho em que pular descarta
+    // trabalho (`006/FR-005`).
+    const dialogo = page.getByRole('dialog');
+    await expect(dialogo).toBeVisible();
+    await dialogo.getByRole('button', { name: t.common.discard }).click();
+
+    // Chegou na seleção de serviços…
+    await expect(page.getByRole('heading', { name: t.destinations.heading })).toBeVisible();
+    // …a tela de criação nunca apareceu…
+    await expect(
+      page.getByText(fmt(t.playlistConfig.creating, { service: SPOTIFY })),
+    ).toHaveCount(0);
+    // …e nada foi criado na conta.
+    expect(spotifyState.createdPlaylistId).toBeNull();
+  });
+
+  test('recusar a confirmação devolve o usuário à revisão intacta', async ({ page }) => {
+    await mockSpotify(page);
+    await seedCredential(page, CLIENT_ID, 'spotify');
+
+    await ateEntrada(page, LISTA);
+    await botaoConectar(page, SPOTIFY).click();
+    await expect(tituloRevisao(page, SPOTIFY)).toBeVisible();
+
+    await page
+      .getByRole('button', { name: fmt(t.queue.skipService, { service: SPOTIFY }) })
+      .click();
+    await page.getByRole('dialog').getByRole('button', { name: t.common.cancel }).click();
+
+    await expect(tituloRevisao(page, SPOTIFY)).toBeVisible();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+  });
+
+  test('o comando de recomeço devolve à seleção de serviços de qualquer etapa', async ({
+    page,
+  }) => {
+    await mockSpotify(page);
+    await seedCredential(page, CLIENT_ID, 'spotify');
+
+    await ateEntrada(page, LISTA);
+    await botaoConectar(page, SPOTIFY).click();
+    await expect(tituloRevisao(page, SPOTIFY)).toBeVisible();
+
+    await page.getByRole('button', { name: t.flow.reset }).click();
+    await page.getByRole('dialog').getByRole('button', { name: t.flow.resetConfirm }).click();
+
+    await expect(page.getByRole('heading', { name: t.destinations.heading })).toBeVisible();
+
+    // A credencial sobreviveu: nada de voltar para a etapa de configuração.
+    await expect(page.getByRole('heading', { name: t.credential.heading })).toHaveCount(0);
+  });
+});

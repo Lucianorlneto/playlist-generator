@@ -50,7 +50,11 @@ export async function avancarDosDestinos(page: Page): Promise<void> {
 export async function informarLista(page: Page, lista: string): Promise<void> {
   await expect(page.getByRole('heading', { name: t.input.heading })).toBeVisible();
   await page.getByLabel(t.input.textareaLabel).fill(lista);
-  await page.getByRole('button', { name: t.input.start }).click();
+  // `exact` como no `avancarDosDestinos` acima: o Playwright casa nome de papel
+  // por **substring**, e "Começar" é sufixo de "Recomeçar" — o botão global de
+  // recomeço que a `006` pôs no cabeçalho de todas as etapas. Sem isto o
+  // localizador resolve para dois elementos.
+  await page.getByRole('button', { name: t.input.start, exact: true }).click();
 }
 
 /** Abertura → entrada, parando antes do ciclo do primeiro serviço. */
