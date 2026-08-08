@@ -27,7 +27,7 @@ export function DraftRecoveryBanner() {
     return (
       <div
         role="status"
-        className="border-status-uncertain bg-status-uncertain-soft text-ink rounded-lg border p-3 text-sm"
+        className="border-state-uncertain-edge bg-state-uncertain-tint text-ink rounded-card border p-3 text-body"
       >
         <p>{notice === 'quota_failed' ? t.draft.quotaWarning : t.draft.quotaDegraded}</p>
         <Button
@@ -47,7 +47,7 @@ export function DraftRecoveryBanner() {
     return (
       <div
         role="status"
-        className="border-status-uncertain bg-status-uncertain-soft text-ink rounded-lg border p-3 text-sm"
+        className="border-state-uncertain-edge bg-state-uncertain-tint text-ink rounded-card border p-3 text-body"
       >
         <p>{t.draft.keptAfterQuota}</p>
         <div className="mt-2 flex flex-wrap gap-2">
@@ -76,7 +76,7 @@ export function DraftRecoveryBanner() {
 
   if (notice === 'discarded') {
     return (
-      <div role="status" className="border-border bg-surface rounded-lg border p-3 text-sm">
+      <div role="status" className="border-rule bg-surface rounded-card border p-3 text-body">
         <p>{t.draft.discarded}</p>
         <Button
           size="sm"
@@ -92,7 +92,20 @@ export function DraftRecoveryBanner() {
   }
 
   return (
-    <div role="status" className="border-accent bg-accent-soft rounded-lg border p-3 text-sm">
+    /*
+      A faixa perdeu o fundo âmbar suave e ganhou uma guia de 3px à esquerda
+      (contracts/components.md §10). A informação migrou de preenchimento para
+      estrutura, que é o que o FR-047 pede: fundo tingido em âmbar era
+      exatamente o que fazia esta faixa competir visualmente com o botão
+      primário.
+
+      A guia é `guide-edge`, um utilitário de `index.css`, e não
+      `border-l-accent`: uma barra sólida é preenchimento — o único uso que o
+      FR-050 autoriza para o âmbar cheio — e mantê-la fora do componente permite
+      à regra de lint recusar `border-accent` sem exceção
+      (contracts/token-migration.md §6.5).
+    */
+    <div role="status" className="guide-edge border-rule bg-surface rounded-card border p-3 text-body">
       <p className="text-ink font-semibold">
         {notice === 'migrated' ? t.draft.migrated : t.draft.recoveredHeading}
       </p>

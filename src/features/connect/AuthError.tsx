@@ -26,7 +26,7 @@ export function AuthError({ error, redirectUri }: AuthErrorProps) {
   return (
     <div
       role="alert"
-      className="border-danger bg-danger-soft text-ink rounded-lg border p-3 text-sm"
+      className="border-state-missing bg-state-missing-tint text-ink rounded-card border p-3 text-body"
     >
       <p className="font-bold">{error.info.title}</p>
       <p className="mt-1">{error.info.cause}</p>
@@ -34,7 +34,7 @@ export function AuthError({ error, redirectUri }: AuthErrorProps) {
 
       {showRedirectUri && (
         <div className="mt-2 flex flex-wrap items-center gap-2">
-          <code className="border-border bg-surface rounded-lg border px-2 py-1 break-all">
+          <code className="border-rule bg-surface rounded-card border px-2 py-1 break-all">
             {uri}
           </code>
           <CopyButton value={uri} label={t.credential.copyRedirectUri} />

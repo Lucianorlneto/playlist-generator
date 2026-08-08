@@ -5,12 +5,10 @@ import { nameOf } from '@/features/credential/providerText';
 import { format, t } from '@/i18n/pt-BR';
 import { useAppStore } from '@/store';
 import { Button } from '@/ui/Button';
-import { cx } from '@/ui/cx';
 import { StepHeading } from '@/ui/StepHeading';
 
 import { MatchRow } from './MatchRow';
 import { PlaylistConfigForm } from './PlaylistConfigForm';
-import { REVIEW_GRID } from './reviewGrid';
 import { SearchProgress } from './SearchProgress';
 
 export interface ReviewScreenProps {
@@ -64,29 +62,27 @@ export function ReviewScreen({ provider }: ReviewScreenProps) {
 
       <SearchProgress provider={provider} />
 
-      <p className="text-ink-muted text-sm">
+      <p className="text-ink-muted text-body">
         {format(t.review.summaryConfident, { count: summary.confident })} ·{' '}
         {format(t.review.summaryUncertain, { count: summary.uncertain })} ·{' '}
         {format(t.review.summaryNotFound, { count: summary.notFound })}
       </p>
-      <p className="text-ink text-sm font-semibold">
+      <p className="text-ink text-body font-semibold">
         {format(t.review.selectedCount, { selected: summary.selected, total: items.length })}
       </p>
       <p className="field-message">{t.review.editLinePropagates}</p>
 
-      {/* Cabeçalho de colunas: só existe a partir de `sm:`, onde a lista deixa
-          de ser uma pilha de cartões e passa a ter colunas alinhadas. */}
-      <div
-        aria-hidden="true"
-        className={cx(REVIEW_GRID, 'text-ink-muted hidden px-4 text-xs font-semibold sm:grid')}
-      >
-        <span>{t.review.columnInclude}</span>
-        <span>{t.review.columnOriginal}</span>
-        <span>{t.review.columnMatch}</span>
-        <span className="text-right">{t.review.columnStatus}</span>
-      </div>
+      {/*
+        O cabeçalho de colunas saiu junto com a grade de quatro colunas.
+        `MatchRow` deixou de ser uma linha de tabela e passou a ser uma entrada
+        de documento — goteira com o numeral, e o conteúdo empilhado ao lado
+        (design.md §5). Não há mais colunas a rotular, e um cabeçalho que não
+        encabeça nada é ruído.
 
-      <ul aria-label={t.review.listLabel} className="flex flex-col gap-3">
+        Nada se perde em acessibilidade: o elemento era `aria-hidden`, e cada
+        campo da linha continua rotulado por texto próprio.
+      */}
+      <ul aria-label={t.review.listLabel} className="flex flex-col gap-2">
         {ordered.map((item) => (
           <MatchRow key={item.line.id} item={item} provider={provider} />
         ))}

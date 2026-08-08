@@ -1,0 +1,186 @@
+/**
+ * Camada 1 de duas: os valores brutos, por tema.
+ *
+ * Este arquivo é a **origem única** de todo valor visual que muda entre os temas
+ * (FR-001, FR-002, FR-028). A camada 2 — o mapeamento dos nomes semânticos para
+ * utilitários — vive em `index.css`, num `@theme inline` que emite `var(--…)` em
+ * vez do valor resolvido. É essa indireção que faz a troca de tema custar uma
+ * mudança de atributo, sem recarregar e sem recompor React (research §1, T001).
+ *
+ * Divisão de responsabilidade entre os dois arquivos: **o que difere por tema
+ * está aqui**; o que é único para os dois — escalas de espaçamento, raio,
+ * tipografia e layout — está em `index.css`. Um token de cor definido só num dos
+ * temas é erro de definição, não recurso (contracts/tokens.md §6).
+ *
+ * Os valores são normativos e vêm de `contracts/tokens.md` §1. Alterá-los aqui
+ * sem atualizar o contrato e sem rodar `tests/unit/contrast.spec.ts` quebra o
+ * portão do FR-030.
+ */
+
+/* ---------------------------------------------------------------------------
+ * Tema Papel — claro. Também o padrão quando não há atributo nem preferência
+ * de sistema por escuro.
+ * ------------------------------------------------------------------------ */
+:root {
+  /* Faz `<progress>`, barras de rolagem e controles nativos acompanharem o
+     tema. Sem isto o tema escuro entrega uma barra de progresso clara no meio
+     da tela — `SearchProgress` usa `<progress>` nativo de propósito
+     (research §9). */
+  color-scheme: light;
+
+  --bg: #faf7f0;
+  --surface: #ffffff;
+  --surface-raised: #f4efe4;
+
+  --rule: #e3dccd;
+  --rule-strong: #8f887a;
+
+  --ink: #141c26;
+  --ink-muted: #5a6473;
+
+  --accent: #f4a900;
+  --accent-deep: #d99700;
+  --accent-ink: #141c26;
+  --accent-text: #9a5b00;
+
+  --state-confident: #14706b;
+  --state-uncertain: #7a5c00;
+  --state-missing: #b3261e;
+
+  /* Quantidade de tinta do estado sobre a superfície. Difere por tema porque o
+     substrato difere: 12% de teal sobre branco lê igual a 15% sobre marinho. */
+  --state-tint-amount: 12%;
+
+  /* Profundidade: um único nível no claro (contracts/tokens.md §4). */
+  --elevation-card:
+    0 1px 2px rgb(20 28 38 / 6%),
+    0 4px 12px rgb(20 28 38 / 5%);
+}
+
+/* ---------------------------------------------------------------------------
+ * Tema Noite — escuro, aplicado por escolha explícita do usuário.
+ * ------------------------------------------------------------------------ */
+[data-theme='dark'] {
+  color-scheme: dark;
+
+  --bg: #0d1219;
+  --surface: #1a2332;
+  --surface-raised: #223045;
+
+  --rule: #2c3a4d;
+  --rule-strong: #5e7a9d;
+
+  --ink: #e8eaed;
+  --ink-muted: #9aa8b8;
+
+  --accent: #f4a900;
+  --accent-deep: #c98600;
+  --accent-ink: #0d1219;
+  --accent-text: #f4a900;
+
+  --state-confident: #4ec4b8;
+  --state-uncertain: #f0c04a;
+  --state-missing: #ff8a7a;
+
+  --state-tint-amount: 15%;
+
+  /* Sombra preta sobre fundo quase-preto não é visível. No escuro a
+     profundidade vem de degrau de luminosidade e filete de 1px, e a assimetria
+     é escolha, não esquecimento (contracts/tokens.md §4). */
+  --elevation-card: none;
+}
+
+/* ---------------------------------------------------------------------------
+ * Sem atributo, o sistema decide.
+ *
+ * Esta é a camada que faz FR-010 funcionar **sem script nenhum** para o caminho
+ * mais comum — quem nunca escolheu tema, que é o estado inicial de todos. O
+ * `public/theme-boot.js` só existe para a divergência: preferência manual que
+ * contradiz o sistema (research §2).
+ *
+ * `:not([data-theme])` é o que garante que uma escolha manual por "Claro" vença
+ * um sistema em escuro.
+ * ------------------------------------------------------------------------ */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    color-scheme: dark;
+
+    --bg: #0d1219;
+    --surface: #1a2332;
+    --surface-raised: #223045;
+
+    --rule: #2c3a4d;
+    --rule-strong: #5e7a9d;
+
+    --ink: #e8eaed;
+    --ink-muted: #9aa8b8;
+
+    --accent: #f4a900;
+    --accent-deep: #c98600;
+    --accent-ink: #0d1219;
+    --accent-text: #f4a900;
+
+    --state-confident: #4ec4b8;
+    --state-uncertain: #f0c04a;
+    --state-missing: #ff8a7a;
+
+    --state-tint-amount: 15%;
+
+    --elevation-card: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Derivados de estado.
+ *
+ * Não são tokens próprios: são `color-mix` do token de estado com a superfície
+ * (contracts/tokens.md §1). Derivar em vez de declarar é o que impede que trocar
+ * o teal de "confiante" exija editar dois valores e esquecer um.
+ *
+ * Declarados uma única vez, fora dos blocos de tema: `var()` em propriedade
+ * customizada é substituída no elemento onde a declaração vence, então tanto o
+ * token de estado quanto a quantidade de tinta já chegam aqui com o valor do
+ * tema em vigor.
+ * ------------------------------------------------------------------------ */
+:root {
+  --state-confident-tint: color-mix(
+    in srgb,
+    var(--state-confident) var(--state-tint-amount),
+    var(--surface)
+  );
+  --state-uncertain-tint: color-mix(
+    in srgb,
+    var(--state-uncertain) var(--state-tint-amount),
+    var(--surface)
+  );
+  --state-missing-tint: color-mix(
+    in srgb,
+    var(--state-missing) var(--state-tint-amount),
+    var(--surface)
+  );
+  --state-neutral-tint: color-mix(
+    in srgb,
+    var(--ink-muted) var(--state-tint-amount),
+    var(--surface)
+  );
+
+  /* Filete do selo: a cor do estado a 30%, igual nos dois temas. */
+  --state-confident-edge: color-mix(in srgb, var(--state-confident) 30%, transparent);
+  --state-uncertain-edge: color-mix(in srgb, var(--state-uncertain) 30%, transparent);
+  --state-missing-edge: color-mix(in srgb, var(--state-missing) 30%, transparent);
+  --state-neutral-edge: color-mix(in srgb, var(--ink-muted) 30%, transparent);
+
+  /* Véu do diálogo: `--ink` a 35% no claro, preto a 55% no escuro
+     (contracts/components.md §4). */
+  --scrim: color-mix(in srgb, var(--ink) 35%, transparent);
+}
+
+[data-theme='dark'] {
+  --scrim: rgb(0 0 0 / 55%);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --scrim: rgb(0 0 0 / 55%);
+  }
+}

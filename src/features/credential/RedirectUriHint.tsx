@@ -33,23 +33,23 @@ export function RedirectUriHint({ provider, redirectUri, javaScriptOrigin }: Red
   const setup = providerFor(provider).setup;
 
   return (
-    <section className="border-border bg-surface-muted rounded-lg border p-3">
-      <h4 className="text-ink text-sm font-bold">{text.howToHeading}</h4>
-      <ol className="text-ink-muted mt-2 list-decimal space-y-1 pl-5 text-sm">
+    <section className="border-rule bg-bg rounded-card border p-3">
+      <h4 className="text-ink text-body font-bold">{text.howToHeading}</h4>
+      <ol className="text-ink-muted mt-2 list-decimal space-y-1 pl-6 text-body">
         {text.howToSteps.map((step) => (
           <li key={step}>{step}</li>
         ))}
       </ol>
-      <p className="mt-2 text-sm">
+      <p className="mt-2 text-body">
         <a href={setup.consoleUrl} target="_blank" rel="noopener noreferrer">
           {text.consoleLinkLabel}
         </a>
       </p>
 
-      <h4 className="text-ink mt-4 text-sm font-bold">{t.credential.redirectUriHeading}</h4>
+      <h4 className="text-ink mt-4 text-body font-bold">{t.credential.redirectUriHeading}</h4>
       <p className="field-message">{t.credential.redirectUriHint}</p>
       <div className="mt-2 flex flex-wrap items-center gap-2">
-        <code className="border-border bg-surface text-ink rounded-lg border px-2 py-1 text-sm break-all">
+        <code className="border-rule bg-surface text-ink rounded-card border px-2 py-1 text-body break-all">
           {uri}
         </code>
         <CopyButton value={uri} label={t.credential.copyRedirectUri} />
@@ -57,10 +57,10 @@ export function RedirectUriHint({ provider, redirectUri, javaScriptOrigin }: Red
 
       {setup.needsJavaScriptOrigin && (
         <>
-          <h4 className="text-ink mt-4 text-sm font-bold">{t.credential.javascriptOriginHeading}</h4>
+          <h4 className="text-ink mt-4 text-body font-bold">{t.credential.javascriptOriginHeading}</h4>
           <p className="field-message">{t.credential.javascriptOriginHint}</p>
           <div className="mt-2 flex flex-wrap items-center gap-2">
-            <code className="border-border bg-surface text-ink rounded-lg border px-2 py-1 text-sm break-all">
+            <code className="border-rule bg-surface text-ink rounded-card border px-2 py-1 text-body break-all">
               {origin}
             </code>
             <CopyButton value={origin} label={t.credential.copyJavascriptOrigin} />
@@ -70,7 +70,7 @@ export function RedirectUriHint({ provider, redirectUri, javaScriptOrigin }: Red
 
       {/* O aviso é sempre exibido; quando a aplicação de fato está em `localhost`
           ele vira alerta, porque aí a autorização vai falhar de verdade. */}
-      <p role={localhostRisk ? 'alert' : undefined} className="field-message text-status-uncertain">
+      <p role={localhostRisk ? 'alert' : undefined} className="field-message text-state-uncertain">
         {t.credential.redirectUriLocalhostWarning}
       </p>
     </section>

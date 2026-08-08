@@ -11,19 +11,19 @@ export type ButtonSize = 'md' | 'sm';
  * aparece no build (research §14).
  */
 const VARIANT_CLASSES: Record<ButtonVariant, string> = {
-  primary: 'bg-accent text-ink-inverse hover:bg-accent-strong disabled:hover:bg-accent',
-  secondary: 'bg-surface text-ink border border-border-strong hover:bg-surface-sunken',
-  danger: 'bg-surface text-danger border border-danger hover:bg-danger-soft',
-  ghost: 'bg-transparent text-ink-muted hover:bg-surface-sunken hover:text-ink',
+  primary: 'bg-accent text-accent-ink hover:bg-accent-deep disabled:hover:bg-accent',
+  secondary: 'bg-surface text-ink border border-rule-strong hover:bg-surface-raised',
+  danger: 'bg-surface text-state-missing border border-state-missing hover:bg-state-missing-tint',
+  ghost: 'bg-transparent text-ink-muted hover:bg-surface-raised hover:text-ink',
 };
 
 const SIZE_CLASSES: Record<ButtonSize, string> = {
-  md: 'px-4 py-2 text-sm',
-  sm: 'px-2.5 py-1.5 text-xs',
+  md: 'px-4 py-2 text-body',
+  sm: 'px-3 py-1 text-meta',
 };
 
 const BASE_CLASSES =
-  'focus-ring inline-flex items-center justify-center gap-2 rounded-lg font-semibold ' +
+  'focus-ring inline-flex items-center justify-center gap-2 rounded-card font-semibold ' +
   'transition-colors disabled:cursor-not-allowed disabled:opacity-50';
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {

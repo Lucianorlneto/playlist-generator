@@ -64,8 +64,8 @@ export function PlaylistConfigForm({ provider }: PlaylistConfigFormProps) {
     session === null ? null : effectivePath(provider, session.user.displayName, config.name);
 
   return (
-    <section className="border-border flex flex-col gap-3 border-t pt-4">
-      <h3 className="text-ink text-base font-bold">{t.playlistConfig.heading}</h3>
+    <section className="border-rule flex flex-col gap-3 border-t pt-4">
+      <h3 className="text-ink text-body font-bold">{t.playlistConfig.heading}</h3>
 
       <TextField
         label={t.playlistConfig.nameLabel}
@@ -112,7 +112,7 @@ export function PlaylistConfigForm({ provider }: PlaylistConfigFormProps) {
       )}
 
       {nameCheckError !== null && (
-        <div role="alert" className="border-danger bg-danger-soft rounded-lg border p-2 text-sm">
+        <div role="alert" className="border-state-missing bg-state-missing-tint rounded-card border p-2 text-body">
           <p className="font-semibold">{nameCheckError.info.title}</p>
           <p>{nameCheckError.info.cause}</p>
           <p>{nameCheckError.info.nextStep}</p>
@@ -129,7 +129,7 @@ export function PlaylistConfigForm({ provider }: PlaylistConfigFormProps) {
       )}
 
       {!validation.ok && validation.reason === 'no_tracks_selected' && (
-        <p className="field-message text-danger">{t.playlistConfig.noTracksSelected}</p>
+        <p className="field-message text-state-missing">{t.playlistConfig.noTracksSelected}</p>
       )}
 
       <div>

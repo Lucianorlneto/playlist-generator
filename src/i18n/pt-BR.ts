@@ -43,6 +43,20 @@ const messages = {
     skipToContent: 'Ir para o conteúdo',
   },
 
+  /**
+   * Controle de tema (FR-022). Os únicos textos **novos** desta feature — o
+   * FR-035 congela todos os demais, e mexer em copy aqui misturaria duas
+   * mudanças de natureza diferente na mesma revisão (design.md §7).
+   */
+  theme: {
+    groupLabel: 'Tema',
+    light: 'Claro',
+    dark: 'Escuro',
+    system: 'Sistema',
+    /** Lido junto do segmento "Sistema", que sozinho não diz o que faz. */
+    systemHint: 'Acompanha a preferência do sistema',
+  },
+
   steps: {
     credential: 'Configuração',
     destinations: 'Destinos',

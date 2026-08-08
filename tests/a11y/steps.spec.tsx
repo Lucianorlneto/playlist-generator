@@ -10,7 +10,7 @@
 
 import { render, screen } from '@testing-library/react';
 import axe from 'axe-core';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { CredentialStep } from '@/features/credential/CredentialStep';
 import { DestinationsStep } from '@/features/destinations/DestinationsStep';
@@ -26,6 +26,7 @@ import { SummaryScreen } from '@/features/summary/SummaryScreen';
 import { t } from '@/i18n/pt-BR';
 import { configureProviderClient } from '@/services/providers/http';
 import { createRefresher } from '@/services/providers/spotify/auth';
+import { THEMES } from '@/domain/theme/approvedPairs';
 import { useAppStore } from '@/store';
 
 import {
@@ -119,7 +120,29 @@ beforeEach(() => {
   });
 });
 
-describe('Acessibilidade do fluxo (FR-047)', () => {
+/**
+ * A suíte inteira roda **duas vezes**, uma por tema (FR-031, SC-002, research §11).
+ *
+ * O que isso pega e o que não pega, dito com honestidade: as regras de contraste
+ * estão desligadas porque o happy-dom não calcula estilo o bastante, então a
+ * duplicação **não** verifica cor. O que ela verifica é que nenhuma etapa
+ * introduza estrutura condicional ao tema — rótulo, papel ARIA ou ordem que
+ * mudem com o atributo raiz. Hoje nada muda, e é exatamente essa a afirmação
+ * que o teste passa a sustentar em vez de assumir.
+ *
+ * A verificação de contraste de verdade é `tests/unit/contrast.spec.ts`, que
+ * mede os pares declarados nos dois temas. As duas se complementam: a matriz
+ * cobre pares declarados, o axe cobre a árvore renderizada.
+ */
+describe.each(THEMES)('Acessibilidade do fluxo (FR-047) — tema %s', (theme) => {
+  beforeEach(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  });
+
+  afterEach(() => {
+    document.documentElement.removeAttribute('data-theme');
+  });
+
   it('configuração — sem nenhuma credencial salva', async () => {
     const { container } = render(<CredentialStep />);
     await semViolacoes(container);

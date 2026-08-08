@@ -72,7 +72,7 @@ export function InputScreen() {
         }}
       />
 
-      <p className="text-ink-muted text-sm">
+      <p className="text-ink-muted text-body">
         {plural(lineCount, t.input.lineCountOne, t.input.lineCountOther)}
       </p>
 
@@ -85,7 +85,7 @@ export function InputScreen() {
       )}
 
       {lineCount > LARGE_LIST_THRESHOLD && (
-        <p role="status" className="field-message text-status-uncertain">
+        <p role="status" className="field-message text-state-uncertain">
           {format(t.input.largeListWarning, { count: lineCount })}
         </p>
       )}

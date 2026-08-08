@@ -47,8 +47,8 @@ export function SummaryScreen() {
           return (
             <li key={entry.provider} className="app-card flex flex-col gap-2">
               <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <h3 className="text-ink text-base font-bold">{service}</h3>
-                <span className="text-ink-muted text-sm font-semibold">
+                <h3 className="text-ink text-body font-bold">{service}</h3>
+                <span className="text-ink-muted text-body font-semibold">
                   {t.summary.outcome[entry.outcome]}
                 </span>
               </div>
@@ -56,18 +56,18 @@ export function SummaryScreen() {
               <p className="field-message">{t.summary.outcomeHint[entry.outcome]}</p>
 
               {entry.accountLabel !== '' && (
-                <p className="text-ink-muted text-sm">
+                <p className="text-ink-muted text-body">
                   {t.summary.accountLabel}: <strong className="text-ink">{entry.accountLabel}</strong>
                 </p>
               )}
 
-              <p className="text-ink-muted text-sm">
+              <p className="text-ink-muted text-body">
                 {plural(entry.lineCount, t.summary.linesUsedOne, t.summary.linesUsedOther)} ·{' '}
                 {t.result.added}: {entry.addedCount} · {t.result.skipped}: {entry.skippedCount}
               </p>
 
               {entry.incompleteByQuota && (
-                <p role="alert" className="field-message text-status-uncertain">
+                <p role="alert" className="field-message text-state-uncertain">
                   {t.quota.incompleteWarning}
                 </p>
               )}
@@ -78,14 +78,18 @@ export function SummaryScreen() {
                     href={entry.playlistUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="focus-ring text-sm underline"
+                    className="focus-ring text-body underline"
                   >
                     {text.openPlaylist}
                   </a>
                 </div>
               )}
 
-              <FailedLines provider={entry.provider} lines={entry.failedLines} />
+              <FailedLines
+                provider={entry.provider}
+                lines={entry.failedLines}
+                indices={entry.failedIndices}
+              />
             </li>
           );
         })}
@@ -94,7 +98,7 @@ export function SummaryScreen() {
       {summary.listsDiverged && (
         <section
           role="note"
-          className="border-status-uncertain bg-status-uncertain-soft rounded-lg border p-3 text-sm"
+          className="border-state-uncertain-edge bg-state-uncertain-tint rounded-card border p-3 text-body"
         >
           <h3 className="text-ink font-bold">{t.summary.divergedHeading}</h3>
           <p className="text-ink mt-1">{t.summary.divergedBody}</p>

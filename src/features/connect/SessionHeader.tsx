@@ -41,7 +41,7 @@ export function SessionHeader() {
   if (listed.length === 0) return null;
 
   return (
-    <ul aria-label={t.connect.accountsLabel} className="flex flex-col items-end gap-1 text-sm">
+    <ul aria-label={t.connect.accountsLabel} className="flex flex-col items-end gap-1 text-body">
       {listed.map((provider) => {
         const session = sessions[provider];
         const service = nameOf(provider);

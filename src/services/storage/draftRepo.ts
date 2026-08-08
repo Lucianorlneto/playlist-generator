@@ -213,6 +213,7 @@ function serializeResult(result: CreationResult) {
     addedCount: result.addedCount,
     skippedCount: result.skippedCount,
     failedLines: result.failedLines,
+    failedIndices: result.failedIndices,
     incompleteByQuota: result.incompleteByQuota,
   };
 }
@@ -520,6 +521,12 @@ function validateResult(raw: unknown): CreationResult | null {
   const addedCount = asFiniteNumber(obj['addedCount']);
   const skippedCount = asFiniteNumber(obj['skippedCount']);
   const failedLines = asStringArray(obj['failedLines']);
+  // Aditivo: rascunho gravado antes da 005 não traz o campo, e a ausência não
+  // pode invalidar o registro inteiro — o relatório apenas fica sem numeral.
+  const rawIndices = obj['failedIndices'];
+  const failedIndices = Array.isArray(rawIndices)
+    ? rawIndices.filter((value): value is number => typeof value === 'number' && Number.isFinite(value))
+    : [];
   const incompleteByQuota = asBoolean(obj['incompleteByQuota']);
 
   if (
@@ -544,6 +551,7 @@ function validateResult(raw: unknown): CreationResult | null {
     addedCount,
     skippedCount,
     failedLines,
+    failedIndices,
     incompleteByQuota: incompleteByQuota ?? false,
   };
 }

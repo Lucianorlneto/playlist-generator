@@ -66,7 +66,7 @@ export function ResultScreen({ provider }: ResultScreenProps) {
         />
 
         {creating && creation !== null && (
-          <p role="status" className="text-ink-muted text-sm">
+          <p role="status" className="text-ink-muted text-body">
             {format(t.result.creationProgress, {
               current: Math.min(creation.orderedUris.length, committedItemCount(creation) + 1),
               total: creation.orderedUris.length,
@@ -76,7 +76,7 @@ export function ResultScreen({ provider }: ResultScreenProps) {
         )}
 
         {creationError !== null && creation === null && (
-          <div role="alert" className="border-danger bg-danger-soft rounded-lg border p-3 text-sm">
+          <div role="alert" className="border-state-missing bg-state-missing-tint rounded-card border p-3 text-body">
             <p className="font-bold">{creationError.info.title}</p>
             <p>{creationError.info.cause}</p>
             <p>{creationError.info.nextStep}</p>
@@ -86,7 +86,7 @@ export function ResultScreen({ provider }: ResultScreenProps) {
         {creationError !== null && <RetryRemaining provider={provider} />}
 
         {run.error !== null && (
-          <div role="alert" className="border-danger bg-danger-soft rounded-lg border p-3 text-sm">
+          <div role="alert" className="border-state-missing bg-state-missing-tint rounded-card border p-3 text-body">
             <p className="font-bold">{run.error.title}</p>
             <p>{run.error.cause}</p>
             <p>{run.error.nextStep}</p>
@@ -139,7 +139,7 @@ export function ResultScreen({ provider }: ResultScreenProps) {
     <section className="flex flex-col gap-4">
       <StepHeading title={format(t.result.heading, { service })} focusToken={stepToken} />
 
-      <dl className="grid gap-2 text-sm sm:grid-cols-2">
+      <dl className="grid gap-2 text-body sm:grid-cols-2">
         <div>
           <dt className="text-ink font-semibold">{t.result.playlistName}</dt>
           <dd className="text-ink-muted">{result.playlistName}</dd>
@@ -166,7 +166,7 @@ export function ResultScreen({ provider }: ResultScreenProps) {
       {result.incompleteByQuota && (
         <div
           role="alert"
-          className="border-status-uncertain bg-status-uncertain-soft rounded-lg border p-3 text-sm"
+          className="border-state-uncertain-edge bg-state-uncertain-tint rounded-card border p-3 text-body"
         >
           <p className="font-bold">{format(t.quota.exhaustedHeading, { service })}</p>
           <p>
@@ -187,14 +187,18 @@ export function ResultScreen({ provider }: ResultScreenProps) {
           href={result.playlistUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="focus-ring bg-accent text-ink-inverse inline-flex rounded-lg px-4 py-2 text-sm font-semibold"
+          className="focus-ring bg-accent text-accent-ink inline-flex rounded-card px-4 py-2 text-body font-semibold"
         >
           {text.openPlaylist}
         </a>
       </div>
 
       <FolderNotice provider={provider} />
-      <FailedLines provider={provider} lines={result.failedLines} />
+      <FailedLines
+        provider={provider}
+        lines={result.failedLines}
+        indices={result.failedIndices}
+      />
 
       <div className="flex flex-wrap gap-2">
         {isLast ? (

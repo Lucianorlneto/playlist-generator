@@ -205,3 +205,83 @@ test.describe('FR-047 — operação por teclado', () => {
     await expect(recomecar).toBeFocused();
   });
 });
+
+/**
+ * FR-016, SC-010 e SC-012 nos **dois temas** (T063).
+ *
+ * O anel de foco passou a usar `outline` em vez de `box-shadow` (research §12),
+ * e sua cor é `--accent-text` — que **diverge entre os temas**: `#9a5b00` no
+ * claro, `#f4a900` no escuro. Verificar num tema só deixaria metade da
+ * afirmação sem prova.
+ *
+ * Nenhuma asserção de comportamento é alterada aqui: o que se acrescenta é
+ * verificação sobre o que já existia.
+ */
+test.describe('FR-016 e SC-010 — foco visível nos dois temas', () => {
+  for (const tema of ['light', 'dark'] as const) {
+    test(`o anel de foco é desenhado por outline no tema ${tema}`, async ({ page }) => {
+      await page.addInitScript(
+        ([preference]) => {
+          window.localStorage.setItem(
+            'tp.v2.theme',
+            JSON.stringify({ schemaVersion: 2, preference }),
+          );
+        },
+        [tema],
+      );
+
+      await mockSpotify(page);
+      await seedCredential(page);
+      await page.goto('/');
+
+      /*
+        O foco precisa chegar **por teclado**. `element.focus()` programático não
+        casa `:focus-visible` no Chromium, e a medição pegaria o anel padrão do
+        navegador em vez do nosso — passando ou falhando por motivo errado.
+      */
+      const selecionado = page.locator('[role="radio"][tabindex="0"]');
+      await focarPorTeclado(page, '[role="radio"][tabindex="0"]');
+
+      const foco = await selecionado.evaluate((node) => {
+        const estilo = getComputedStyle(node);
+        return {
+          outlineStyle: estilo.outlineStyle,
+          outlineWidth: estilo.outlineWidth,
+          outlineColor: estilo.outlineColor,
+          boxShadow: estilo.boxShadow,
+        };
+      });
+
+      expect(foco.outlineStyle).toBe('solid');
+      expect(Number.parseFloat(foco.outlineWidth)).toBeGreaterThanOrEqual(2);
+      // `box-shadow` desaparece em modo de cores forçadas; o foco não pode
+      // depender dele.
+      expect(foco.boxShadow === 'none' || foco.boxShadow === '').toBe(true);
+      // A cor do anel acompanha o tema.
+      expect(foco.outlineColor).toBe(tema === 'dark' ? 'rgb(244, 169, 0)' : 'rgb(154, 91, 0)');
+    });
+
+    test(`o ThemeControl é uma parada única de Tab no tema ${tema}`, async ({ page }) => {
+      await page.addInitScript(
+        ([preference]) => {
+          window.localStorage.setItem(
+            'tp.v2.theme',
+            JSON.stringify({ schemaVersion: 2, preference }),
+          );
+        },
+        [tema],
+      );
+
+      await mockSpotify(page);
+      await page.goto('/');
+
+      await focarPorTeclado(page, '[role="radio"][tabindex="0"]');
+      await expect(page.getByRole('radio', { checked: true })).toBeFocused();
+
+      // Os não selecionados ficam fora da ordem de tabulação; as setas navegam
+      // dentro do grupo. É o que impede o controle novo de acrescentar três
+      // paradas ao caminho de teclado do cabeçalho (SC-016).
+      expect(await page.locator('[role="radio"][tabindex="-1"]').count()).toBe(2);
+    });
+  }
+});

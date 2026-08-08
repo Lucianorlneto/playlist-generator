@@ -33,9 +33,20 @@ export interface DialogProps {
   children: ReactNode;
 }
 
+/**
+ * Painel e véu (contracts/components.md §4).
+ *
+ * A largura vem de `--container-panel` mais margem lateral pela escala, no lugar
+ * do `w-[min(32rem,calc(100vw-2rem))]` anterior: a medida é restrição de layout
+ * do sistema e passa a viver em `index.css`, não escolhida dentro do componente.
+ *
+ * `shadow-card` é `none` no tema escuro por decisão — ali o painel se separa do
+ * véu por luminosidade e pelo filete de 1px, que é como o escuro funciona
+ * (contracts/tokens.md §4).
+ */
 const DIALOG_CLASSES =
-  'bg-surface text-ink border-border-strong m-auto w-[min(32rem,calc(100vw-2rem))] ' +
-  'rounded-xl border p-5 shadow-lg backdrop:bg-black/40';
+  'bg-surface text-ink border-rule-strong m-auto w-full max-w-panel ' +
+  'rounded-card border p-6 shadow-card backdrop:bg-scrim';
 
 export function Dialog({ open, onClose, labelledBy, children }: DialogProps) {
   const ref = useRef<HTMLDialogElement>(null);

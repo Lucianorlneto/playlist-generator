@@ -20,6 +20,8 @@ import type {
 } from '@/domain/types';
 import type { AppError } from '@/services/providers/errors';
 
+import type { ThemeSlice } from './themeSlice';
+
 // ---------------------------------------------------------------------------
 // Wizard (FR-043)
 // ---------------------------------------------------------------------------
@@ -188,7 +190,8 @@ export interface DraftSlice {
   resetWork: () => void;
 }
 
-export type AppState = WizardSlice &
+export type AppState = ThemeSlice &
+  WizardSlice &
   CredentialSlice &
   SessionSlice &
   DestinationsSlice &

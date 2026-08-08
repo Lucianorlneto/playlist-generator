@@ -176,3 +176,65 @@ describe('Princípio II — a tabela de hosts, provedor a provedor', () => {
     expect(ofensores).toEqual([]);
   });
 });
+
+/**
+ * Nenhuma origem remota nos recursos visuais (FR-039, research §6) — T069.
+ *
+ * A tipografia é o vetor clássico de vazamento: uma linha de `@import` do Google
+ * Fonts entrega o IP e o User-Agent de cada visitante a um terceiro, sem
+ * requisição de API nenhuma e sem aparecer em `connect-src`. Nada disso passa
+ * pelas verificações de `fetch` acima, porque nada disso é `fetch`.
+ *
+ * Esta camada é barata e falha cedo, no portão local. A camada que observa o
+ * navegador de verdade é o ouvinte de requisições do Playwright (T070).
+ */
+describe('FR-039 · nenhum recurso visual vem de fora do repositório', () => {
+  const estilos = files.filter((file) => file.path.endsWith('.css'));
+
+  it('encontrou os arquivos de estilo', () => {
+    expect(estilos.length).toBeGreaterThan(0);
+  });
+
+  it('nenhum `url(http…)` em CSS', () => {
+    const ofensores = estilos
+      .filter((file) => /url\(\s*['"]?https?:/iu.test(file.text))
+      .map((file) => file.path);
+    expect(ofensores).toEqual([]);
+  });
+
+  it('nenhum `@import` de origem externa', () => {
+    const ofensores = estilos
+      .filter((file) => /@import\s+(?:url\(\s*)?['"]?(?:https?:)?\/\//iu.test(file.text))
+      .map((file) => file.path);
+    expect(ofensores).toEqual([]);
+  });
+
+  it('todo `src:` de @font-face aponta para caminho local', () => {
+    const ofensores: string[] = [];
+    for (const file of estilos) {
+      const blocos = file.text.match(/@font-face\s*\{[^}]*\}/gu) ?? [];
+      for (const bloco of blocos) {
+        // `local(...)` é a pilha do sistema, não a rede: legítimo no fallback.
+        const fontes = bloco.match(/src\s*:[^;]+;/giu) ?? [];
+        for (const fonte of fontes) {
+          if (/https?:|\/\//u.test(fonte)) ofensores.push(`${file.path}: ${fonte.trim()}`);
+        }
+      }
+    }
+    expect(ofensores).toEqual([]);
+  });
+
+  it('a fonte embarcada está versionada no repositório', () => {
+    const woff2 = join(process.cwd(), 'src/assets/fonts/space-grotesk-subset.woff2');
+    expect(statSync(woff2).isFile()).toBe(true);
+
+    // SIL OFL 1.1 exige que a licença acompanhe a redistribuição (FR-034).
+    const licenca = readFileSync(join(process.cwd(), 'src/assets/fonts/OFL.txt'), 'utf8');
+    expect(licenca).toContain('SIL OPEN FONT LICENSE Version 1.1');
+  });
+
+  it('SC-013 · o recurso tipográfico cabe no teto de 80 KB', () => {
+    const bytes = statSync(join(process.cwd(), 'src/assets/fonts/space-grotesk-subset.woff2')).size;
+    expect(bytes, `${String(Math.round(bytes / 1024))} KB`).toBeLessThan(80 * 1024);
+  });
+});

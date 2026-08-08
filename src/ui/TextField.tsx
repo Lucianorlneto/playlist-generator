@@ -33,14 +33,14 @@ export function TextField({
 
   return (
     <div className="flex flex-col">
-      <label htmlFor={id} className="text-ink text-sm font-semibold">
+      <label htmlFor={id} className="text-ink text-body font-semibold">
         {label}
       </label>
       <input
         id={id}
         className={cx(
-          'focus-ring bg-surface text-ink mt-1 w-full rounded-lg border px-3 py-2 text-sm',
-          error === null ? 'border-border-strong' : 'border-danger',
+          'focus-ring bg-surface text-ink mt-1 w-full rounded-card border px-3 py-2 text-body',
+          error === null ? 'border-rule-strong' : 'border-state-missing',
           className,
         )}
         aria-invalid={error === null ? undefined : true}
@@ -53,12 +53,12 @@ export function TextField({
         </p>
       )}
       {warning !== null && (
-        <p id={warningId} className="field-message text-status-uncertain">
+        <p id={warningId} className="field-message text-state-uncertain">
           {warning}
         </p>
       )}
       {error !== null && (
-        <p id={errorId} role="alert" className="field-message text-danger">
+        <p id={errorId} role="alert" className="field-message text-state-missing">
           {error}
         </p>
       )}

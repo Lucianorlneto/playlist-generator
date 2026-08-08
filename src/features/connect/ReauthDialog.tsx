@@ -55,13 +55,13 @@ export function ReauthDialog({ provider, navigate }: ReauthDialogProps) {
       }}
       labelledBy={titleId}
     >
-      <h2 id={titleId} className="text-ink text-base font-bold">
+      <h2 id={titleId} className="text-ink text-body font-bold">
         {format(t.connect.reauthTitle, { service })}
       </h2>
 
-      <p className="text-ink mt-2 text-sm">{format(t.connect.reconnectNeeded, { service })}</p>
-      <p className="text-ink-muted mt-1 text-sm">{t.connect.reauthPreserved}</p>
-      <p className="text-ink-muted mt-1 text-sm">
+      <p className="text-ink mt-2 text-body">{format(t.connect.reconnectNeeded, { service })}</p>
+      <p className="text-ink-muted mt-1 text-body">{t.connect.reauthPreserved}</p>
+      <p className="text-ink-muted mt-1 text-body">
         {format(t.connect.resumeAt, { where: t.connect.resumePoint[resumeFrom] })}
       </p>
 
@@ -123,7 +123,7 @@ function Progresso({ provider }: { provider: ProviderId }) {
     const creation = run.creation;
     if (creation === null) return null;
     return (
-      <p className="text-ink mt-2 text-sm">
+      <p className="text-ink mt-2 text-body">
         {format(t.connect.reauthCreationProgress, {
           added: committedItemCount(creation),
           total: creation.orderedUris.length,
@@ -134,7 +134,7 @@ function Progresso({ provider }: { provider: ProviderId }) {
 
   const total = run.lineIds.length;
   return (
-    <p className="text-ink mt-2 text-sm">
+    <p className="text-ink mt-2 text-body">
       {format(t.connect.reauthSearchProgress, {
         done: total - remainingLineIds(run).length,
         total,
@@ -162,7 +162,7 @@ function CustoDaRetomada({ provider }: { provider: ProviderId }) {
 
   const restantes = remainingLineIds(run);
   if (restantes.length === 0) {
-    return <p className="text-ink-muted mt-2 text-sm">{t.connect.reauthCostNone}</p>;
+    return <p className="text-ink-muted mt-2 text-body">{t.connect.reauthCostNone}</p>;
   }
 
   const alvo = linesFor(lines, restantes);
@@ -173,7 +173,7 @@ function CustoDaRetomada({ provider }: { provider: ProviderId }) {
   const units = nominalCost(quota, restantes.length, 0, reserva);
 
   return (
-    <p className="text-ink-muted mt-2 text-sm">
+    <p className="text-ink-muted mt-2 text-body">
       {format(
         plural(restantes.length, t.connect.reauthCostOne, t.connect.reauthCostOther),
         { units, count: restantes.length },

@@ -25,7 +25,7 @@ export function DestinationSelector() {
 
   return (
     <fieldset className="flex flex-col gap-3">
-      <legend className="text-ink text-sm font-bold">{t.destinations.groupLabel}</legend>
+      <legend className="text-ink text-body font-bold">{t.destinations.groupLabel}</legend>
 
       {PROVIDER_ORDER.map((provider) => {
         const service = nameOf(provider);
@@ -35,7 +35,7 @@ export function DestinationSelector() {
         const reasonId = `destino-motivo-${provider}`;
 
         return (
-          <div key={provider} className="border-border bg-surface-muted rounded-lg border p-3">
+          <div key={provider} className="border-rule bg-bg rounded-card border p-3">
             <div className="flex items-center gap-2">
               <input
                 type="checkbox"
@@ -48,7 +48,7 @@ export function DestinationSelector() {
                   toggle(provider);
                 }}
               />
-              <label htmlFor={`destino-${provider}`} className="text-ink text-sm font-semibold">
+              <label htmlFor={`destino-${provider}`} className="text-ink text-body font-semibold">
                 {format(t.destinations.selectLabel, { service })}
               </label>
             </div>

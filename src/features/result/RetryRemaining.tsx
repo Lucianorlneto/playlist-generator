@@ -33,10 +33,10 @@ export function RetryRemaining({ provider }: RetryRemainingProps) {
   return (
     <section
       role="alert"
-      className="border-status-uncertain bg-status-uncertain-soft rounded-lg border p-3"
+      className="border-state-uncertain-edge bg-state-uncertain-tint rounded-card border p-3"
     >
-      <h3 className="text-ink text-sm font-bold">{t.result.partialHeading}</h3>
-      <p className="text-ink mt-1 text-sm">
+      <h3 className="text-ink text-body font-bold">{t.result.partialHeading}</h3>
+      <p className="text-ink mt-1 text-body">
         {format(t.result.partialBody, {
           added,
           total: creation.orderedUris.length,

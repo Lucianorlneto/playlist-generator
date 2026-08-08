@@ -27,14 +27,28 @@ import { flushDraftNow } from '@/store/draftPersistence';
 
 import { effectivePath } from './effectivePath';
 
-/** Linhas que não entraram por não terem correspondência (FR-041). */
-export function failedLines(items: MatchItem[]): string[] {
-  return [...items]
+/**
+ * Linhas que não entraram por não terem correspondência (FR-041).
+ *
+ * Devolve texto e índice **da mesma travessia**, para que não exista o estado em
+ * que as duas listas discordam sobre qual numeral pertence a qual linha.
+ */
+export function failedEntries(items: MatchItem[]): { lines: string[]; indices: number[] } {
+  const failed = [...items]
     .sort((a, b) => a.line.index - b.line.index)
     .filter(
       (item) => item.status === 'not_found' || item.status === 'unparsed' || item.error !== null,
-    )
-    .map((item) => item.line.raw);
+    );
+
+  return {
+    lines: failed.map((item) => item.line.raw),
+    indices: failed.map((item) => item.line.index),
+  };
+}
+
+/** O texto puro, para quem só precisa do que se copia. */
+export function failedLines(items: MatchItem[]): string[] {
+  return failedEntries(items).lines;
 }
 
 function buildResult(
@@ -56,7 +70,8 @@ function buildResult(
     effectivePath: effectivePath(provider, displayName, name),
     addedCount,
     skippedCount: Math.max(0, items.length - progress.orderedUris.length),
-    failedLines: failedLines(items),
+    failedLines: failedEntries(items).lines,
+    failedIndices: failedEntries(items).indices,
     incompleteByQuota,
   };
 }

@@ -71,10 +71,10 @@ export function QuotaEstimateScreen({ provider }: QuotaEstimateScreenProps) {
 
   return (
     <section className="flex flex-col gap-3">
-      <h3 className="text-ink text-base font-bold">{format(t.quota.heading, { service })}</h3>
+      <h3 className="text-ink text-body font-bold">{format(t.quota.heading, { service })}</h3>
       <p className="field-message">{format(t.quota.intro, { service })}</p>
 
-      <dl className="border-border bg-surface-muted grid grid-cols-1 gap-2 rounded-lg border p-3 text-sm sm:grid-cols-2">
+      <dl className="border-rule bg-bg grid grid-cols-1 gap-2 rounded-card border p-3 text-body sm:grid-cols-2">
         <div>
           <dt className="text-ink-muted">{t.quota.estimateLabel}</dt>
           <dd className="text-ink font-semibold">
@@ -117,7 +117,7 @@ export function QuotaEstimateScreen({ provider }: QuotaEstimateScreenProps) {
       {estimate.blocked ? (
         <div
           role="alert"
-          className="border-danger bg-danger-soft text-ink flex flex-col gap-2 rounded-lg border p-3 text-sm"
+          className="border-state-missing bg-state-missing-tint text-ink flex flex-col gap-2 rounded-card border p-3 text-body"
         >
           <p className="font-bold">{t.quota.blockedHeading}</p>
           <p>

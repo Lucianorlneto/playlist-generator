@@ -127,6 +127,7 @@ export function makeResult(overrides: Partial<CreationResult> = {}): CreationRes
     addedCount: 2,
     skippedCount: 0,
     failedLines: [],
+    failedIndices: [],
     incompleteByQuota: false,
     ...overrides,
   };

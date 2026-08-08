@@ -32,3 +32,6 @@ Thumbs.db
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Intermediário do gerador do guia de tema
+docs/theme-guidelines/.render.html
