@@ -158,3 +158,59 @@ test.describe('SC-016 — tela de 375 px', () => {
     await expect(caixa).not.toBeChecked();
   });
 });
+
+/**
+ * FR-023 e SC-011 nos **dois temas** (T062).
+ *
+ * Rodar de novo no tema escuro não é zelo redundante: a goteira colapsada, o
+ * controle de tema em modo só-ícone e o selo de estado com filete de 1px são
+ * exatamente os elementos cujo tamanho depende de borda e de espaçamento — e
+ * borda é o que mudou nos dois temas quando T016 reforçou `--rule-strong`.
+ */
+test.describe('FR-023 e SC-011 — 320 px nos dois temas', () => {
+  test.use({ viewport: { width: 320, height: 640 } });
+
+  for (const tema of ['light', 'dark'] as const) {
+    test(`sem rolagem horizontal no tema ${tema}`, async ({ page }) => {
+      await page.addInitScript(
+        ([preference]) => {
+          window.localStorage.setItem(
+            'tp.v2.theme',
+            JSON.stringify({ schemaVersion: 2, preference }),
+          );
+        },
+        [tema],
+      );
+
+      await mockSpotify(page);
+      await seedCredential(page, CLIENT_ID, 'spotify');
+      await page.goto('/');
+
+      expect(await page.evaluate(() => document.documentElement.dataset['theme'])).toBe(tema);
+
+      // Etapa 1 — configuração.
+      await semRolagemHorizontal(page);
+      await page.getByRole('button', { name: t.common.next, exact: true }).click();
+
+      // Etapa 2 — destinos.
+      await semRolagemHorizontal(page);
+      await page.getByRole('button', { name: t.common.next, exact: true }).click();
+
+      // Etapa 3 — entrada, com uma linha deliberadamente longa.
+      await page.getByLabel(t.input.textareaLabel).fill(LISTA);
+      await semRolagemHorizontal(page);
+      await page.getByRole('button', { name: t.input.start }).click();
+
+      // Etapa 4 — serviço e revisão, onde a goteira colapsa em prefixo.
+      await botaoConectar(page, SPOTIFY).click();
+      await expect(tituloRevisao(page, SPOTIFY)).toBeVisible();
+      await semRolagemHorizontal(page);
+
+      // O controle de tema continua acionável no modo colapsado (SC-010).
+      const opcao = page.getByRole('radio', { name: t.theme.light });
+      await expect(opcao).toBeVisible();
+      const caixa = await opcao.boundingBox();
+      expect(caixa?.width ?? 0).toBeGreaterThan(0);
+    });
+  }
+});

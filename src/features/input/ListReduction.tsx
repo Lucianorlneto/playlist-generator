@@ -56,7 +56,7 @@ export function ListReduction({
 
   return (
     <section className="flex flex-col gap-3">
-      <h3 className="text-ink text-base font-bold">
+      <h3 className="text-ink text-body font-bold">
         {format(t.reduction.heading, { service })}
       </h3>
       <p className="field-message">{t.reduction.intro}</p>
@@ -76,13 +76,13 @@ export function ListReduction({
           return (
             <li
               key={line.id}
-              className="border-border bg-surface flex flex-wrap items-center justify-between gap-2 rounded-lg border p-2"
+              className="border-rule bg-surface flex flex-wrap items-center justify-between gap-2 rounded-card border p-2"
             >
               <span
                 className={
                   inList
-                    ? 'text-ink font-mono text-sm break-words'
-                    : 'text-ink-muted font-mono text-sm break-words line-through'
+                    ? 'text-ink font-mono text-body break-words'
+                    : 'text-ink-muted font-mono text-body break-words line-through'
                 }
               >
                 {line.raw}
@@ -103,7 +103,7 @@ export function ListReduction({
         })}
       </ul>
 
-      <p className="text-ink text-sm font-semibold">
+      <p className="text-ink text-body font-semibold">
         {plural(kept.length, t.reduction.remainingOne, t.reduction.remainingOther)}
       </p>
       {removed.length > 0 && (
@@ -112,11 +112,11 @@ export function ListReduction({
         </p>
       )}
       {kept.length === 0 && (
-        <p role="status" className="field-message text-status-uncertain">
+        <p role="status" className="field-message text-state-uncertain">
           {format(t.reduction.emptyMeansSkip, { service })}
         </p>
       )}
-      {!valid && <p className="field-message text-status-not-found">{t.reduction.notASubset}</p>}
+      {!valid && <p className="field-message text-state-missing">{t.reduction.notASubset}</p>}
 
       <div className="flex flex-wrap gap-2">
         <Button

@@ -20,10 +20,10 @@ export function StepHeading({ title, description, focusToken }: StepHeadingProps
 
   return (
     <header className="mb-4">
-      <h2 ref={heading} tabIndex={-1} className="focus-ring text-ink text-xl font-bold">
+      <h2 ref={heading} tabIndex={-1} className="focus-ring text-ink text-step font-bold">
         {title}
       </h2>
-      {description !== undefined && <p className="text-ink-muted mt-1 text-sm">{description}</p>}
+      {description !== undefined && <p className="text-ink-muted mt-1 text-body">{description}</p>}
     </header>
   );
 }

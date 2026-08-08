@@ -115,9 +115,97 @@ const noDynamicClassName = {
   },
 };
 
+/**
+ * Prefixos de utilitário que consomem cor.
+ *
+ * `accent` está **deliberadamente fora** da lista: `accent-accent` é a
+ * propriedade CSS `accent-color`, que pinta o preenchimento de `<progress>` e de
+ * caixa de seleção nativa — uso que o FR-050 autoriza. Incluir o prefixo por
+ * simetria quebraria os dois usos legítimos do projeto.
+ */
+const COLOR_PREFIXES =
+  '(?:bg|text|border|ring|outline|fill|stroke|divide|decoration|placeholder|caret|from|via|to|shadow)';
+
+const SPACING_PREFIXES =
+  '(?:p|px|py|pt|pb|pl|pr|ps|pe|m|mx|my|mt|mb|ml|mr|ms|me|gap|gap-x|gap-y|space-x|space-y|size|w|h|min-w|min-h|max-w|max-h|top|bottom|left|right|inset|inset-x|inset-y|translate-x|translate-y|basis)';
+
+const TAILWIND_PALETTE =
+  '(?:slate|gray|zinc|neutral|stone|red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose)';
+
+/** Variante opcional (`hover:`, `sm:`, `disabled:hover:`, …). */
+const VARIANTS = '(?:[a-z-]+:)*';
+
+const RAW_VISUAL_PATTERNS = [
+  {
+    messageId: 'arbitrary',
+    pattern: new RegExp(
+      `\\b${VARIANTS}(?:${COLOR_PREFIXES}|${SPACING_PREFIXES}|rounded(?:-[a-z]+)?)-\\[[^\\]]*\\]`,
+      'u',
+    ),
+  },
+  {
+    messageId: 'palette',
+    pattern: new RegExp(`\\b${VARIANTS}${COLOR_PREFIXES}-${TAILWIND_PALETTE}-\\d{2,3}\\b`, 'u'),
+  },
+  {
+    messageId: 'accentMisuse',
+    pattern: new RegExp(`\\b${VARIANTS}(?:text|border|ring|outline|divide)-accent\\b(?!-)`, 'u'),
+  },
+];
+
+const noRawVisualValues = {
+  meta: {
+    type: 'problem',
+    docs: {
+      description:
+        'Todo valor visual vem da camada de tokens; valor avulso no componente é proibido (FR-040, FR-046, FR-050, SC-009).',
+    },
+    schema: [],
+    messages: {
+      arbitrary:
+        'Valor visual arbitrário em "{{utility}}". Cor, espaçamento e raio vêm da camada de tokens — use um degrau da escala ou declare um token em src/styles/ (FR-040, SC-009).',
+      palette:
+        'Escala crua da paleta do Tailwind em "{{utility}}". A paleta padrão foi removida do tema justamente para que a cor venha de um nome semântico (FR-004, FR-040).',
+      accentMisuse:
+        'O âmbar de "{{utility}}" é preenchimento, não tinta: em cheia saturação ele dá 2,0:1 como texto ou borda. Para texto, link, borda e foco o token é `--accent-text` (FR-046, FR-050).',
+    },
+  },
+  create(context) {
+    /**
+     * A varredura é sobre **todo literal de string do arquivo**, não só sobre
+     * `className`. As variantes de `Button` e de `StatusBadge` vivem em mapas de
+     * literais no topo do módulo — que é a convenção que `no-dynamic-classname`
+     * obriga —, e uma regra que só olhasse o JSX deixaria de fora exatamente os
+     * arquivos onde a cor é decidida.
+     */
+    function inspect(node, value) {
+      for (const { messageId, pattern } of RAW_VISUAL_PATTERNS) {
+        const match = pattern.exec(value);
+        if (match === null) continue;
+        context.report({ node, messageId, data: { utility: match[0] } });
+        return;
+      }
+    }
+
+    return {
+      Literal(node) {
+        if (typeof node.value !== 'string') return;
+        // `import x from '…'` e `export … from '…'` não são classes.
+        if (node.parent?.type === 'ImportDeclaration') return;
+        if (node.parent?.type === 'ExportNamedDeclaration') return;
+        inspect(node, node.value);
+      },
+      TemplateElement(node) {
+        inspect(node, node.value.raw);
+      },
+    };
+  },
+};
+
 export default {
   rules: {
     'no-ui-text-literals': noUiTextLiterals,
     'no-dynamic-classname': noDynamicClassName,
+    'no-raw-visual-values': noRawVisualValues,
   },
 };

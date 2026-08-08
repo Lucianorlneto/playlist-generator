@@ -21,8 +21,10 @@ import { createRefresher } from '@/services/providers/spotify/auth';
 import { configureProviderClient } from '@/services/providers/http';
 import { providerFor } from '@/services/providers/registry';
 import { loadAllCredentials } from '@/services/storage/credentialRepo';
+import { loadThemePreference } from '@/services/storage/themeRepo';
+import { subscribeToSystemPreference, systemPrefersDark } from '@/services/theme/systemPreference';
 import { migrateToV2, migrateToV3 } from '@/services/storage/migrations';
-import { onStorageWarning } from '@/services/storage/schema';
+import { onStorageWarning, STORAGE_KEYS } from '@/services/storage/schema';
 import { classifyYouTubeError } from '@/services/providers/youtube/errors';
 import { clearSession, loadAllSessions, saveSession } from '@/services/storage/sessionRepo';
 import { useAppStore } from '@/store';
@@ -127,10 +129,57 @@ export function useBootstrap(): void {
   useEffect(
     () =>
       onStorageWarning((warning) => {
+        // FR-011: falha ao gravar preferência de cor nunca vira mensagem
+        // visível. O aviso de armazenamento chega à interface para as demais
+        // chaves; para esta, o usuário não tem nada a decidir e a troca vale na
+        // sessão de qualquer forma (contracts/storage.md §3).
+        if (warning.key === STORAGE_KEYS.theme) return;
+
         if (warning.reason === 'quota_exceeded') {
           useAppStore.getState().setDraftNotice('quota_failed');
         }
       }),
     [],
   );
+
+  useThemeRuntime();
+}
+
+/**
+ * Liga a preferência de tema ao elemento raiz (FR-006, FR-009, FR-010).
+ *
+ * Fica **fora** de `useBootstrap`, num efeito próprio, pelo mesmo motivo das
+ * assinaturas de rascunho: o trecho de execução única do `useBootstrap` roda uma
+ * vez sob o StrictMode e não religaria a assinatura depois do ciclo de
+ * montar/desmontar.
+ *
+ * A leitura inicial acontece aqui **de novo**, mesmo com `public/theme-boot.js`
+ * já tendo escrito o atributo. Não é redundância: o script resolve a pintura, o
+ * store resolve o estado, e é o store que o `ThemeControl` precisa para saber
+ * qual segmento está selecionado.
+ */
+function useThemeRuntime(): void {
+  useEffect(() => {
+    const store = useAppStore.getState();
+    store.hydrateTheme(loadThemePreference(), systemPrefersDark());
+
+    return subscribeToSystemPreference((prefersDark) => {
+      // O evento chega sempre; `setSystemPrefersDark` decide se ele produz
+      // efeito, consultando a preferência. A regra de FR-009 mora num lugar só,
+      // a função pura `resolveTheme`.
+      useAppStore.getState().setSystemPrefersDark(prefersDark);
+    });
+  }, []);
+
+  useEffect(() => {
+    const apply = (theme: 'light' | 'dark'): void => {
+      document.documentElement.setAttribute('data-theme', theme);
+    };
+
+    apply(useAppStore.getState().effectiveTheme);
+
+    return useAppStore.subscribe((state, previous) => {
+      if (state.effectiveTheme !== previous.effectiveTheme) apply(state.effectiveTheme);
+    });
+  }, []);
 }

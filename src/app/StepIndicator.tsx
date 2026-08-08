@@ -35,21 +35,43 @@ export function StepIndicator({ current }: StepIndicatorProps) {
   const provider = queue.order[queue.currentIndex] ?? null;
   const run = provider === null ? null : (queue.runs[provider] ?? null);
 
+  /** Fração preenchida da régua. A etapa atual conta como alcançada. */
+  const progresso = steps.length === 0 ? 0 : (currentIndex + 1) / steps.length;
+
   return (
-    <nav aria-label={t.steps.progressLabel} className="flex flex-col gap-1">
-      <ol className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs sm:text-sm">
+    <nav aria-label={t.steps.progressLabel} className="flex flex-col gap-2">
+      {/*
+        A régua é `aria-hidden`: ela duplica visualmente o que a lista abaixo já
+        diz por `aria-current` e pela contagem "N de T". Anunciá-la de novo faria
+        o leitor de tela ouvir a mesma informação duas vezes
+        (contracts/components.md §6).
+      */}
+      <div aria-hidden="true" className="bg-rule h-1 w-full overflow-hidden rounded-pill">
+        <div
+          className="bg-accent h-full rounded-pill transition-[width] duration-200 motion-reduce:transition-none"
+          style={{ width: `${String(Math.round(progresso * 100))}%` }}
+        />
+      </div>
+
+      {/*
+        Semântica preservada da versão em pílulas: continua `nav` + `ol`, com
+        `aria-current="step"` e a contagem para leitor de tela. Saíram as pílulas
+        e os separadores `›`; entrou a régua acima — o indicador de etapa feito
+        quieto, para não competir com a goteira numerada, que é a assinatura
+        (design.md §6).
+      */}
+      <ol className="flex flex-wrap items-center gap-x-4 gap-y-1 text-meta">
         {steps.map((step, index) => {
           const done = index < currentIndex;
           const active = index === currentIndex;
           return (
-            <li key={step} className="flex items-center gap-2">
+            <li key={step}>
               <span
                 aria-current={active ? 'step' : undefined}
                 className={cx(
-                  'rounded-full px-2 py-0.5 font-semibold',
-                  active ? 'bg-accent text-ink-inverse' : null,
-                  done ? 'bg-accent-soft text-accent-strong' : null,
-                  !active && !done ? 'text-ink-muted' : null,
+                  active ? 'text-ink font-semibold' : null,
+                  done ? 'text-ink-muted' : null,
+                  !active && !done ? 'text-ink-muted opacity-60' : null,
                 )}
               >
                 <span className="sr-only">
@@ -61,18 +83,13 @@ export function StepIndicator({ current }: StepIndicatorProps) {
                 </span>
                 {STEP_LABEL[step]}
               </span>
-              {index < steps.length - 1 && (
-                <span aria-hidden="true" className="text-border-strong">
-                  ›
-                </span>
-              )}
             </li>
           );
         })}
       </ol>
 
       {current === 'service' && provider !== null && run !== null && (
-        <p className="text-ink-muted text-xs">
+        <p className="text-ink-muted text-meta">
           {nameOf(provider)} · {t.queue.phase[run.phase]}
         </p>
       )}

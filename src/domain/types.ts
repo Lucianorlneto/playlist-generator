@@ -275,6 +275,16 @@ export interface CreationResult {
   skippedCount: number;
   /** `line.raw` dos não encontrados, na ordem original (FR-041). */
   failedLines: string[];
+  /**
+   * `line.index` de cada entrada de `failedLines`, na mesma ordem.
+   *
+   * É o que faz o numeral da goteira sobreviver até o relatório de falhas
+   * (design.md §5): a linha 7 continua sendo a linha 7 aqui. Campo **aditivo** —
+   * um rascunho gravado antes desta feature não o traz, e a leitura devolve
+   * lista vazia em vez de recusar o registro, para não invalidar trabalho em
+   * andamento de quem atualizou no meio de uma execução.
+   */
+  failedIndices: number[];
   /** `true` quando a execução foi encerrada por esgotamento de cota (FR-032). */
   incompleteByQuota: boolean;
 }
@@ -417,6 +427,8 @@ export interface SummaryEntry {
   addedCount: number;
   skippedCount: number;
   failedLines: string[];
+  /** Índices de entrada correspondentes, na mesma ordem (design.md §5). */
+  failedIndices: number[];
   lineCount: number;
   incompleteByQuota: boolean;
 }

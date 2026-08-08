@@ -13,6 +13,9 @@ export default tseslint.config(
       'node_modules/**',
       'playwright-report/**',
       'test-results/**',
+      // Templates de skill do agente. Não são código do projeto e rodam em
+      // outro ambiente (p5.js), então as globais deles não existem aqui.
+      '.claude/**',
     ],
   },
   js.configs.recommended,
@@ -45,6 +48,43 @@ export default tseslint.config(
       'tp/no-ui-text-literals': 'error',
       'tp/no-dynamic-classname': 'error',
     },
+  },
+  {
+    /**
+     * `public/theme-boot.js` é script clássico de navegador, servido como está.
+     * Não passa pelo TypeScript nem pelo bundler — daí as globais explícitas e
+     * o `sourceType: 'script'`. A contenção da duplicação que ele carrega é
+     * `tests/unit/theme-boot-sync.spec.ts`, não o lint (contracts/storage.md §5).
+     */
+    files: ['public/**/*.js'],
+    languageOptions: {
+      ecmaVersion: 2020,
+      sourceType: 'script',
+      globals: globals.browser,
+    },
+    rules: {
+      'no-empty': 'off',
+      '@typescript-eslint/no-unused-vars': 'off',
+    },
+  },
+  {
+    /**
+     * `docs/theme-guidelines/build.mjs` é ferramenta de autoria, executada com
+     * `node`. O corpo de `page.evaluate` roda no navegador, então as duas
+     * famílias de globais valem, e o relatório de saída é o produto do script.
+     */
+    files: ['docs/**/*.mjs'],
+    languageOptions: {
+      ecmaVersion: 2022,
+      globals: { ...globals.browser, ...globals.node },
+    },
+    rules: { 'no-console': 'off' },
+  },
+  {
+    // Onde a decisão visual é tomada é onde a regra precisa valer (research §10).
+    files: ['src/features/**/*.{ts,tsx}', 'src/app/**/*.{ts,tsx}', 'src/ui/**/*.{ts,tsx}'],
+    plugins: { tp },
+    rules: { 'tp/no-raw-visual-values': 'error' },
   },
   {
     // O módulo de textos é justamente onde os literais devem estar.

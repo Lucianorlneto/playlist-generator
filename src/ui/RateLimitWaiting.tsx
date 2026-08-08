@@ -29,7 +29,7 @@ export function RateLimitWaiting({ onCancel, label }: RateLimitWaitingProps) {
   return (
     <div
       role="status"
-      className="border-status-uncertain bg-status-uncertain-soft text-ink flex flex-wrap items-center gap-2 rounded-lg border px-3 py-2 text-sm"
+      className="border-state-uncertain-edge bg-state-uncertain-tint text-ink flex flex-wrap items-center gap-2 rounded-card border px-3 py-2 text-body"
     >
       <span>{label ?? t.review.progressWaiting}</span>
       {onCancel !== undefined && (

@@ -7,6 +7,9 @@
  * re-busca de linha que não encosta nas demais.
  */
 
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -284,5 +287,101 @@ describe('Tela de revisão (US2)', () => {
 
     expect(screen.getByText(t.review.status.duplicate)).toBeInTheDocument();
     expect(screen.getByText(t.review.statusHint.duplicate)).toBeInTheDocument();
+  });
+});
+
+/**
+ * Piso de legibilidade da grade densa (FR-044) — T044.
+ *
+ * A revisão é a tela mais densa do aplicativo e a que o usuário lê linha a
+ * linha. Personalidade tipográfica não pode sair cara justamente aqui: se o
+ * nome da faixa ou o do artista encolherem para caber mais linha na tela, a
+ * feature terá trocado legibilidade por estilo — e é o tipo de troca que
+ * ninguém percebe fazendo, porque cada passo isolado parece pequeno.
+ *
+ * O piso é **o tamanho que existia antes desta feature**: `text-sm` do Tailwind,
+ * 0,875rem, com entrelinha de 1,25rem (≈ 1,43). O teste lê os degraus declarados
+ * em `src/styles/index.css` e falha se algum deles ficar abaixo disso.
+ */
+describe('FR-044 · piso de legibilidade da grade densa', () => {
+  const INDEX_CSS = readFileSync(join(process.cwd(), 'src/styles/index.css'), 'utf8');
+
+  /** Valor de um degrau declarado no `@theme`, em rem. */
+  function remOf(token: string): number {
+    const match = new RegExp(`--text-${token}:\\s*([\\d.]+)rem\\s*;`, 'u').exec(INDEX_CSS);
+    expect(match, `--text-${token} não está declarado em src/styles/index.css`).not.toBeNull();
+    return Number(match?.[1]);
+  }
+
+  function lineHeightOf(token: string): number {
+    const match = new RegExp(`--text-${token}--line-height:\\s*([\\d.]+)\\s*;`, 'u').exec(INDEX_CSS);
+    expect(match, `--text-${token}--line-height não está declarado`).not.toBeNull();
+    return Number(match?.[1]);
+  }
+
+  /**
+   * O que a versão anterior à 005 usava nestas duas linhas: `text-sm`, que no
+   * Tailwind é 0,875rem com entrelinha de 1,25rem.
+   *
+   * A entrelinha é comparada em **valor absoluto**, não em razão. A razão
+   * sozinha enganaria: 1,4 sobre um corpo maior produz uma linha mais alta que
+   * 1,43 sobre um corpo menor, e o que afeta a leitura de um bloco denso é a
+   * altura da linha, não o multiplicador que a produziu.
+   */
+  const PISO_REM = 0.875;
+  const PISO_ENTRELINHA_REM = 1.25;
+
+  it('o nome de faixa usa `--text-item`, e ele não encolheu', () => {
+    expect(remOf('item')).toBeGreaterThanOrEqual(PISO_REM);
+    expect(remOf('item') * lineHeightOf('item')).toBeGreaterThanOrEqual(PISO_ENTRELINHA_REM);
+  });
+
+  it('a linha de artista usa `--text-body`, e ela não encolheu', () => {
+    expect(remOf('body')).toBeGreaterThanOrEqual(PISO_REM);
+    expect(remOf('body') * lineHeightOf('body')).toBeGreaterThanOrEqual(PISO_ENTRELINHA_REM);
+  });
+
+  it('a linha renderizada aplica de fato esses dois degraus', () => {
+    // Sem esta asserção, os degraus poderiam ficar generosos no arquivo de
+    // estilo e a linha continuar usando outro — o piso valeria no papel.
+    seedItems();
+    const { container } = render(<ReviewScreen provider="spotify" />);
+
+    const nome = container.querySelector('.text-item');
+    expect(nome, 'nenhum elemento usa `text-item` na revisão').not.toBeNull();
+    expect(nome?.textContent).not.toBe('');
+
+    const artista = nome?.parentElement?.querySelector('.text-body');
+    expect(artista, 'a linha de artista não usa `text-body`').not.toBeNull();
+  });
+
+  it('o numeral da goteira é tabular — a coluna depende disso', () => {
+    seedItems();
+    const { container } = render(<ReviewScreen provider="spotify" />);
+
+    const numerais = container.querySelectorAll('.data-numeral');
+    expect(numerais.length).toBeGreaterThan(0);
+    // `data-numeral` carrega `font-variant-numeric: tabular-nums`; T004 mediu
+    // 4,6 px de diferença entre `08` e `11` sem ele.
+    expect(INDEX_CSS).toMatch(/@utility data-numeral[\s\S]*?tabular-nums/u);
+  });
+
+  it('o numeral exibido é o índice da linha de entrada, base 1 (design.md §5)', () => {
+    seedItems();
+    const { container } = render(<ReviewScreen provider="spotify" />);
+
+    /*
+      Cada linha desenha o numeral duas vezes — uma na goteira, uma como prefixo
+      em linha —, e o CSS esconde a que não vale no breakpoint corrente. Não há
+      risco de as duas divergirem: ambas leem a mesma variável, calculada uma vez
+      por `lineNumeral(item.line.index)`. Por isso o teste compara o conjunto.
+    */
+    const numerais = [
+      ...new Set(
+        [...container.querySelectorAll('.data-numeral')].map((node) => node.textContent?.trim()),
+      ),
+    ];
+    // Três itens semeados com index 0, 1 e 2 — preenchidos a duas casas.
+    expect(numerais).toEqual(['01', '02', '03']);
   });
 });

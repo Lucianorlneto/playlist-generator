@@ -34,7 +34,7 @@ export function MaskedValue({ value, revealed, provider, onToggle }: MaskedValue
     <div className="flex flex-wrap items-center gap-2">
       <output
         aria-label={format(t.credential.maskedLabel, { service })}
-        className="border-border bg-surface-sunken text-ink rounded-lg border px-3 py-2 font-mono text-sm break-all"
+        className="border-rule bg-surface-raised text-ink rounded-card border px-3 py-2 font-mono text-body break-all"
       >
         {revealed ? value : maskValue(value)}
       </output>

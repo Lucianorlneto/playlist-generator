@@ -50,6 +50,7 @@ export function buildSummary(queue: ExecutionQueue, context: SummaryContext): Co
     addedCount: run.result?.addedCount ?? 0,
     skippedCount: run.result?.skippedCount ?? 0,
     failedLines: run.result?.failedLines ?? [],
+    failedIndices: run.result?.failedIndices ?? [],
     lineCount: run.lineIds.length,
     incompleteByQuota: run.result?.incompleteByQuota ?? false,
   }));

@@ -65,7 +65,7 @@ export function CredentialForm({ provider }: CredentialFormProps) {
             toggleReveal(provider);
           }}
         />
-        {formatWarning && <p className="field-message text-status-uncertain">{text.formatWarning}</p>}
+        {formatWarning && <p className="field-message text-state-uncertain">{text.formatWarning}</p>}
         <RemoveCredential
           provider={provider}
           onRemoved={() => {

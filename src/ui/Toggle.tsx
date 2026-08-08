@@ -30,7 +30,7 @@ export function Toggle({
 
   return (
     <div className="flex flex-col">
-      <span id={labelId} className="text-ink text-sm font-semibold">
+      <span id={labelId} className="text-ink text-body font-semibold">
         {label}
       </span>
       <div className="mt-1 flex items-center gap-2">
@@ -45,19 +45,25 @@ export function Toggle({
             onChange(!checked);
           }}
           className={cx(
-            'focus-ring inline-flex h-6 w-11 shrink-0 items-center rounded-full border transition-colors',
-            checked ? 'border-accent-strong bg-accent' : 'border-border-strong bg-surface-sunken',
+            'focus-ring inline-flex h-6 w-12 shrink-0 items-center rounded-pill border transition-colors',
+            checked ? 'border-accent-text bg-accent' : 'border-rule-strong bg-surface-raised',
             disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer',
           )}
         >
+          {/*
+            O botão perdeu a sombra própria: a profundidade tem um nível só, e
+            um segundo degrau para um elemento de 16px seria escala fora da
+            escala. Ele continua se separando do trilho por luminosidade, e o
+            estado é anunciado por texto e não por relevo (FR-017).
+          */}
           <span
             className={cx(
-              'bg-surface ml-0.5 inline-block h-4.5 w-4.5 rounded-full shadow-sm transition-transform',
-              checked ? 'translate-x-5' : 'translate-x-0',
+              'bg-surface ml-1 inline-block size-4 rounded-pill transition-transform',
+              checked ? 'translate-x-6' : 'translate-x-0',
             )}
           />
         </button>
-        <span className="text-ink text-sm">{stateLabel}</span>
+        <span className="text-ink text-body">{stateLabel}</span>
       </div>
       {hint !== undefined && (
         <p id={hintId} className="field-message">

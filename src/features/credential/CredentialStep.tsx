@@ -46,13 +46,13 @@ export function CredentialStep() {
             aria-labelledby={`credencial-${provider}`}
             className="flex flex-col gap-3"
           >
-            <h3 id={`credencial-${provider}`} className="text-ink text-base font-bold">
+            <h3 id={`credencial-${provider}`} className="text-ink text-body font-bold">
               {text.credentialHeading}
             </h3>
             <CredentialForm provider={provider} />
             <p className="field-message">{text.scopesNotice}</p>
             {text.setupNotices.map((notice) => (
-              <p key={notice} className="field-message text-status-uncertain">
+              <p key={notice} className="field-message text-state-uncertain">
                 {notice}
               </p>
             ))}

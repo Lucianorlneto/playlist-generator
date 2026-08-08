@@ -21,7 +21,7 @@ export function QueueIndicator() {
     <p
       role="status"
       aria-label={t.queue.label}
-      className="text-ink-muted text-sm font-semibold"
+      className="text-ink-muted text-body font-semibold"
     >
       {format(t.queue.position, {
         service: nameOf(provider),

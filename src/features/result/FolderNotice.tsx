@@ -21,11 +21,11 @@ export function FolderNotice({ provider }: FolderNoticeProps) {
   const text = textFor(provider);
 
   return (
-    <section className="border-border bg-surface-muted rounded-lg border p-3">
-      <h3 className="text-ink text-sm font-bold">{t.result.folderNoticeHeading}</h3>
-      <p className="text-ink-muted mt-1 text-sm">{text.folderNotice}</p>
+    <section className="border-rule bg-bg rounded-card border p-3">
+      <h3 className="text-ink text-body font-bold">{t.result.folderNoticeHeading}</h3>
+      <p className="text-ink-muted mt-1 text-body">{text.folderNotice}</p>
       {text.resultNotices.map((notice) => (
-        <p key={notice} className="text-ink-muted mt-2 text-sm">
+        <p key={notice} className="text-ink-muted mt-2 text-body">
           {notice}
         </p>
       ))}

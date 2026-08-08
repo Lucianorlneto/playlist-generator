@@ -34,6 +34,15 @@ export const STORAGE_KEYS = {
   authRequest: (provider: ProviderId): string => `tp.v2.authreq.${provider}`,
   quota: (provider: ProviderId): string => `tp.v2.quota.${provider}`,
   draft: 'tp.v2.draft',
+  /**
+   * Preferência de tema — **valor literal, não função de `ProviderId`**.
+   *
+   * A diferença não é estilística: é o que satisfaz FR-013 por construção. As
+   * chaves acima são funções do provedor, então nenhum caminho de código que
+   * apaga os dados de um serviço pode alcançar esta — e desconectar, expirar
+   * sessão ou descartar rascunho não altera o tema (contracts/storage.md §4).
+   */
+  theme: 'tp.v2.theme',
 } as const;
 
 /** Chaves da 001, lidas **apenas** pela migração (contracts/storage.md §4). */

@@ -49,7 +49,7 @@ export function RemoveCredential({ provider, onRemoved }: RemoveCredentialProps)
 
   return (
     <div role="group" aria-label={t.credential.removeHeading} className="flex flex-col gap-2">
-      <p className="text-ink text-sm">{format(t.credential.removeConfirm, { service })}</p>
+      <p className="text-ink text-body">{format(t.credential.removeConfirm, { service })}</p>
       <div className="flex flex-wrap gap-2">
         <Button
           variant="danger"

@@ -35,8 +35,14 @@ export function SearchProgress({ provider }: SearchProgressProps) {
 
   return (
     <section className="flex flex-col gap-2" aria-label={t.review.progressLabel}>
+      {/*
+        `<progress>` nativo continua sendo a escolha, por acessibilidade — a
+        decisão já morava neste arquivo. É por causa dela que `color-scheme`
+        precisa ser declarado por tema em `tokens.css`: sem isso o tema escuro
+        entregaria uma barra clara no meio da tela (research §9).
+      */}
       <progress
-        className="accent-accent h-2 w-full"
+        className="accent-accent bg-surface-raised h-2 w-full rounded-pill"
         value={search.done}
         max={Math.max(search.total, 1)}
         aria-label={t.review.progressLabel}
@@ -45,7 +51,10 @@ export function SearchProgress({ provider }: SearchProgressProps) {
       </progress>
 
       <div className="flex flex-wrap items-center justify-between gap-2">
+        {/* Contagem em `data-numeral`: tabular, para que o número não dance
+            enquanto sobe (contracts/components.md §8). */}
         <LiveRegion
+          className="data-numeral"
           visible
           message={
             search.running

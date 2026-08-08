@@ -28,7 +28,7 @@ export function VersionHintBadge({ hints }: VersionHintBadgeProps) {
   const labels = hints.map((hint) => t.versionHints[hint]);
 
   return (
-    <span className="border-status-uncertain text-status-uncertain inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold">
+    <span className="border-state-uncertain-edge text-state-uncertain inline-flex items-center gap-1 rounded-pill border px-2 py-1 text-meta font-semibold">
       <span className="sr-only">
         {format(t.versionHints.badgeLabelFor, { hints: labels.join(', ') })}
       </span>

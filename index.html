@@ -15,6 +15,13 @@
       do Vite exigiria `style-src 'unsafe-inline'` e o afrouxamento vazaria para
       produção (research §8).
     -->
+    <!--
+      Aplica `data-theme` antes da primeira pintura (FR-010). Precisa vir aqui,
+      bloqueante e **antes** do `<script type="module">`, que é adiado por
+      definição e rodaria depois do primeiro quadro. Arquivo de `public/`, mesma
+      origem, sem inline — é a forma que cabe em `script-src 'self'` (research §2).
+    -->
+    <script src="./theme-boot.js"></script>
   </head>
   <body>
     <div id="root"></div>

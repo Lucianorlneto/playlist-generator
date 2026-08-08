@@ -30,8 +30,8 @@ export function Alternatives({ item, provider }: AlternativesProps) {
   const showsAlbum = capabilitiesOf(provider).showsAlbum;
 
   return (
-    <div className="border-border bg-surface-muted mt-2 rounded-lg border p-2">
-      <h4 className="text-ink text-sm font-semibold">
+    <div className="border-rule bg-bg mt-2 rounded-card border p-2">
+      <h4 className="text-ink text-body font-semibold">
         {format(t.review.alternativesHeading, { line: item.line.raw })}
       </h4>
 
@@ -44,9 +44,9 @@ export function Alternatives({ item, provider }: AlternativesProps) {
             return (
               <li
                 key={candidate.uri}
-                className="border-border bg-surface flex flex-wrap items-center justify-between gap-2 rounded-lg border p-2"
+                className="border-rule bg-surface flex flex-wrap items-center justify-between gap-2 rounded-card border p-2"
               >
-                <div className="min-w-0 text-sm">
+                <div className="min-w-0 text-body">
                   <p className="text-ink font-semibold">{candidate.title}</p>
                   <p className="text-ink-muted">
                     {showsAlbum
@@ -56,7 +56,7 @@ export function Alternatives({ item, provider }: AlternativesProps) {
                   <VersionHintBadge hints={candidate.versionHints ?? []} />
                 </div>
                 {chosen ? (
-                  <span className="text-status-confident text-xs font-semibold">
+                  <span className="text-state-confident text-meta font-semibold">
                     {t.review.chosenCandidate}
                   </span>
                 ) : (

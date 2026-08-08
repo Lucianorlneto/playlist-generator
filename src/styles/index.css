@@ -1,96 +1,377 @@
 @import 'tailwindcss';
+@import './tokens.css';
 
 /**
- * Configuração CSS-first do Tailwind 4 (research §14). Não existe
- * `tailwind.config.js`: os tokens abaixo viram utilitários automaticamente
- * (`bg-surface`, `text-ink-muted`, `border-status-confident`, …).
+ * Space Grotesk variável, subsetada e versionada em `src/assets/fonts/`
+ * (research §3). Caminho relativo: o arquivo é do próprio build e nunca sai
+ * da origem — FR-039 e o Princípio II dependem disso.
+ */
+@font-face {
+  font-family: 'Space Grotesk';
+  src: url('../assets/fonts/space-grotesk-subset.woff2') format('woff2-variations');
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/**
+ * Fallback com métrica ajustada (FR-037, SC-015).
+ *
+ * Durante o `swap`, a pilha nativa desenha o texto. Sem ajuste ela desenha com
+ * outra altura de x e outra entrelinha, e o conteúdo salta quando a fonte real
+ * chega. Os números abaixo são derivados, não estimados: a altura de x de Space
+ * Grotesk é 486/1000 e a de Arial é 1062/2048, logo `size-adjust` = 93.72%. Os
+ * overrides de ascendente e descendente reaplicam as métricas verticais de
+ * Space Grotesk sobre o corpo já reescalado.
+ *
+ * Recalcular junto se o arquivo da fonte for trocado — ver research §3.
+ */
+@font-face {
+  font-family: 'Space Grotesk Fallback';
+  src: local('Arial'), local('Helvetica'), local('Liberation Sans');
+  size-adjust: 93.72%;
+  ascent-override: 104.99%;
+  descent-override: 31.16%;
+  line-gap-override: 0%;
+}
+
+/**
+ * Camada 2 de duas: os nomes semânticos.
+ *
+ * O modificador `inline` é o que faz o utilitário emitir `var(--bg)` em vez do
+ * hex resolvido em tempo de build. Sem ele a sobrescrita por `[data-theme]` não
+ * surtiria efeito nenhum — confirmado contra a 4.3.3 instalada em T001
+ * (research §1). **Não remova o `inline`.**
+ *
+ * `--color-*: initial` derruba a paleta padrão inteira do Tailwind. É o que
+ * torna `text-slate-500` inexistente em vez de meramente desaconselhado, e é a
+ * metade estrutural do FR-040 — a regra de lint de T017 é a outra metade, para
+ * o caso do valor arbitrário em colchete, que nenhum reset alcança.
+ */
+@theme inline {
+  --color-*: initial;
+
+  --color-transparent: transparent;
+  --color-current: currentColor;
+  --color-inherit: inherit;
+
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+
+  --color-rule: var(--rule);
+  --color-rule-strong: var(--rule-strong);
+
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+
+  --color-accent: var(--accent);
+  --color-accent-deep: var(--accent-deep);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-text: var(--accent-text);
+
+  --color-state-confident: var(--state-confident);
+  --color-state-uncertain: var(--state-uncertain);
+  --color-state-missing: var(--state-missing);
+
+  --color-state-confident-tint: var(--state-confident-tint);
+  --color-state-uncertain-tint: var(--state-uncertain-tint);
+  --color-state-missing-tint: var(--state-missing-tint);
+  --color-state-neutral-tint: var(--state-neutral-tint);
+
+  --color-state-confident-edge: var(--state-confident-edge);
+  --color-state-uncertain-edge: var(--state-uncertain-edge);
+  --color-state-missing-edge: var(--state-missing-edge);
+  --color-state-neutral-edge: var(--state-neutral-edge);
+
+  --color-scrim: var(--scrim);
+
+  /**
+   * Profundidade assimétrica (T011, contracts/tokens.md §4).
+   *
+   * Um único nível no claro; `none` no escuro, onde a separação vem de degrau
+   * de luminosidade e filete de 1px. Sombra preta sobre fundo quase-preto não é
+   * visível — aplicar o mesmo sistema aos dois substratos produziria um tema
+   * escuro chapado com custo de renderização e nenhum ganho.
+   *
+   * O valor bruto se chama `--elevation-card` e não `--shadow-card` de
+   * propósito: o namespace `--shadow-*` pertence ao Tailwind, e o nome repetido
+   * viraria uma referência a si mesmo.
+   */
+  --shadow-*: initial;
+  --shadow-card: var(--elevation-card);
+}
+
+/**
+ * Escalas finitas (FR-014). Não passam por `inline` porque não variam com o
+ * tema — um degrau de espaço mede o mesmo nos dois substratos.
+ *
+ * O `initial` em cada namespace é o que torna a escala **finita de fato**. Sem
+ * ele o Tailwind continua gerando `p-13`, `text-7xl` e `rounded-3xl` sob
+ * demanda, e "escala de 7 degraus" seria descrição de intenção, não restrição.
+ * Valor fora da escala é violação, não exceção (data-model.md §3).
  */
 @theme {
-  --color-surface: oklch(100% 0 0);
-  --color-surface-muted: oklch(97% 0.004 260);
-  --color-surface-sunken: oklch(94.5% 0.006 260);
-  --color-border: oklch(88% 0.008 260);
-  --color-border-strong: oklch(76% 0.012 260);
+  /* --- Espaçamento: 7 degraus (contracts/tokens.md §4) ------------------- */
+  --spacing: initial;
 
-  --color-ink: oklch(24% 0.015 260);
-  --color-ink-muted: oklch(48% 0.014 260);
-  --color-ink-inverse: oklch(99% 0 0);
+  --spacing-1: 0.25rem;
+  --spacing-2: 0.5rem;
+  --spacing-3: 0.75rem;
+  --spacing-4: 1rem;
+  --spacing-6: 1.5rem;
+  --spacing-8: 2rem;
+  --spacing-12: 3rem;
 
-  --color-accent: oklch(56% 0.14 155);
-  --color-accent-strong: oklch(47% 0.13 155);
-  --color-accent-soft: oklch(95% 0.03 155);
+  /* Zero não é um degrau da escala: é a ausência de espaço. Declarado porque
+     `inset-0`, `p-0` e `min-w-0` dependem dele e nenhum deles introduz medida. */
+  --spacing-0: 0px;
 
-  --color-danger: oklch(52% 0.19 25);
-  --color-danger-soft: oklch(96% 0.03 25);
+  /* --- Raio: 3 degraus --------------------------------------------------- */
+  --radius-*: initial;
 
-  /* Os três status de correspondência (data-model.md → MatchStatus). */
-  --color-status-confident: oklch(50% 0.13 155);
-  --color-status-confident-soft: oklch(95% 0.04 155);
-  --color-status-uncertain: oklch(53% 0.13 75);
-  --color-status-uncertain-soft: oklch(96% 0.05 85);
-  --color-status-not-found: oklch(52% 0.19 25);
-  --color-status-not-found-soft: oklch(96% 0.03 25);
-  --color-status-neutral: oklch(48% 0.014 260);
-  --color-status-neutral-soft: oklch(95% 0.005 260);
+  --radius-control: 4px;
+  --radius-card: 8px;
+  --radius-pill: 9999px;
 
-  --radius-card: 0.75rem;
+  /* --- Tipografia: 6 degraus (contracts/tokens.md §3) -------------------- */
+  --text-*: initial;
+
+  --text-step: 1.625rem;
+  --text-step--line-height: 1.2;
+  --text-step--letter-spacing: -0.02em;
+  --text-step--font-weight: 600;
+
+  --text-section: 1.0625rem;
+  --text-section--line-height: 1.35;
+  --text-section--font-weight: 600;
+
+  --text-body: 0.9375rem;
+  --text-body--line-height: 1.55;
+  --text-body--font-weight: 400;
+
+  --text-item: 0.9375rem;
+  --text-item--line-height: 1.4;
+  --text-item--font-weight: 500;
+
+  --text-meta: 0.8125rem;
+  --text-meta--line-height: 1.45;
+  --text-meta--font-weight: 400;
+
+  --text-data: 0.75rem;
+  --text-data--line-height: 1.4;
+  --text-data--letter-spacing: 0.03em;
+  --text-data--font-weight: 500;
+
+  /* --- Família única (FR-034) -------------------------------------------- */
+  --font-*: initial;
+
   --font-sans:
-    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    'Space Grotesk', 'Space Grotesk Fallback', ui-sans-serif, system-ui, -apple-system, 'Segoe UI',
+    Roboto, 'Helvetica Neue', Arial, sans-serif;
+
+  /* --- Layout (contracts/tokens.md §5) ----------------------------------- */
+  --container-measure: 46rem;
+
+  /* Largura do painel modal. Vive aqui, e não como valor em colchete no
+     componente, porque é restrição de layout do sistema — não uma medida
+     escolhida no olho dentro do `Dialog` (contracts/token-migration.md §5b). */
+  --container-panel: 32rem;
+
+  /* Abaixo daqui a goteira colapsa em prefixo de linha. Declarado como
+     breakpoint para que o componente possa usar a variante `gutter:` em vez de
+     repetir a medida. */
+  --breakpoint-gutter: 40rem;
 }
 
 /**
- * Recorrências que aparecem em três ou mais lugares viram utilitário nomeado,
- * nunca uma string copiada entre componentes (research §14).
+ * Goteira: a coluna reservada à esquerda em todas as telas (design.md §4).
+ * Vive fora do `@theme` porque não é um degrau de escala — é uma medida
+ * estrutural única, consumida pelo utilitário `gutter-row`.
  */
-@utility app-card {
-  border-radius: var(--radius-card);
-  border: 1px solid var(--color-border);
-  background-color: var(--color-surface);
-  padding: 1rem;
+:root {
+  --gutter: 2.5rem;
 }
 
+/**
+ * Utilitários nomeados (contracts/components.md §11).
+ *
+ * Recorrência que aparece em três ou mais lugares vira utilitário, nunca string
+ * copiada entre componentes — regra que o projeto já praticava e que a camada
+ * de tokens torna mais barata de cumprir.
+ */
+
+@utility app-card {
+  border-radius: var(--radius-card);
+  border: 1px solid var(--rule);
+  background-color: var(--surface);
+  padding: var(--spacing-4);
+  /* `none` no tema escuro, por decisão de contracts/tokens.md §4. */
+  box-shadow: var(--elevation-card);
+}
+
+/**
+ * Anel de foco (FR-016, research §12).
+ *
+ * `outline` e não `box-shadow`: o modo de cores forçadas descarta sombra e
+ * preserva contorno. Um foco feito de `box-shadow` desaparece exatamente para
+ * quem mais depende dele.
+ */
 @utility focus-ring {
   &:focus-visible {
-    outline: 2px solid var(--color-accent-strong);
+    outline: 2px solid var(--accent-text);
     outline-offset: 2px;
   }
 }
 
+/**
+ * Anatomia base do selo de estado (FR-047).
+ *
+ * **Sem preenchimento sólido**: fundo tingido, filete na cor do estado e tinta
+ * na cor do estado chegam pelas classes de variante. É a forma — não o matiz —
+ * que separa o selo "incerta" âmbar do botão primário âmbar.
+ */
 @utility status-badge {
   display: inline-flex;
   align-items: center;
-  gap: 0.25rem;
-  border-radius: 9999px;
-  border-width: 1px;
-  padding-inline: 0.5rem;
-  padding-block: 0.125rem;
-  font-size: 0.75rem;
-  line-height: 1rem;
-  font-weight: 600;
+  gap: var(--spacing-1);
+  border-radius: var(--radius-pill);
+  border: 1px solid transparent;
+  padding-inline: var(--spacing-2);
+  padding-block: var(--spacing-1);
+  font-size: var(--text-data);
+  line-height: 1.4;
+  letter-spacing: 0.03em;
+  font-weight: 500;
   white-space: nowrap;
 }
 
 @utility field-message {
-  margin-top: 0.25rem;
-  font-size: 0.875rem;
-  line-height: 1.25rem;
-  color: var(--color-ink-muted);
+  margin-top: var(--spacing-1);
+  font-size: var(--text-meta);
+  line-height: 1.45;
+  color: var(--ink-muted);
+}
+
+/**
+ * A goteira (design.md §4) — a estrutura que faz cinco telas parecerem cinco
+ * páginas do mesmo documento.
+ *
+ * Abaixo de `--breakpoint-gutter` a coluna colapsa e o numeral vira prefixo em
+ * linha. A medida aparece literal na consulta porque `@media` não aceita `var()`;
+ * ela espelha `--breakpoint-gutter` do `@theme` acima, e mover uma sem a outra
+ * é o modo de falha a vigiar.
+ */
+@utility gutter-row {
+  display: grid;
+  grid-template-columns: var(--gutter) minmax(0, 1fr);
+  column-gap: var(--spacing-2);
+  align-items: start;
+
+  @media (width < 40rem) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/**
+ * Numeral tabular (design.md §5).
+ *
+ * `tabular-nums` mora aqui e não em cada uso: T004 mediu 4,6 px de diferença
+ * entre `08` e `11` sem ele, e um numeral que esquecesse a declaração não
+ * quebraria teste nenhum — só deixaria a coluna torta.
+ */
+@utility data-numeral {
+  font-size: var(--text-data);
+  line-height: 1.4;
+  letter-spacing: 0.03em;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+}
+
+/**
+ * Guia lateral em âmbar cheio (`DraftRecoveryBanner`).
+ *
+ * Declarada aqui, e não como `border-l-accent` no componente, porque uma barra
+ * sólida de 3px é **preenchimento** — o único uso que o FR-050 autoriza para o
+ * âmbar em cheia saturação. Mantê-la fora do componente é o que permite à regra
+ * de lint recusar `border-accent` sem exceção (contracts/token-migration.md §6.5).
+ */
+@utility guide-edge {
+  border-inline-start: 3px solid var(--accent);
+}
+
+/**
+ * Movimento reduzido (FR-020).
+ *
+ * O sistema quase não tem movimento: a régua do indicador de etapa avança em
+ * 200ms e o resto é instantâneo. Sob `prefers-reduced-motion` até ela para de
+ * animar — **sem perda de informação**, porque a régua já é `aria-hidden` e o
+ * estado que ela mostra está dito por escrito na lista de etapas.
+ *
+ * A regra é declarada em `!important` porque precisa vencer utilitários de
+ * transição escritos no componente. É o único `!important` do arquivo, e o
+ * motivo é que a preferência do usuário não é uma sugestão.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 @layer base {
-  html {
-    color-scheme: light;
+  /**
+   * `<progress>` (contracts/components.md §8).
+   *
+   * **Armadilha que custou uma depuração**: dar `background-color` ao elemento
+   * faz o Chromium abandonar o desenho nativo — e com ele o `accent-color` —
+   * caindo no `-webkit-progress-value` legado, cujo padrão é **verde**. O
+   * resultado era uma barra verde no meio de uma interface âmbar, nos dois
+   * temas, sem nenhum erro em lugar nenhum.
+   *
+   * Estilizar os pseudoelementos explicitamente resolve nos dois motores e não
+   * depende do suporte a `accent-color` para este elemento. `accent-color`
+   * continua valendo onde funciona bem: caixa de seleção nativa.
+   */
+  progress {
+    appearance: none;
+    border: none;
+    background-color: var(--surface-raised);
+    border-radius: var(--radius-pill);
+    overflow: hidden;
+  }
+
+  progress::-webkit-progress-bar {
+    background-color: var(--surface-raised);
+    border-radius: var(--radius-pill);
+  }
+
+  progress::-webkit-progress-value {
+    background-color: var(--accent);
+    border-radius: var(--radius-pill);
+  }
+
+  progress::-moz-progress-bar {
+    background-color: var(--accent);
+    border-radius: var(--radius-pill);
   }
 
   body {
     margin: 0;
-    background-color: var(--color-surface-muted);
-    color: var(--color-ink);
+    background-color: var(--bg);
+    color: var(--ink);
     font-family: var(--font-sans);
+    font-size: var(--text-body);
+    line-height: 1.55;
     -webkit-font-smoothing: antialiased;
   }
 
-  /* Nenhum contêiner usa largura fixa em pixels — SC-012 depende disso. */
+  /* Nenhum contêiner usa largura fixa em pixels — SC-011 depende disso. */
   img,
   svg {
     max-width: 100%;
@@ -98,6 +379,6 @@
   }
 
   :where(a) {
-    color: var(--color-accent-strong);
+    color: var(--accent-text);
   }
 }
