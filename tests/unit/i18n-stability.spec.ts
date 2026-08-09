@@ -88,10 +88,33 @@ describe('FR-035 e SC-012 · nenhum texto da aplicação mudou nesta feature', (
     expect(removidas, `Chaves removidas: ${removidas.join(', ')}`).toEqual([]);
   });
 
-  it('chave nova é permitida — e o controle de tema traz exatamente cinco', () => {
+  /**
+   * Adição não falha. O caso existe para provar que cada feature acrescentou
+   * **só** os textos que declarou, e não copy que entrou de carona.
+   *
+   * A lista cresce por feature, e cada prefixo aponta o requisito que o
+   * autoriza. Acrescentar um prefixo aqui é uma decisão consciente; deixar a
+   * asserção cair para `true` genérico é o que faria esta guarda parar de
+   * guardar qualquer coisa.
+   */
+  it('chave nova é permitida — e só com prefixo declarado', () => {
+    const PREFIXOS_AUTORIZADOS = [
+      // 005/FR-022 — controle de tema.
+      'theme.',
+      // 006/FR-005 — confirmação do pulo que encerra o fluxo e descarta.
+      'queue.skipEndsFlow',
+      // 006/FR-013 a FR-015 — comando global de recomeço.
+      'flow.',
+    ];
+
     const novas = Object.keys(atual).filter((chave) => !(chave in gravado));
-    // Adição não falha. O caso é declarado para que o instantâneo prove que as
-    // únicas adições da 005 são as do FR-022, e não copy que entrou de carona.
-    expect(novas.every((chave) => chave.startsWith('theme.'))).toBe(true);
+    const forasteiras = novas.filter(
+      (chave) => !PREFIXOS_AUTORIZADOS.some((prefixo) => chave.startsWith(prefixo)),
+    );
+
+    expect(
+      forasteiras,
+      `Texto novo sem prefixo declarado: ${forasteiras.join(', ')}`,
+    ).toEqual([]);
   });
 });

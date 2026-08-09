@@ -43,6 +43,11 @@ export const createDraftSlice: SliceCreator<DraftSlice> = (set, get) => ({
    * credenciais: por isso não há nenhuma chamada a `clearCredential` aqui.
    */
   discardDraft: () => {
+    // `006/FR-022`: abortar **antes** de zerar. `blankWork()` põe `searchAbort`
+    // em `null`, e sem esta linha o controlador ia embora sem ninguém que
+    // pudesse pará-lo — a busca seguia gastando cota de um trabalho já
+    // descartado (`006/research §6`).
+    get().searchAbort?.abort();
     set({
       ...blankWork(),
       step: 'destinations',
@@ -57,8 +62,14 @@ export const createDraftSlice: SliceCreator<DraftSlice> = (set, get) => ({
     clearDraft();
   },
 
-  /** Recomeço após uma criação bem-sucedida — o rascunho já foi apagado. */
+  /**
+   * Recomeço do trabalho. Nasceu como saída de uma criação bem-sucedida e a
+   * partir da `006` é também o destino do comando global de recomeço e do pulo
+   * que encerra o fluxo sem nada a relatar (`006/FR-016`, FR-004).
+   */
   resetWork: () => {
+    // Mesmo motivo do descarte (`006/FR-022`).
+    get().searchAbort?.abort();
     set({
       ...blankWork(),
       step: 'destinations',

@@ -8,6 +8,7 @@ import {
   replaceRun,
   reduceUpcoming,
 } from '@/domain/run/queue';
+import { exitAfterSkip } from '@/domain/run/exit';
 import { buildSummary } from '@/domain/run/summary';
 import type { ProviderId } from '@/domain/providers';
 import type { ExecutionQueue, ServiceRun } from '@/domain/types';
@@ -71,8 +72,54 @@ export const createRunSlice: SliceCreator<RunSlice> = (set, get) => ({
       return next === run ? state : { queue: replaceRun(state.queue, next) };
     }),
 
+  /**
+   * Avança para o próximo serviço.
+   *
+   * O `stepToken` sobe junto (`006/FR-024`). Ele é o gatilho de foco do
+   * `StepHeading`, e até a `006` só era incrementado por `goToStep` — que não
+   * dispara aqui, porque passar de um serviço para o outro acontece **dentro**
+   * da etapa `service`. Medido na Fase 0: quem usa leitor de tela trocava de
+   * destino sem que nada fosse anunciado (`006/research §7`).
+   */
   advance: () =>
-    set((state) => ({ queue: advanceQueue(state.queue, state.lines) })),
+    set((state) => ({
+      queue: advanceQueue(state.queue, state.lines),
+      stepToken: state.stepToken + 1,
+    })),
+
+  /**
+   * Pular um destino, do começo ao fim (`006/FR-001`, FR-008).
+   *
+   * Até a `006` isto era uma sequência de quatro passos repetida em seis lugares
+   * da interface — e, em cinco deles, incompleta: só o primeiro passo acontecia.
+   * FR-008 exige comportamento **idêntico** nas quatro fases em que o botão
+   * existe, e seis cópias de uma sequência é como uma delas acaba diferente.
+   *
+   * A ordem é contratada (`006/contracts/flow-contract §3`):
+   *
+   * 1. **cancelar primeiro** (invariante S1). Cancelar depois deixaria uma
+   *    janela em que a busca ainda escreve progresso sobre execução encerrada;
+   * 2. **calcular a saída antes do despacho** (invariante S2), porque
+   *    `exitAfterSkip` pergunta se algum destino rodou e o próprio destino
+   *    pulado passaria a contar como `skipped` no meio do caminho;
+   * 3. encerrar, avançar e aplicar a saída.
+   *
+   * `resetWork` já leva à seleção de serviços, apaga o rascunho e preserva
+   * credenciais e sessões — o descarte de FR-004 **é** ele, não um caminho
+   * paralelo (`006/contracts/flow-contract §4`).
+   */
+  skipService: (provider) => {
+    const store = get();
+    store.cancelSearch();
+
+    const exit = exitAfterSkip(store.queue, provider);
+
+    store.dispatchRun({ type: 'skipped' }, provider);
+    store.advance();
+
+    if (exit.kind === 'summary') get().goToStep('summary');
+    else if (exit.kind === 'discard') get().resetWork();
+  },
 
   reduceUpcoming: (provider, lineIds) =>
     set((state) => ({ queue: reduceUpcoming(state.queue, provider, lineIds) })),
