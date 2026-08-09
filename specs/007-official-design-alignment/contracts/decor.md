@@ -59,6 +59,41 @@ Um único tratamento para os dois substratos é **erro**, não simplificação
 suposição. Adesivo que desaparecer no tema claro precisa de variante ou de
 contorno — nunca de ser deixado invisível.
 
+### A medição (T074, 2026-08-09)
+
+Contraste médio dos pixels **opacos** de cada arte contra cada substrato. A
+franja antisserrilhada foi descartada (alfa < 200), porque ela puxaria a média
+para o valor do fundo e mascararia o problema.
+
+| Arte | Sobre `--bg` claro | Sobre `--bg` escuro | Tratamento |
+| --- | --- | --- | --- |
+| `Vinyl 2.png` | **1,40** | 12,62 | `sticker-faint` — variante reforçada |
+| `Boombox.png` | 1,67 | 10,57 | `sticker` |
+| `Star 1.png` | 1,73 | 10,22 | `sticker` |
+| `Star 2.png` | 1,77 | 10,02 | `sticker` |
+| `Cassette 3.png` | 1,83 | 9,66 | `sticker` |
+| `Cassette 2.png` | 1,83 | 9,64 | `sticker` |
+| `Cassette 1.png` | 1,84 | 9,60 | `sticker` |
+| `Logo Mark.png` | 1,88 | 9,42 | `brand-mark` |
+| `Play Button.png` | 2,00 | 8,86 | `sticker` |
+| `Headphones 2.png` | 2,11 | 8,38 | `sticker` |
+| `Vinyl 1.png` | 2,33 | 7,60 | `sticker` |
+| `Headphones 1.png` | 2,80 | 6,31 | `sticker` |
+
+**Todas as doze artes perdem entre 4× e 9× de contraste no tema claro.** É a
+prova numérica de que FR-049 não é zelo: elas foram compostas contra o
+quase-preto, e servir um tratamento único aos dois substratos entrega, no tema
+Papel, decoração que não se vê.
+
+`Vinyl 2.png` é a única abaixo de 1,5:1 — o ponto em que a silhueta deixa de ser
+perceptível — e por isso recebe variante própria. Escurecer todas as doze as
+afastaria do desenho original sem necessidade; a exceção precisa ficar sendo
+exceção.
+
+**Nenhum teste automatizado da suíte pega isto.** Tudo que ele checaria — `src`,
+`alt` vazio, tamanho, carregamento diferido — está correto nos doze casos. É o
+item de maior risco da conferência manual de FR-073.
+
 A marca não entra no inventário da §1 porque não é decoração: o papel dela é
 `brand`, declarado em `contracts/icons.md` §1. O que ela precisa deste contrato é
 apenas o tratamento por tema, pela mesma razão que os adesivos — foi composta

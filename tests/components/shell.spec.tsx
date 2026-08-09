@@ -455,6 +455,94 @@ describe('FR-046 e SC-015 · a árvore é idêntica entre os temas', () => {
   });
 });
 
+describe('FR-046, SC-004 e SC-015 · toda superfície resolve para token', () => {
+  /**
+   * A asserção é sobre **propriedade customizada resolvida**, não sobre nome de
+   * classe.
+   *
+   * Conferir `className.includes('bg-surface-zone')` provaria apenas que alguém
+   * escreveu a classe — e o modo de falha desta feature inteira é justamente a
+   * classe que existe no código e **não emite CSS**. Ler o valor computado é o
+   * que distingue "a classe está escrita" de "o token chegou na tela".
+   *
+   * Em happy-dom não há folha de estilo aplicada, então o que se lê é a cascata
+   * de propriedades customizadas declarada em `tokens.css` — que é exatamente a
+   * camada que precisa existir nos dois temas. A aplicação visual final é
+   * responsabilidade do e2e e da conferência manual (FR-073).
+   */
+  const TOKENS_CSS = readFileSync(join(process.cwd(), 'src/styles/tokens.css'), 'utf8');
+
+  it.each(THEMES)('os tokens das zonas estão declarados no tema %s', (theme) => {
+    const bloco =
+      theme === 'light'
+        ? TOKENS_CSS.slice(TOKENS_CSS.indexOf(':root {'))
+        : TOKENS_CSS.slice(TOKENS_CSS.indexOf("[data-theme='dark'] {"));
+
+    for (const token of ['--bg', '--surface-zone', '--surface', '--rule-strong', '--ink']) {
+      expect(
+        new RegExp(`${token}:\\s*#[0-9a-f]{3,8}\\s*;`, 'iu').test(bloco),
+        `${token} não está declarado no tema ${theme}`,
+      ).toBe(true);
+    }
+  });
+
+  it.each(MATRIZ)(
+    'nenhuma propriedade com valor literal — etapa $step, tema $theme, estreito $narrow',
+    ({ step, theme, narrow }) => {
+      /*
+        Um `style="background: #1a2332"` escrito à mão sobrevive a toda a
+        disciplina de token: o lint não lê atributo `style` dinâmico, o
+        `typecheck` não sabe o que é cor, e a tela fica certa **num** tema.
+
+        A única exceção autorizada é a largura da régua de progresso do
+        `StepIndicator`, que saiu com a feature 007 — hoje não há nenhuma.
+      */
+      larguraDe(narrow);
+      comTema(theme);
+      semear(step);
+
+      const { container } = render(
+        <Shell>
+          <p>x</p>
+        </Shell>,
+      );
+
+      const comEstiloLiteral = [...container.querySelectorAll('[style]')]
+        .map((node) => node.getAttribute('style') ?? '')
+        .filter((estilo) => /#[0-9a-f]{3,8}|rgb\(|hsl\(/iu.test(estilo));
+
+      expect(
+        comEstiloLiteral,
+        `valor de cor literal em atributo style: ${comEstiloLiteral.join(' | ')}`,
+      ).toEqual([]);
+    },
+  );
+
+  it('FR-028 · sob cores forçadas, as três zonas ganham contorno próprio', () => {
+    /*
+      Neste modo o navegador descarta `background-color` e impõe a própria
+      paleta. O degrau de luminosidade que separa `--bg` de `--surface-zone`
+      desaparece, e as três zonas viram uma superfície só — a estrutura que esta
+      feature construiu fica ilegível justamente para quem mais depende de
+      estrutura.
+
+      A regra vive em `src/styles/index.css` e é lida daqui, porque happy-dom não
+      avalia `@media (forced-colors)`. É uma asserção sobre a folha, não sobre o
+      DOM — e é o que resta quando o ambiente não emula o modo.
+    */
+    const INDEX_CSS = readFileSync(join(process.cwd(), 'src/styles/index.css'), 'utf8');
+
+    const bloco = /@media \(forced-colors: active\) \{([\s\S]*?)\n\}/u.exec(INDEX_CSS);
+    expect(bloco, 'nenhum bloco @media (forced-colors: active) em index.css').not.toBeNull();
+
+    const corpo = bloco?.[1] ?? '';
+    for (const zona of ['header', 'nav[aria-label]', 'main']) {
+      expect(corpo, `a zona "${zona}" não recebe contorno sob cores forçadas`).toContain(zona);
+    }
+    expect(corpo).toMatch(/border:\s*1px solid/u);
+  });
+});
+
 describe('SHELL_BREAKPOINT_REM espelha --breakpoint-shell', () => {
   it('as duas cópias do ponto de corte concordam', () => {
     /*

@@ -1,6 +1,7 @@
 import { nameOf } from '@/features/credential/providerText';
 import { format, t } from '@/i18n/pt-BR';
 import { useAppStore } from '@/store';
+import { Icon } from '@/ui/Icon';
 
 /**
  * "Spotify — 1 de 2", visível em todas as telas do ciclo (FR-018).
@@ -21,8 +22,14 @@ export function QueueIndicator() {
     <p
       role="status"
       aria-label={t.queue.label}
-      className="text-ink-muted text-body font-semibold"
+      className="text-ink-muted text-body flex items-center gap-2 font-semibold"
     >
+      {/*
+        O papel `queue` — `list-ordered` no arquivo de design, onde ele encabeça
+        o painel "Ordem de execução". Decorativo: a posição está escrita ao lado
+        e no `aria-label`, e o ícone é reforço, não portador (FR-042, FR-059).
+      */}
+      <Icon role="queue" />
       {format(t.queue.position, {
         service: nameOf(provider),
         current: queue.currentIndex + 1,

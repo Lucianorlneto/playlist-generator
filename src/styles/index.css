@@ -245,6 +245,12 @@
   --rail-width: 18.5rem;
   --side-panel-width: 20.625rem;
   --topbar-height: 4.25rem;
+
+  /* Teto de largura do chip de conexão. Sem ele, um nome de conta longo estica
+     o chip até empurrar o controle de tema para fora da barra — o `truncate`
+     interno só age depois que existe um limite a respeitar
+     (`contracts/shell.md` §2). */
+  --chip-max-width: 18.75rem;
 }
 
 /**
@@ -290,6 +296,10 @@
   flex-shrink: 0;
 }
 
+@utility chip-measure {
+  max-width: var(--chip-max-width);
+}
+
 /**
  * A marca sobre cada substrato (FR-049, FR-060; `contracts/decor.md` §2).
  *
@@ -316,6 +326,151 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme]) .brand-mark {
     filter: none;
+  }
+}
+
+/**
+ * Decoração: o tratamento por tema (FR-049; `contracts/decor.md` §2).
+ *
+ * **Um único tratamento para os dois substratos é erro, não simplificação.** Os
+ * três recursos — fundo ambiente, adesivos e fotografia — foram compostos contra
+ * um quase-preto. Servi-los iguais nos dois temas produz, no tema Papel, uma
+ * textura que suja o off-white e adesivos que simplesmente desaparecem: a imagem
+ * carrega, tem o tamanho certo, e não se vê. **Nenhum teste automatizado percebe
+ * isso** — é o item de maior risco da conferência manual de FR-073.
+ */
+
+@utility ambient-backdrop {
+  opacity: 0.5;
+  /* Esmaecimento para `--bg` na borda inferior: a textura entrega o topo e
+     devolve o substrato onde o conteúdo fica mais denso. */
+  mask-image: linear-gradient(to bottom, rgb(0 0 0 / 100%), transparent 85%);
+}
+
+:root .ambient-backdrop {
+  /* Opacidade **menor** no claro, e `multiply` para que a textura escure o papel
+     em vez de depositar cinza sobre ele. `normal` a 50% deixaria um véu
+     acinzentado sobre o off-white — o efeito exato que o design não quer. */
+  opacity: 0.12;
+  mix-blend-mode: multiply;
+}
+
+[data-theme='dark'] .ambient-backdrop {
+  opacity: 0.5;
+  mix-blend-mode: normal;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .ambient-backdrop {
+    opacity: 0.5;
+    mix-blend-mode: normal;
+  }
+}
+
+/**
+ * Adesivos.
+ *
+ * No escuro, como entregues. No claro, uma sombra de contorno devolve a silhueta
+ * que a arte clara perde sobre o papel — `drop-shadow` e não `border`, porque a
+ * arte tem recorte irregular e uma borda retangular emolduraria o PNG em vez de
+ * contornar o desenho.
+ *
+ * ## A medição que motivou os dois níveis (T074)
+ *
+ * O contraste médio dos pixels opacos de cada adesivo foi medido contra os dois
+ * substratos. O resultado é inequívoco e vale registrar, porque explica por que
+ * o tratamento por tema não é zelo:
+ *
+ * | Adesivo | Sobre `--bg` claro | Sobre `--bg` escuro |
+ * | --- | --- | --- |
+ * | Vinyl 2 | **1,40** | 12,62 |
+ * | Boombox | 1,67 | 10,57 |
+ * | Star 1 · Star 2 | 1,73 · 1,77 | 10,22 · 10,02 |
+ * | Cassette 1‑3 | 1,83‑1,84 | 9,60‑9,66 |
+ * | Logo Mark | 1,88 | 9,42 |
+ * | Play Button | 2,00 | 8,86 |
+ * | Headphones 2 | 2,11 | 8,38 |
+ * | Vinyl 1 | 2,33 | 7,60 |
+ * | Headphones 1 | 2,80 | 6,31 |
+ *
+ * **Todos perdem entre 4× e 9× de contraste no tema claro.** `Vinyl 2` cruza a
+ * linha em que a silhueta deixa de ser perceptível, e por isso recebe variante
+ * própria em vez do tratamento genérico — o contrato manda dar variante,
+ * contorno ou filtro a quem sumir, nunca deixá-lo invisível
+ * (`contracts/decor.md` §2).
+ */
+@utility sticker {
+  filter: none;
+}
+
+:root .sticker {
+  filter: drop-shadow(0 0 2px rgb(20 28 38 / 55%)) saturate(1.1) contrast(1.08);
+}
+
+[data-theme='dark'] .sticker {
+  filter: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .sticker {
+    filter: none;
+  }
+}
+
+/**
+ * Variante para a arte que **some** sobre o papel.
+ *
+ * Halo mais largo e escurecimento próprio. Aplicada por adesivo, e não a todos,
+ * porque escurecer a arte que já se vê a afastaria do desenho original sem
+ * necessidade — a exceção precisa ficar sendo exceção.
+ */
+@utility sticker-faint {
+  filter: none;
+}
+
+:root .sticker-faint {
+  filter: drop-shadow(0 0 3px rgb(20 28 38 / 70%)) saturate(1.15) contrast(1.2) brightness(0.88);
+}
+
+[data-theme='dark'] .sticker-faint {
+  filter: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .sticker-faint {
+    filter: none;
+  }
+}
+
+/**
+ * Fotografia de clima do painel lateral de Destinos.
+ *
+ * A sobreposição em degradê que o design mostra escureceria demais sobre papel.
+ * Cada tema declara a sua: no escuro o degradê caminha para `--bg`, no claro
+ * para `--surface-zone`, que é o substrato do painel.
+ */
+@utility mood-photo {
+  position: relative;
+  overflow: hidden;
+}
+
+@utility mood-photo-veil {
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(to top, var(--bg) 5%, transparent 70%);
+}
+
+:root .mood-photo-veil {
+  background-image: linear-gradient(to top, var(--surface-zone) 10%, rgb(255 255 255 / 35%) 100%);
+}
+
+[data-theme='dark'] .mood-photo-veil {
+  background-image: linear-gradient(to top, var(--bg) 5%, transparent 70%);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .mood-photo-veil {
+    background-image: linear-gradient(to top, var(--bg) 5%, transparent 70%);
   }
 }
 
@@ -448,6 +603,34 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/**
+ * Cores forçadas (FR-028; Edge Case "alto contraste ou cores forçadas").
+ *
+ * Neste modo o navegador **descarta** `background-color` e `box-shadow` e impõe
+ * a própria paleta. As três zonas da casca se separam por degrau de luminosidade
+ * — `--bg` para o conteúdo, `--surface-zone` para a barra superior e a trilha —,
+ * e é exatamente esse degrau que desaparece: as três viram uma superfície só, e
+ * a estrutura que a feature inteira construiu fica ilegível.
+ *
+ * A solução é dar-lhes contorno próprio. `1px solid` com a cor de sistema faz o
+ * navegador desenhar a divisa com a paleta que o usuário escolheu, e a separação
+ * sobrevive sem depender de preenchimento translúcido.
+ */
+@media (forced-colors: active) {
+  header,
+  nav[aria-label],
+  main,
+  [role='group'] {
+    border: 1px solid;
+  }
+
+  /* O disco da trilha e o ponto do chip são preenchimento puro: sem contorno
+     eles somem junto com o fundo. */
+  .rounded-pill {
+    forced-color-adjust: auto;
   }
 }
 

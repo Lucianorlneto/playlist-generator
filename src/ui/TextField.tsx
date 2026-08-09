@@ -39,7 +39,14 @@ export function TextField({
       <input
         id={id}
         className={cx(
-          'focus-ring bg-surface text-ink mt-1 w-full rounded-card border px-3 py-2 text-body',
+          // `rounded-control` (8px) — campo é controle, não cartão. O contorno é
+          // `--rule-strong` porque carrega significado: é ele que separa a área
+          // digitável do substrato, e `--rule` dá 1,37:1, que é filete.
+          //
+          // `focus:bg-surface-raised` é o degrau de luminosidade que marca o
+          // campo em foco. Some sob cores forçadas, mas o `outline` do
+          // `focus-ring` não — a pista principal nunca é a cor de fundo.
+          'focus-ring bg-surface text-ink focus:bg-surface-raised mt-1 w-full rounded-control border px-3 py-2 text-body',
           error === null ? 'border-rule-strong' : 'border-state-missing',
           className,
         )}

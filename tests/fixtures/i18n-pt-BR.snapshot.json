@@ -16,6 +16,8 @@
   "steps.current": "Etapa atual",
   "steps.completed": "Etapa concluída",
   "steps.of": "de",
+  "greeting.personal": "Olá, {name}",
+  "greeting.impersonal": "Olá",
   "rail.title": "Etapas",
   "rail.restart": "Recomeçar do início",
   "rail.position": "Etapa {n} de {total}",

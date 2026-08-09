@@ -121,7 +121,7 @@ test.describe('US4 — recuperação do rascunho', () => {
     // Ciclo do YouTube, parando na revisão.
     await page.getByRole('button', { name: fmt(t.result.continueNext, { service: YOUTUBE }) }).click();
     await botaoConectar(page, YOUTUBE).click();
-    await expect(page.getByText(YT_CHANNEL_NAME)).toBeVisible();
+    await expect(page.getByRole('banner').getByText(YT_CHANNEL_NAME)).toBeVisible();
     await page.getByRole('button', { name: t.quota.proceed }).click();
     await expect(tituloRevisao(page, YOUTUBE)).toBeVisible();
 
@@ -146,7 +146,7 @@ test.describe('US4 — recuperação do rascunho', () => {
 
     await ateEntrada(page, LISTA);
     await botaoConectar(page, YOUTUBE).click();
-    await expect(page.getByText(YT_CHANNEL_NAME)).toBeVisible();
+    await expect(page.getByRole('banner').getByText(YT_CHANNEL_NAME)).toBeVisible();
     await page.getByRole('button', { name: t.quota.proceed }).click();
     await expect(tituloRevisao(page, YOUTUBE)).toBeVisible();
 

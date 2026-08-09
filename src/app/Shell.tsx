@@ -2,9 +2,12 @@ import type { JSX, ReactNode } from 'react';
 
 import type { WizardStep } from '@/domain/types';
 import { DestinationsActionBar } from '@/features/destinations/DestinationsActionBar';
+import { MoodPanel } from '@/features/destinations/MoodPanel';
 import { InputActionBar } from '@/features/input/InputActionBar';
 import { useAppStore } from '@/store';
+import { AmbientBackdrop } from '@/ui/AmbientBackdrop';
 
+import { Greeting } from './Greeting';
 import { useIsNarrowShell } from './shellBreakpoint';
 import { StepRail } from './StepRail';
 import { StepSummary } from './StepSummary';
@@ -76,14 +79,34 @@ const ACTION_BAR_BY_STEP: Partial<Record<WizardStep, () => JSX.Element>> = {
   input: InputActionBar,
 };
 
+/**
+ * Painel lateral de apoio, por etapa.
+ *
+ * Hoje só Destinos o prevê. O mapa existe pela mesma razão do de barra de ações:
+ * a decisão de qual etapa ganha painel é do sistema, não de cada tela, e ela
+ * ficar num lugar só é o que torna "o painel não rouba a largura de leitura"
+ * (FR-020) verificável em um ponto em vez de em cinco.
+ */
+const SIDE_PANEL_BY_STEP: Partial<Record<WizardStep, () => JSX.Element>> = {
+  destinations: MoodPanel,
+};
+
 export function Shell({ children, sidePanel }: ShellProps) {
   const narrow = useIsNarrowShell();
   const step = useAppStore((state) => state.step);
 
   const StepActionBar = ACTION_BAR_BY_STEP[step];
+  const StepSidePanel = SIDE_PANEL_BY_STEP[step];
 
   return (
     <div className="bg-bg flex min-h-dvh flex-col">
+      {/*
+        A decoração de fundo, em camada fixa atrás de tudo. Fora do fluxo de
+        propósito: o conteúdo nunca espera por ela, e nada se desloca quando ela
+        chega (FR-068, FR-070; SC-019, SC-020).
+      */}
+      <AmbientBackdrop />
+
       <Topbar narrow={narrow} />
 
       <div className="flex min-h-0 flex-1">
@@ -112,6 +135,12 @@ export function Shell({ children, sidePanel }: ShellProps) {
               className="shell:basis-measure flex w-full min-w-0 flex-1 flex-col gap-4"
             >
               {narrow && <StepSummary />}
+              {/*
+                A saudação abre o cabeçalho de conteúdo, acima do título da
+                etapa. Degrada para a forma impessoal sem conta conectada —
+                nunca some, nunca inventa nome (FR-036).
+              */}
+              <Greeting />
               {children}
             </main>
 
@@ -122,8 +151,10 @@ export function Shell({ children, sidePanel }: ShellProps) {
               contêiner vira coluna e ele desce para baixo, sem que a ordem do
               DOM mude (FR-053).
             */}
-            {sidePanel !== undefined && (
-              <aside className="shell:zone-side-panel w-full min-w-0">{sidePanel}</aside>
+            {(sidePanel !== undefined || StepSidePanel !== undefined) && (
+              <aside className="shell:zone-side-panel w-full min-w-0">
+                {sidePanel ?? (StepSidePanel === undefined ? null : <StepSidePanel />)}
+              </aside>
             )}
           </div>
 

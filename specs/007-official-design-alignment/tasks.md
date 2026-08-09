@@ -197,43 +197,43 @@ de tela, porque toda tela as consome.
 
 ### Primitivas do sistema
 
-- [ ] T052 [US4] Redesenhar `src/ui/Button.tsx` com os novos raios e a regra de que preenchimento sólido significa acionável, garantindo que texto claro sobre `--accent` não exista em variante nenhuma (FR-017, FR-022, FR-024)
-- [ ] T053 [P] [US4] Redesenhar `src/ui/TextField.tsx` com `--radius-control` 8px, contorno `--rule-strong` e campo focado sobre `--surface-raised` (FR-021, FR-025)
-- [ ] T054 [P] [US4] Redesenhar `src/ui/TextArea.tsx` com a mesma anatomia de campo de T053 (FR-025)
-- [ ] T055 [P] [US4] Redesenhar `src/ui/Toggle.tsx` consumindo o papel `done` de `src/ui/icons.ts` na caixa de seleção (FR-024, FR-059)
-- [ ] T056 [US4] Redesenhar `src/ui/Dialog.tsx` por analogia ao painel mais próximo que o design define — o arquivo não desenha modal algum — e registrar a analogia adotada para o guia de estilo (FR-063, FR-064)
-- [ ] T057 [P] [US4] Redesenhar `src/ui/StepHeading.tsx` com `--text-page` e `--text-step`, **sem** repetir a posição no fluxo que a trilha já anuncia (FR-041, `contracts/tokens.md` §3)
-- [ ] T058 [P] [US4] Redesenhar `src/ui/CopyButton.tsx`, `src/ui/VersionHintBadge.tsx`, `src/ui/RateLimitWaiting.tsx` e `src/ui/LiveRegion.tsx` pelo vocabulário oficial, por analogia — nenhuma delas é desenhada e nenhuma é removida por isso (FR-063, FR-064)
+- [X] T052 [US4] Redesenhar `src/ui/Button.tsx` com os novos raios e a regra de que preenchimento sólido significa acionável, garantindo que texto claro sobre `--accent` não exista em variante nenhuma (FR-017, FR-022, FR-024)
+- [X] T053 [P] [US4] Redesenhar `src/ui/TextField.tsx` com `--radius-control` 8px, contorno `--rule-strong` e campo focado sobre `--surface-raised` (FR-021, FR-025)
+- [X] T054 [P] [US4] Redesenhar `src/ui/TextArea.tsx` com a mesma anatomia de campo de T053 (FR-025)
+- [X] T055 [P] [US4] Redesenhar `src/ui/Toggle.tsx` consumindo o papel `done` de `src/ui/icons.ts` na caixa de seleção (FR-024, FR-059)
+- [X] T056 [US4] Redesenhar `src/ui/Dialog.tsx` por analogia ao painel mais próximo que o design define — o arquivo não desenha modal algum — e registrar a analogia adotada para o guia de estilo (FR-063, FR-064)
+- [X] T057 [P] [US4] Redesenhar `src/ui/StepHeading.tsx` com `--text-page` e `--text-step`, **sem** repetir a posição no fluxo que a trilha já anuncia (FR-041, `contracts/tokens.md` §3)
+- [X] T058 [P] [US4] Redesenhar `src/ui/CopyButton.tsx`, `src/ui/VersionHintBadge.tsx`, `src/ui/RateLimitWaiting.tsx` e `src/ui/LiveRegion.tsx` pelo vocabulário oficial, por analogia — nenhuma delas é desenhada e nenhuma é removida por isso (FR-063, FR-064)
 
 ### Telas
 
-- [ ] T059 [US4] Redesenhar a etapa de Configuração em `src/features/credential/CredentialStep.tsx`, `CredentialForm.tsx`, `MaskedValue.tsx`, `RedirectUriHint.tsx` e `RemoveCredential.tsx`, com os passos numerados do design e as ações **dentro** do cartão que as explica (FR-061)
-- [ ] T060 [US4] Redesenhar a etapa de Destinos em `src/features/destinations/DestinationsStep.tsx` e `DestinationSelector.tsx`, com a nova anatomia dos cartões de destino, a cor de marca como acento identificador e o painel lateral de apoio sem roubar a largura de leitura (FR-020, FR-023)
-- [ ] T061 [P] [US4] Redesenhar a etapa de Entrada em `src/features/input/InputScreen.tsx` e `ListReduction.tsx` (FR-025)
-- [ ] T062 [US4] Redesenhar o ciclo de serviço em `src/features/service/ServiceStep.tsx` e `SkipButton.tsx`, mantendo "Pular o {serviço}" adjacente ao cartão da fase e o comportamento da 006 intacto (FR-061, FR-062)
-- [ ] T063 [P] [US4] Redesenhar `src/features/connect/ConnectButton.tsx`, `AuthError.tsx` e `ReauthDialog.tsx`, tratando o pedido de reautorização no meio da execução como superfície preservada por analogia (FR-063, FR-064)
-- [ ] T064 [P] [US4] Redesenhar `src/features/quota/QuotaEstimateScreen.tsx`, com a ação de pular adjacente ao cartão de orçamento (FR-062)
-- [ ] T065 [US4] Redesenhar a etapa de revisão em `src/features/review/ReviewScreen.tsx`, `MatchRow.tsx`, `StatusBadge.tsx`, `Alternatives.tsx`, `LineEditor.tsx`, `PlaylistConfigForm.tsx` e `SearchProgress.tsx`, mantendo os três estados de correspondência distinguíveis por fundo tingido, contorno, ícone e rótulo — jamais por preenchimento sólido, que continua significando clicável; capas de álbum e miniaturas de terceiros recebem contorno `--rule-strong` para se separarem do substrato quase-preto (par #26, FR-024, FR-042)
-- [ ] T066 [P] [US4] Redesenhar `src/features/result/ResultScreen.tsx`, `FailedLines.tsx`, `FolderNotice.tsx` e `RetryRemaining.tsx`, preservando `data-numeral` no alinhamento tabular das colunas (FR-025, `contracts/token-migration.md` §6.1)
-- [ ] T067 [P] [US4] Redesenhar `src/features/summary/SummaryScreen.tsx` (FR-025)
-- [ ] T068 [P] [US4] Redesenhar `src/features/queue/QueueIndicator.tsx` consumindo o papel `queue` do mapa de ícones (FR-059)
-- [ ] T069 [P] [US4] Redesenhar `src/app/DraftRecoveryBanner.tsx` pelo vocabulário oficial (FR-063)
-- [ ] T070 [US4] Implementar a saudação personalizada no cabeçalho de conteúdo, degradando para forma impessoal quando nenhuma conta está conectada — sem espaço vazio e sem nome inventado (FR-036)
+- [X] T059 [US4] Redesenhar a etapa de Configuração em `src/features/credential/CredentialStep.tsx`, `CredentialForm.tsx`, `MaskedValue.tsx`, `RedirectUriHint.tsx` e `RemoveCredential.tsx`, com os passos numerados do design e as ações **dentro** do cartão que as explica (FR-061)
+- [X] T060 [US4] Redesenhar a etapa de Destinos em `src/features/destinations/DestinationsStep.tsx` e `DestinationSelector.tsx`, com a nova anatomia dos cartões de destino, a cor de marca como acento identificador e o painel lateral de apoio sem roubar a largura de leitura (FR-020, FR-023)
+- [X] T061 [P] [US4] Redesenhar a etapa de Entrada em `src/features/input/InputScreen.tsx` e `ListReduction.tsx` (FR-025)
+- [X] T062 [US4] Redesenhar o ciclo de serviço em `src/features/service/ServiceStep.tsx` e `SkipButton.tsx`, mantendo "Pular o {serviço}" adjacente ao cartão da fase e o comportamento da 006 intacto (FR-061, FR-062)
+- [X] T063 [P] [US4] Redesenhar `src/features/connect/ConnectButton.tsx`, `AuthError.tsx` e `ReauthDialog.tsx`, tratando o pedido de reautorização no meio da execução como superfície preservada por analogia (FR-063, FR-064)
+- [X] T064 [P] [US4] Redesenhar `src/features/quota/QuotaEstimateScreen.tsx`, com a ação de pular adjacente ao cartão de orçamento (FR-062)
+- [X] T065 [US4] Redesenhar a etapa de revisão em `src/features/review/ReviewScreen.tsx`, `MatchRow.tsx`, `StatusBadge.tsx`, `Alternatives.tsx`, `LineEditor.tsx`, `PlaylistConfigForm.tsx` e `SearchProgress.tsx`, mantendo os três estados de correspondência distinguíveis por fundo tingido, contorno, ícone e rótulo — jamais por preenchimento sólido, que continua significando clicável; capas de álbum e miniaturas de terceiros recebem contorno `--rule-strong` para se separarem do substrato quase-preto (par #26, FR-024, FR-042)
+- [X] T066 [P] [US4] Redesenhar `src/features/result/ResultScreen.tsx`, `FailedLines.tsx`, `FolderNotice.tsx` e `RetryRemaining.tsx`, preservando `data-numeral` no alinhamento tabular das colunas (FR-025, `contracts/token-migration.md` §6.1)
+- [X] T067 [P] [US4] Redesenhar `src/features/summary/SummaryScreen.tsx` (FR-025)
+- [X] T068 [P] [US4] Redesenhar `src/features/queue/QueueIndicator.tsx` consumindo o papel `queue` do mapa de ícones (FR-059)
+- [X] T069 [P] [US4] Redesenhar `src/app/DraftRecoveryBanner.tsx` pelo vocabulário oficial (FR-063)
+- [X] T070 [US4] Implementar a saudação personalizada no cabeçalho de conteúdo, degradando para forma impessoal quando nenhuma conta está conectada — sem espaço vazio e sem nome inventado (FR-036)
 
 ### Decoração
 
-- [ ] T071 [US4] Criar `src/ui/AmbientBackdrop.tsx` servindo `src/assets/imgs/Ambient Backdrop.png` da própria origem, fora do caminho crítico, com decodificação assíncrona, espaço pré-dimensionado e tratamento distinto por tema — opacidade menor e mistura própria sobre o off-white (FR-034, FR-048, FR-049, FR-050, FR-068, FR-070)
-- [ ] T072 [US4] Criar `src/ui/Stickers.tsx` com os onze adesivos de `src/assets/imgs/`, marcados como decorativos, carregados de forma diferida e suprimidos ou estáticos sob `prefers-reduced-motion` (FR-034, FR-035, FR-068)
-- [ ] T073 [US4] Incorporar a fotografia de clima ao painel lateral de Destinos em `src/features/destinations/DestinationsStep.tsx`, com sobreposição em degradê própria para cada tema (FR-034, FR-049)
-- [ ] T074 [US4] Verificar **cada um** dos onze adesivos **e a marca** (`Logo Mark.png`) sobre o substrato claro e dar variante, contorno ou filtro aos que sumirem — arte composta contra o quase-preto desaparece sobre papel, e nenhum teste automatizado percebe (FR-049, FR-060, `contracts/decor.md` §2)
+- [X] T071 [US4] Criar `src/ui/AmbientBackdrop.tsx` servindo `src/assets/imgs/Ambient Backdrop.png` da própria origem, fora do caminho crítico, com decodificação assíncrona, espaço pré-dimensionado e tratamento distinto por tema — opacidade menor e mistura própria sobre o off-white (FR-034, FR-048, FR-049, FR-050, FR-068, FR-070)
+- [X] T072 [US4] Criar `src/ui/Stickers.tsx` com os onze adesivos de `src/assets/imgs/`, marcados como decorativos, carregados de forma diferida e suprimidos ou estáticos sob `prefers-reduced-motion` (FR-034, FR-035, FR-068)
+- [X] T073 [US4] Incorporar a fotografia de clima ao painel lateral de Destinos em `src/features/destinations/DestinationsStep.tsx`, com sobreposição em degradê própria para cada tema (FR-034, FR-049)
+- [X] T074 [US4] Verificar **cada um** dos onze adesivos **e a marca** (`Logo Mark.png`) sobre o substrato claro e dar variante, contorno ou filtro aos que sumirem — arte composta contra o quase-preto desaparece sobre papel, e nenhum teste automatizado percebe (FR-049, FR-060, `contracts/decor.md` §2)
 
 ### Verificação da história
 
-- [ ] T075 [US4] Criar `e2e/decor-loading.spec.ts` verificando, sob rede lenta simulada, que o conteúdo de cada etapa está legível e operável **antes** de qualquer decoração carregar, que nada se desloca quando o recurso chega, e que com imagens desabilitadas todas as etapas permanecem utilizáveis sem buraco (SC-014, SC-019, SC-020)
-- [ ] T076 [US4] Estender `e2e/no-remote-origin.spec.ts` para cobrir também recursos decorativos e fonte de ícone, falhando quando qualquer requisição sair para terceiro (FR-048, FR-057, SC-012)
-- [ ] T077 [US4] Estender `tests/a11y/steps.spec.tsx` para auditar todas as etapas nos **dois temas** e nas **duas larguras**, e para asserir que nenhum elemento decorativo é anunciado por leitor de tela (SC-003, SC-013)
-- [ ] T078 [US4] Estender `tests/components/shell.spec.tsx` com a asserção de token efetivamente aplicado — via propriedade customizada resolvida, não via nome de classe — para as onze telas nos dois temas e nas duas larguras, e com a asserção de que a árvore de zonas e componentes é **idêntica** entre os temas, divergindo apenas em valor de cor (FR-046, FR-071, FR-074, SC-001, SC-004, SC-015)
-- [ ] T078a [US4] Dar contorno próprio às três zonas sob `@media (forced-colors: active)` em `src/styles/index.css` e asserir em `tests/components/shell.spec.tsx` que a separação entre elas sobrevive quando o preenchimento translúcido é descartado (FR-028, Edge Case "alto contraste ou cores forçadas")
+- [X] T075 [US4] Criar `e2e/decor-loading.spec.ts` verificando, sob rede lenta simulada, que o conteúdo de cada etapa está legível e operável **antes** de qualquer decoração carregar, que nada se desloca quando o recurso chega, e que com imagens desabilitadas todas as etapas permanecem utilizáveis sem buraco (SC-014, SC-019, SC-020)
+- [X] T076 [US4] Estender `e2e/no-remote-origin.spec.ts` para cobrir também recursos decorativos e fonte de ícone, falhando quando qualquer requisição sair para terceiro (FR-048, FR-057, SC-012)
+- [X] T077 [US4] Estender `tests/a11y/steps.spec.tsx` para auditar todas as etapas nos **dois temas** e nas **duas larguras**, e para asserir que nenhum elemento decorativo é anunciado por leitor de tela (SC-003, SC-013)
+- [X] T078 [US4] Estender `tests/components/shell.spec.tsx` com a asserção de token efetivamente aplicado — via propriedade customizada resolvida, não via nome de classe — para as onze telas nos dois temas e nas duas larguras, e com a asserção de que a árvore de zonas e componentes é **idêntica** entre os temas, divergindo apenas em valor de cor (FR-046, FR-071, FR-074, SC-001, SC-004, SC-015)
+- [X] T078a [US4] Dar contorno próprio às três zonas sob `@media (forced-colors: active)` em `src/styles/index.css` e asserir em `tests/components/shell.spec.tsx` que a separação entre elas sobrevive quando o preenchimento translúcido é descartado (FR-028, Edge Case "alto contraste ou cores forçadas")
 
 **Checkpoint**: o resultado parece o design, e as asserções estruturais falham
 quando uma zona, um componente ou um token deixa de estar presente.

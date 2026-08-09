@@ -70,6 +70,21 @@ const messages = {
   },
 
   /**
+   * A saudação do cabeçalho de conteúdo (FR-036).
+   *
+   * Personalizada quando há conta conectada; impessoal quando não há. **Nunca um
+   * nome inventado e nunca um espaço vazio** — as duas formas são frases
+   * completas, e a degradação não deixa buraco no layout.
+   *
+   * O identificador vem da sessão que a aplicação já possui. Nada novo é
+   * coletado nem persistido para isto existir.
+   */
+  greeting: {
+    personal: 'Olá, {name}',
+    impersonal: 'Olá',
+  },
+
+  /**
    * A trilha vertical de etapas (FR-010 a FR-015).
    *
    * ## As duas famílias de linha de apoio

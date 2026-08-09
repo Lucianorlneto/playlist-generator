@@ -1,8 +1,8 @@
-import type { JSX } from 'react';
-
 import type { AttentionReason, MatchStatus } from '@/domain/types';
 import { t } from '@/i18n/pt-BR';
 import { cx } from '@/ui/cx';
+import { Icon } from '@/ui/Icon';
+import type { IconRole } from '@/ui/icons';
 
 /**
  * Selo de status (FR-022, FR-047, FR-048) e de duplicata (FR-018).
@@ -22,51 +22,24 @@ import { cx } from '@/ui/cx';
  */
 
 /**
- * Ícones de estado, em SVG e não em glifo.
+ * Ícones de estado, pelos papéis do mapa único (FR-059).
  *
- * O subconjunto embarcado de Space Grotesk cobre Latin Basic, Latin-1 e Latin
- * Extended-A; `◆` e `◇` estão fora dele e cairiam na pilha nativa, com forma e
- * alinhamento imprevisíveis a cada sistema. Desenhar resolve os dois.
+ * Os losangos desenhados à mão da 005 saíram. O papel `confident` é o `gem` que
+ * o arquivo de design nomeia; `uncertain` e `missing` entram **por analogia**,
+ * porque o design não desenha selo para incerta nem para não encontrada e
+ * silêncio do design não é remoção (FR-063). A analogia está registrada em
+ * `contracts/icons.md` §2 e no guia de estilo (FR-064).
+ *
+ * `pending`, `searching` e `discarded` continuam sem ícone: são ausência de
+ * resultado, não um resultado. Dar-lhes um glifo sugeriria que algo foi decidido.
  */
-const DIAMOND_FILLED: JSX.Element = (
-  <svg viewBox="0 0 10 10" aria-hidden="true" className="size-2 shrink-0" fill="currentColor">
-    <path d="M5 0.5 9.5 5 5 9.5 0.5 5Z" />
-  </svg>
-);
-
-const DIAMOND_HOLLOW: JSX.Element = (
-  <svg
-    viewBox="0 0 10 10"
-    aria-hidden="true"
-    className="size-2 shrink-0"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.6"
-  >
-    <path d="M5 1.2 8.8 5 5 8.8 1.2 5Z" />
-  </svg>
-);
-
-const DASH: JSX.Element = (
-  <svg
-    viewBox="0 0 10 10"
-    aria-hidden="true"
-    className="size-2 shrink-0"
-    stroke="currentColor"
-    strokeWidth="1.6"
-    strokeLinecap="round"
-  >
-    <path d="M1.4 5h7.2" />
-  </svg>
-);
-
-const STATUS_ICON: Record<MatchStatus, JSX.Element | null> = {
+const STATUS_ICON: Record<MatchStatus, IconRole | null> = {
   pending: null,
-  searching: null,
-  confident: DIAMOND_FILLED,
-  uncertain: DIAMOND_HOLLOW,
-  not_found: DASH,
-  unparsed: DIAMOND_HOLLOW,
+  searching: 'loading',
+  confident: 'confident',
+  uncertain: 'uncertain',
+  not_found: 'missing',
+  unparsed: 'uncertain',
   discarded: null,
 };
 
@@ -100,21 +73,28 @@ export interface StatusBadgeProps {
 }
 
 export function StatusBadge({ status, duplicate = false, errored = false }: StatusBadgeProps) {
+  const icon = STATUS_ICON[status];
+
   return (
     <span className="flex flex-wrap gap-1">
       <span className={cx('status-badge', STATUS_CLASSES[status])}>
-        {STATUS_ICON[status]}
+        {/*
+          Decorativo em todos os casos: o rótulo do estado está escrito ao lado.
+          FR-042 proíbe o ícone de ser o único portador — aqui ele é o quarto
+          canal, depois da tinta, do fundo tingido e da palavra.
+        */}
+        {icon !== null && <Icon role={icon} />}
         {STATUS_LABEL[status]}
       </span>
       {duplicate && (
         <span className={cx('status-badge', DUPLICATE_CLASSES)}>
-          {DIAMOND_HOLLOW}
+          <Icon role="uncertain" />
           {t.review.status.duplicate}
         </span>
       )}
       {errored && (
         <span className={cx('status-badge', ERROR_CLASSES)}>
-          {DASH}
+          <Icon role="missing" />
           {t.review.status.error}
         </span>
       )}

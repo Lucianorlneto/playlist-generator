@@ -126,7 +126,7 @@ export function ConnectionChip({ provider, navigate }: ConnectionChipProps) {
 
   return (
     <div
-      className="border-rule bg-surface-zone rounded-pill flex min-w-0 items-center gap-2 border px-2 py-1"
+      className="border-rule bg-surface-zone rounded-pill chip-measure flex min-w-0 items-center gap-2 border px-2 py-1"
       // O nome acessível resolve o estado por extenso. Um leitor de tela que
       // encontre o chip ouve "Spotify: Conectado", não "Spotify" e um ponto
       // colorido que ele não pode ver.

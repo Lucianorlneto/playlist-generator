@@ -194,6 +194,7 @@ que não pertencem a nenhum deles vivem como propriedade customizada simples, co
 | `--rail-width` | 18.5rem (296px) | Largura da trilha de etapas | simples |
 | `--side-panel-width` | 20.625rem (330px) | Painel lateral de apoio | simples |
 | `--topbar-height` | 4.25rem (68px) | Altura da barra superior | simples |
+| `--chip-max-width` | 18.75rem (300px) | Teto de largura do chip de conexão | simples |
 | `--breakpoint-shell` | **64rem** (1024px) | Abaixo daqui a casca colapsa | `--breakpoint-*` |
 
 **`--breakpoint-shell` foi medido em T042 e fixado em 64rem.** A conta é

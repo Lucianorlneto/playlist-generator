@@ -11,7 +11,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import axe from 'axe-core';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { CredentialStep } from '@/features/credential/CredentialStep';
 import { DestinationsStep } from '@/features/destinations/DestinationsStep';
@@ -26,6 +26,7 @@ import { ReviewScreen } from '@/features/review/ReviewScreen';
 import { SkipButton } from '@/features/service/SkipButton';
 import { SummaryScreen } from '@/features/summary/SummaryScreen';
 import { ResetFlow } from '@/app/ResetFlow';
+import { Shell } from '@/app/Shell';
 import { t } from '@/i18n/pt-BR';
 import { configureProviderClient } from '@/services/providers/http';
 import { createRefresher } from '@/services/providers/spotify/auth';
@@ -562,4 +563,95 @@ describe('006 — diálogos de pular e de recomeçar', () => {
     const { container } = render(<ResetFlow />);
     await semViolacoes(container);
   });
+});
+
+/**
+ * 007/SC-003 e SC-013 — a casca de três zonas, nos **dois temas** e nas **duas
+ * larguras**.
+ *
+ * Os blocos acima auditam cada tela isoladamente. Este audita a casca que passou
+ * a envolvê-las, e ela é onde os problemas novos moram: a barra superior tem
+ * dois chips com estados independentes, a trilha tem uma lista com
+ * `aria-current`, e a largura estreita troca a trilha por um resumo. Nenhuma
+ * dessas superfícies existia antes da feature.
+ *
+ * Rodar nas duas larguras não é zelo redundante: abaixo do ponto de corte a
+ * árvore é **outra** — a trilha não é renderizada e o `StepSummary` toma o seu
+ * lugar. Auditar só a largura ampla deixaria metade da casca sem prova.
+ */
+describe.each(THEMES)('007/SC-003 · a casca não introduz violação — tema %s', (theme) => {
+  const CLIENT_ID_007 = 'a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6';
+
+  function larguraDe(narrow: boolean): void {
+    vi.stubGlobal(
+      'matchMedia',
+      (query: string): MediaQueryList =>
+        ({
+          matches: narrow,
+          media: query,
+          onchange: null,
+          addEventListener: () => undefined,
+          removeEventListener: () => undefined,
+          addListener: () => undefined,
+          removeListener: () => undefined,
+          dispatchEvent: () => false,
+        }) as unknown as MediaQueryList,
+    );
+  }
+
+  beforeEach(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    useAppStore.setState({
+      credentials: makeCredentials({ spotify: CLIENT_ID_007, youtube: YT_CLIENT_ID }),
+      sessions: makeSessions({ spotify: makeSession('spotify') }),
+      queue: makeQueue(['spotify', 'youtube']),
+    });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    document.documentElement.removeAttribute('data-theme');
+  });
+
+  for (const narrow of [false, true]) {
+    const largura = narrow ? 'estreita' : 'ampla';
+
+    it(`largura ${largura}: a casca inteira passa no axe`, async () => {
+      larguraDe(narrow);
+      useAppStore.setState({ step: 'destinations' });
+
+      const { container } = render(
+        <Shell>
+          <p>conteúdo</p>
+        </Shell>,
+      );
+      await semViolacoes(container);
+    });
+
+    it(`largura ${largura}: nenhum elemento decorativo é anunciado (SC-013)`, async () => {
+      larguraDe(narrow);
+      useAppStore.setState({ step: 'destinations' });
+
+      const { container } = render(
+        <Shell>
+          <p>conteúdo</p>
+        </Shell>,
+      );
+
+      /*
+        Toda imagem desta aplicação é decoração — marca, fundo ambiente,
+        fotografia de clima e os onze adesivos —, exceto as capas de álbum da
+        revisão, que têm `alt` descritivo e não aparecem nesta etapa.
+
+        `alt=""` retira a imagem da árvore de acessibilidade; um `aria-hidden`
+        no ancestral faz o mesmo pelo ramo inteiro. Qualquer das duas basta.
+      */
+      const anunciadas = [...container.querySelectorAll('img')]
+        .filter((img) => img.getAttribute('alt') !== '')
+        .filter((img) => img.closest('[aria-hidden="true"]') === null)
+        .map((img) => img.getAttribute('src') ?? '(sem src)');
+
+      expect(anunciadas, `decoração anunciada: ${anunciadas.join(', ')}`).toEqual([]);
+    });
+  }
 });

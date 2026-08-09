@@ -54,7 +54,7 @@ async function ateRevisaoDoPrimeiro(page: Page, nome = 'Clássicos'): Promise<vo
 
   // Ciclo do Spotify: autorização pedida só agora (FR-017).
   await botaoConectar(page, SPOTIFY).click();
-  await expect(page.getByText(DISPLAY_NAME)).toBeVisible();
+  await expect(page.getByRole('banner').getByText(DISPLAY_NAME)).toBeVisible();
   await expect(tituloRevisao(page, SPOTIFY)).toBeVisible();
 
   // Nome e visibilidade ficam na revisão, junto da confirmação.
@@ -65,7 +65,7 @@ async function ateRevisaoDoPrimeiro(page: Page, nome = 'Clássicos'): Promise<vo
 async function ateRevisaoDoYouTube(page: Page): Promise<void> {
   await page.getByRole('button', { name: fmt(t.result.continueNext, { service: YOUTUBE }) }).click();
   await botaoConectar(page, YOUTUBE).click();
-  await expect(page.getByText(YT_CHANNEL_NAME)).toBeVisible();
+  await expect(page.getByRole('banner').getByText(YT_CHANNEL_NAME)).toBeVisible();
   await page.getByRole('button', { name: t.quota.proceed }).click();
   await expect(tituloRevisao(page, YOUTUBE)).toBeVisible();
 }
@@ -102,7 +102,7 @@ test.describe('US3 — dois destinos, um depois do outro', () => {
       .getByRole('button', { name: fmt(t.result.continueNext, { service: YOUTUBE }) })
       .click();
     await botaoConectar(page, YOUTUBE).click();
-    await expect(page.getByText(YT_CHANNEL_NAME)).toBeVisible();
+    await expect(page.getByRole('banner').getByText(YT_CHANNEL_NAME)).toBeVisible();
 
     // FR-029 / SC-011: a estimativa aparece antes de qualquer busca no YouTube.
     await expect(page.getByText(fmt(t.quota.heading, { service: YOUTUBE }))).toBeVisible();

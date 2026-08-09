@@ -112,6 +112,8 @@ describe('FR-035 e SC-012 · nenhum texto da aplicação mudou nesta feature', (
       'connectionChip.',
       // 007/FR-016 a FR-019 — barra de ações de Destinos e Entrada.
       'actionBar.',
+      // 007/FR-036 — saudação personalizada, com degradação impessoal.
+      'greeting.',
       // 007 — conjunção de lista, consumida por `listAnd` para compor a linha
       // de apoio derivada de Destinos. Vive em `common` porque não pertence a
       // nenhuma superfície: é gramática.

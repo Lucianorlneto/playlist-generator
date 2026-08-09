@@ -43,7 +43,7 @@ async function ateBuscaDoYouTube(page: Page): Promise<YouTubeMockState> {
   await informarLista(page, LISTA);
 
   await botaoConectar(page, YOUTUBE).click();
-  await expect(page.getByText(YT_CHANNEL_NAME)).toBeVisible();
+  await expect(page.getByRole('banner').getByText(YT_CHANNEL_NAME)).toBeVisible();
   await expect(page.getByText(fmt(t.quota.heading, { service: YOUTUBE }))).toBeVisible();
 
   return state;

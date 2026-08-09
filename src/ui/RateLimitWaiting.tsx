@@ -4,6 +4,7 @@ import { t } from '@/i18n/pt-BR';
 import { onWaitStateChange, type WaitState } from '@/services/rate-limiter';
 
 import { Button } from './Button';
+import { Icon } from './Icon';
 
 export interface RateLimitWaitingProps {
   /** Quando presente, o cancelamento continua alcançável durante a espera. */
@@ -27,10 +28,19 @@ export function RateLimitWaiting({ onCancel, label }: RateLimitWaitingProps) {
   if (wait === null) return null;
 
   return (
+    /*
+      **A analogia adotada** (FR-063, FR-064): o design não desenha aviso de
+      espera. O mais próximo é a caixa de dica — cartão baixo, fundo tingido,
+      contorno na cor do estado. A tinta é a de "incerta" e não a de erro: uma
+      pausa por limite de taxa é o serviço pedindo calma, não uma falha, e pintá-la
+      de vermelho ensinaria o usuário a temer o normal.
+    */
     <div
       role="status"
       className="border-state-uncertain-edge bg-state-uncertain-tint text-ink flex flex-wrap items-center gap-2 rounded-card border px-3 py-2 text-body"
     >
+      {/* Decorativo: a espera está escrita ao lado, e o giro comunica duração. */}
+      <Icon role="loading" className="text-state-uncertain motion-safe:animate-spin" />
       <span>{label ?? t.review.progressWaiting}</span>
       {onCancel !== undefined && (
         <Button size="sm" variant="ghost" onClick={onCancel}>

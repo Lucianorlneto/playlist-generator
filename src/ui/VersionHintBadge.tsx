@@ -1,6 +1,8 @@
 import type { VersionHint } from '@/domain/types';
 import { format, t } from '@/i18n/pt-BR';
 
+import { Icon } from './Icon';
+
 export interface VersionHintBadgeProps {
   hints: readonly VersionHint[];
 }
@@ -28,10 +30,27 @@ export function VersionHintBadge({ hints }: VersionHintBadgeProps) {
   const labels = hints.map((hint) => t.versionHints[hint]);
 
   return (
-    <span className="border-state-uncertain-edge text-state-uncertain inline-flex items-center gap-1 rounded-pill border px-2 py-1 text-meta font-semibold">
+    /*
+      **A analogia adotada** (FR-063, FR-064): o design não desenha este selo, e
+      o mais próximo que ele define é o selo de correspondência. Daí vem a
+      anatomia completa de FR-024 — fundo tingido, contorno na cor do estado,
+      ícone e rótulo —, e **nunca** preenchimento sólido, que neste sistema
+      significa acionável. Um selo âmbar preenchido seria indistinguível do botão
+      primário, que também é âmbar.
+
+      O `status-badge` é o utilitário que carrega essa anatomia base; o que muda
+      por estado é só a tinta.
+    */
+    <span className="status-badge border-state-uncertain-edge bg-state-uncertain-tint text-state-uncertain">
       <span className="sr-only">
         {format(t.versionHints.badgeLabelFor, { hints: labels.join(', ') })}
       </span>
+      {/*
+        Decorativo: o selo já tem rótulo, e FR-042 proíbe o ícone de ser o único
+        portador do estado. Ele é a quarta pista, depois da tinta, do contorno e
+        do texto.
+      */}
+      <Icon role="uncertain" />
       <span aria-hidden="true">{t.versionHints.badgeLabel}</span>
       <span aria-hidden="true">· {labels.join(', ')}</span>
     </span>
