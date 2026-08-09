@@ -21,7 +21,7 @@ import { QueueIndicator } from '@/features/queue/QueueIndicator';
 import { QuotaEstimateScreen } from '@/features/quota/QuotaEstimateScreen';
 import { ResultScreen } from '@/features/result/ResultScreen';
 import { ReauthDialog } from '@/features/connect/ReauthDialog';
-import { SessionHeader } from '@/features/connect/SessionHeader';
+import { ConnectionChip } from '@/features/connect/ConnectionChip';
 import { ReviewScreen } from '@/features/review/ReviewScreen';
 import { SkipButton } from '@/features/service/SkipButton';
 import { SummaryScreen } from '@/features/summary/SummaryScreen';
@@ -488,8 +488,10 @@ describe('004/V17 — reconexão sem violação séria ou crítica', () => {
     await semViolacoes(container);
   });
 
-  it('o cabeçalho com um serviço desconectado não introduz violação', async () => {
-    const { container } = render(<SessionHeader />);
+  it('o chip de conexão com um serviço desconectado não introduz violação', async () => {
+    // Sucessor do `SessionHeader`, removido na 007. O chip cobre um estado a
+    // mais — sem credencial —, e os três precisam passar na auditoria.
+    const { container } = render(<ConnectionChip provider="youtube" />);
     await semViolacoes(container);
   });
 });

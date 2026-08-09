@@ -10,16 +10,38 @@
  * Divisão de responsabilidade entre os dois arquivos: **o que difere por tema
  * está aqui**; o que é único para os dois — escalas de espaçamento, raio,
  * tipografia e layout — está em `index.css`. Um token de cor definido só num dos
- * temas é erro de definição, não recurso (contracts/tokens.md §6).
+ * temas é erro de definição, não recurso (FR-002, SC-005).
  *
- * Os valores são normativos e vêm de `contracts/tokens.md` §1. Alterá-los aqui
- * sem atualizar o contrato e sem rodar `tests/unit/contrast.spec.ts` quebra o
- * portão do FR-030.
+ * Os valores são normativos e vêm de `specs/007-official-design-alignment/contracts/tokens.md`
+ * §1. Alterá-los aqui sem atualizar o contrato e sem rodar
+ * `tests/unit/contrast.spec.ts` quebra o portão do FR-003.
+ *
+ * ## O que a feature 007 mudou
+ *
+ * Catorze dos dezoito nomes vêm da 005 **sem alteração de nome**, porque a 005
+ * nomeou por papel e não por aparência — trocar a paleta inteira custou editar
+ * este arquivo, não os componentes. Entram quatro nomes novos: `--surface-zone`
+ * (o substrato das zonas da casca), `--state-live` (sessão viva no chip de
+ * conexão) e o par `--brand-spotify` / `--brand-youtube`.
+ *
+ * **Não existe `--ink-faint`.** O arquivo de design usa uma terceira tinta para a
+ * etapa pendente da trilha; ela reprova em todos os substratos, e todo valor que
+ * passa fica indistinguível de `--ink-muted`. A etapa pendente se distingue por
+ * **forma** — disco preenchido, tingido ou vazado —, que sobrevive a cores
+ * forçadas e a daltonismo (FR-011, FR-042; research §3).
  */
 
 /* ---------------------------------------------------------------------------
  * Tema Papel — claro. Também o padrão quando não há atributo nem preferência
  * de sistema por escuro.
+ *
+ * FR-032 conserva o substrato da 005: `--bg`, `--surface`, `--surface-raised`,
+ * `--rule` e `--ink` são os mesmos valores. Só a âncora âmbar, o que dela deriva
+ * e os quatro tokens novos mudam. A consequência é registrada e deliberada: os
+ * dois temas divergem em caráter, o escuro adotando o substrato do design
+ * oficial e o claro conservando o da 005. A divergência autorizada é
+ * **cromática apenas** — estrutura, composição e estados são idênticos
+ * (FR-046, SC-015).
  * ------------------------------------------------------------------------ */
 :root {
   /* Faz `<progress>`, barras de rolagem e controles nativos acompanharem o
@@ -29,26 +51,50 @@
   color-scheme: light;
 
   --bg: #faf7f0;
+  /* Substrato da barra superior e da trilha. Inverte a direção entre os temas:
+     aqui é **mais escuro** que `--bg`, no escuro é mais claro. É o degrau de
+     luminosidade que separa a zona do conteúdo, e ele só funciona afastando-se
+     do substrato. */
+  --surface-zone: #f1ece0;
   --surface: #ffffff;
   --surface-raised: #f4efe4;
 
   --rule: #e3dccd;
-  --rule-strong: #8f887a;
+  --rule-strong: #8b8476;
 
   --ink: #141c26;
   --ink-muted: #5a6473;
 
-  --accent: #f4a900;
-  --accent-deep: #d99700;
+  /* A âncora da identidade: a cor da ação **não muda** quando o substrato muda.
+     O deslocamento de `#f4a900` (005) para `#f5b301` (design) é a única
+     mudança, e vale para os dois temas. */
+  --accent: #f5b301;
+  --accent-deep: #dfa301;
   --accent-ink: #141c26;
-  --accent-text: #9a5b00;
+  /* Âmbar para texto, link, borda e foco. O contrato propunha `#896401`, que dá
+     4,58:1 sobre `--surface-zone` — passa por 0,08 e reprovaria com qualquer
+     acerto futuro no substrato da zona. Escurecido um degrau, preservando matiz
+     e saturação, para 4,94:1 (T008). */
+  --accent-text: #816001;
 
-  --state-confident: #14706b;
+  --state-confident: #1f766e;
+  /* Deliberadamente deslocado do âmbar de ação, nos dois temas: os dois
+     aparecem na mesma tela, e o selo "incerta" não pode ser o mesmo hex do
+     botão primário. */
   --state-uncertain: #7a5c00;
-  --state-missing: #b3261e;
+  --state-missing: #d31608;
+  --state-live: #349842;
+
+  /* Cor de marca é **acento identificador**: ícone e filete, nunca ação, nunca
+     estado, nunca texto (FR-023). As variantes claras são escurecidas
+     preservando matiz e saturação — as originais foram escolhidas contra um
+     substrato quase-preto e não sobrevivem ao off-white: `#1db954` sobre
+     `#faf7f0` dá 2,42:1. */
+  --brand-spotify: #189946;
+  --brand-youtube: #ff3126;
 
   /* Quantidade de tinta do estado sobre a superfície. Difere por tema porque o
-     substrato difere: 12% de teal sobre branco lê igual a 15% sobre marinho. */
+     substrato difere: 12% de teal sobre branco lê igual a 15% sobre quase-preto. */
   --state-tint-amount: 12%;
 
   /* Profundidade: um único nível no claro (contracts/tokens.md §4). */
@@ -63,40 +109,46 @@
 [data-theme='dark'] {
   color-scheme: dark;
 
-  --bg: #0d1219;
-  --surface: #1a2332;
-  --surface-raised: #223045;
+  --bg: #0d1117;
+  --surface-zone: #12171f;
+  --surface: #161c25;
+  --surface-raised: #1e2632;
 
-  --rule: #2c3a4d;
+  --rule: #252d3a;
   --rule-strong: #5e7a9d;
 
-  --ink: #e8eaed;
-  --ink-muted: #9aa8b8;
+  --ink: #e9eef5;
+  --ink-muted: #8a94a6;
 
-  --accent: #f4a900;
-  --accent-deep: #c98600;
-  --accent-ink: #0d1219;
-  --accent-text: #f4a900;
+  --accent: #f5b301;
+  --accent-deep: #dfa301;
+  --accent-ink: #0d1117;
+  --accent-text: #f5b301;
 
-  --state-confident: #4ec4b8;
+  --state-confident: #4fd1c5;
   --state-uncertain: #f0c04a;
-  --state-missing: #ff8a7a;
+  --state-missing: #f97066;
+  --state-live: #3fb950;
+
+  --brand-spotify: #1db954;
+  --brand-youtube: #ff3b30;
 
   --state-tint-amount: 15%;
 
   /* Sombra preta sobre fundo quase-preto não é visível. No escuro a
-     profundidade vem de degrau de luminosidade e filete de 1px, e a assimetria
-     é escolha, não esquecimento (contracts/tokens.md §4). */
+     profundidade vem de degrau de luminosidade — `--bg` → `--surface-zone` →
+     `--surface` → `--surface-raised` — e filete de 1px, e a assimetria é
+     escolha, não esquecimento (contracts/tokens.md §4). */
   --elevation-card: none;
 }
 
 /* ---------------------------------------------------------------------------
  * Sem atributo, o sistema decide.
  *
- * Esta é a camada que faz FR-010 funcionar **sem script nenhum** para o caminho
- * mais comum — quem nunca escolheu tema, que é o estado inicial de todos. O
- * `public/theme-boot.js` só existe para a divergência: preferência manual que
- * contradiz o sistema (research §2).
+ * Esta é a camada que faz a preferência de sistema funcionar **sem script
+ * nenhum** para o caminho mais comum — quem nunca escolheu tema, que é o estado
+ * inicial de todos. O `public/theme-boot.js` só existe para a divergência:
+ * preferência manual que contradiz o sistema (research §2 da 005).
  *
  * `:not([data-theme])` é o que garante que uma escolha manual por "Claro" vença
  * um sistema em escuro.
@@ -105,24 +157,29 @@
   :root:not([data-theme]) {
     color-scheme: dark;
 
-    --bg: #0d1219;
-    --surface: #1a2332;
-    --surface-raised: #223045;
+    --bg: #0d1117;
+    --surface-zone: #12171f;
+    --surface: #161c25;
+    --surface-raised: #1e2632;
 
-    --rule: #2c3a4d;
+    --rule: #252d3a;
     --rule-strong: #5e7a9d;
 
-    --ink: #e8eaed;
-    --ink-muted: #9aa8b8;
+    --ink: #e9eef5;
+    --ink-muted: #8a94a6;
 
-    --accent: #f4a900;
-    --accent-deep: #c98600;
-    --accent-ink: #0d1219;
-    --accent-text: #f4a900;
+    --accent: #f5b301;
+    --accent-deep: #dfa301;
+    --accent-ink: #0d1117;
+    --accent-text: #f5b301;
 
-    --state-confident: #4ec4b8;
+    --state-confident: #4fd1c5;
     --state-uncertain: #f0c04a;
-    --state-missing: #ff8a7a;
+    --state-missing: #f97066;
+    --state-live: #3fb950;
+
+    --brand-spotify: #1db954;
+    --brand-youtube: #ff3b30;
 
     --state-tint-amount: 15%;
 
@@ -164,14 +221,17 @@
     var(--surface)
   );
 
+  /* Disco da etapa atual da trilha: âmbar tingido sobre o substrato da zona, na
+     mesma proporção dos selos de estado (contracts/shell.md §4). */
+  --accent-tint: color-mix(in srgb, var(--accent) var(--state-tint-amount), var(--surface-zone));
+
   /* Filete do selo: a cor do estado a 30%, igual nos dois temas. */
   --state-confident-edge: color-mix(in srgb, var(--state-confident) 30%, transparent);
   --state-uncertain-edge: color-mix(in srgb, var(--state-uncertain) 30%, transparent);
   --state-missing-edge: color-mix(in srgb, var(--state-missing) 30%, transparent);
   --state-neutral-edge: color-mix(in srgb, var(--ink-muted) 30%, transparent);
 
-  /* Véu do diálogo: `--ink` a 35% no claro, preto a 55% no escuro
-     (contracts/components.md §4). */
+  /* Véu do diálogo: `--ink` a 35% no claro, preto a 55% no escuro. */
   --scrim: color-mix(in srgb, var(--ink) 35%, transparent);
 }
 

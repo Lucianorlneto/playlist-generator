@@ -63,37 +63,33 @@ export function MatchRow({ item, provider }: MatchRowProps) {
   }
 
   return (
-    <li className="app-card gutter-row">
+    <li className="app-card flex items-start gap-3">
       {/*
-        A goteira (design.md §4 e §5). Carrega a identidade da linha — o numeral
-        que a pessoa colou — e a decisão sobre ela — incluir ou não. Abaixo de
-        `--gutter-collapse` a coluna colapsa e o numeral vira prefixo em linha,
-        logo abaixo; por isso ele é `gutter:block` aqui e `gutter:hidden` lá.
+        A decisão sobre a linha — incluir ou não. Na 005 esta caixa vivia na
+        goteira, a coluna reservada de 2,5rem que dava identidade às cinco telas;
+        a 007 removeu a goteira (FR-029) e a caixa passou a abrir a própria
+        linha, sem coluna reservada.
       */}
-      <div className="gutter:flex-col gutter:items-start flex items-center gap-2">
-        <input
-          type="checkbox"
-          className="focus-ring accent-accent size-4"
-          checked={item.included}
-          disabled={item.selectedUri === null || item.status === 'discarded'}
-          aria-label={format(t.review.includeLabelFor, { line: item.line.raw })}
-          onChange={() => {
-            toggleIncluded(item.line.id);
-          }}
-        />
-        <span aria-hidden="true" className="data-numeral text-accent-text gutter:block hidden">
-          {numeral}
-        </span>
-      </div>
+      <input
+        type="checkbox"
+        className="focus-ring accent-accent mt-1 size-4 shrink-0"
+        checked={item.included}
+        disabled={item.selectedUri === null || item.status === 'discarded'}
+        aria-label={format(t.review.includeLabelFor, { line: item.line.raw })}
+        onChange={() => {
+          toggleIncluded(item.line.id);
+        }}
+      />
 
-      <div className="flex min-w-0 flex-col gap-1">
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
         {/*
           A entrada como foi colada, em tinta secundária: ela é referência, não
-          o resultado. O numeral aparece aqui como prefixo apenas na tela
-          estreita, mantendo o alinhamento tabular do `data-numeral`.
+          o resultado. O numeral a prefixa, mantendo o alinhamento tabular do
+          `data-numeral` — que sobreviveu à goteira justamente por isso
+          (contracts/token-migration.md §6.1).
         */}
         <p className="text-ink-muted text-meta flex min-w-0 items-baseline gap-2 break-words">
-          <span aria-hidden="true" className="data-numeral text-accent-text gutter:hidden">
+          <span aria-hidden="true" className="data-numeral text-accent-text">
             {numeral}
           </span>
           <span className="sr-only">{t.review.originalLine}</span>
@@ -148,15 +144,19 @@ export function MatchRow({ item, provider }: MatchRowProps) {
               />
             )}
             {/*
-              **Piso de legibilidade da grade densa** (FR-044). Nome de faixa em
-              `--text-item` e linha de artista em `--text-body`, ambos
-              0,9375rem — acima dos 0,875rem que a versão anterior usava. A
-              personalidade tipográfica não pode sair cara justamente na tela
-              mais densa do aplicativo; `tests/components/review.spec.tsx` fixa
-              esse piso em teste.
+              **Piso de legibilidade da grade densa.** Nome de faixa e linha de
+              artista ficam em `--text-body`; nenhum dos dois desce para
+              `--text-meta`, que é o piso abaixo do qual a 007 proíbe texto que
+              carregue conteúdo (contracts/tokens.md §3).
+
+              Os dois usavam degraus distintos na 005 — `--text-item` para o
+              nome, `--text-body` para o artista —, mas os dois degraus mediam
+              0,9375rem e só divergiam em entrelinha e peso. A 007 os fundiu:
+              distinção que o componente declara melhor do que a escala. O peso
+              do nome vem de `font-medium` aqui, onde se lê.
             */}
             <div className="min-w-0">
-              <p className="text-ink text-item truncate">{selected.title}</p>
+              <p className="text-ink text-body truncate font-medium">{selected.title}</p>
               <p className="text-ink-muted text-body truncate">
                 {showsAlbum
                   ? `${selected.artists.join(', ')} · ${selected.album} · ${formatDuration(selected.durationMs)}`

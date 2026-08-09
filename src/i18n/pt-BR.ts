@@ -69,7 +69,111 @@ const messages = {
     of: 'de',
   },
 
+  /**
+   * A trilha vertical de etapas (FR-010 a FR-015).
+   *
+   * ## As duas famílias de linha de apoio
+   *
+   * `neutral` descreve **o que fazer** na etapa; `derived` descreve **o que foi
+   * decidido** nela. A regra que escolhe entre as duas é do domínio, não daqui:
+   * `src/domain/rail/` deriva apenas quando a etapa está concluída e existe
+   * valor real (FR-012, FR-066).
+   *
+   * É por isso que não há texto aqui para "Spotify e YouTube" sob Destinos na
+   * tela de Configuração, ainda que o arquivo de design o mostre: reproduzi-lo
+   * seria a trilha afirmando uma escolha que o usuário não fez.
+   */
+  rail: {
+    title: 'Etapas',
+    restart: 'Recomeçar do início',
+    /** Anunciado só a leitor de tela, com o ordinal e o total do domínio. */
+    position: 'Etapa {n} de {total}',
+
+    neutral: {
+      credential: 'Informe o Client ID de cada serviço',
+      destinations: 'Escolha onde criar as playlists',
+      input: 'Cole a sua lista de músicas',
+      service: 'Acompanhe a criação em cada serviço',
+      summary: 'Veja o resultado de cada destino',
+    },
+
+    derived: {
+      credential: 'Credenciais salvas neste dispositivo',
+      /** Recebe os destinos reais já unidos por `listAnd`. */
+      destinations: '{list}',
+      inputOne: '{count} linha colada',
+      inputOther: '{count} linhas coladas',
+      serviceOne: '{count} serviço concluído',
+      serviceOther: '{count} serviços concluídos',
+    },
+  },
+
+  /**
+   * Chip de conexão da barra superior (FR-007 a FR-009).
+   *
+   * Os três estados são distinguíveis por **rótulo e forma**, não só por cor: o
+   * nome do estado e o rótulo da ação dizem o mesmo que o ponto colorido diz.
+   * `no-credential` nunca ganha identificador de conta — nem vazio, nem
+   * genérico (FR-009).
+   */
+  connectionChip: {
+    connected: 'Conectado',
+    disconnected: 'Desconectado',
+    noCredential: 'Sem credencial',
+
+    /**
+     * Rótulo **visível** da ação: curto, porque a barra superior é estreita e o
+     * serviço já está escrito ao lado.
+     */
+    reconnect: 'Reconectar',
+    connect: 'Conectar',
+    configure: 'Configurar',
+    /**
+     * Só existe no estado `connected`: não há o que encerrar quando não há
+     * sessão, e um "Desconectar" apagado ao lado de "Conectar" seria ruído.
+     * O nome acessível é `t.connect.disconnect`, da feature 002.
+     */
+    disconnect: 'Sair',
+
+    /**
+     * Nome **acessível** da ação.
+     *
+     * Nomeia o serviço, porque dois botões chamados "Reconectar" lado a lado são
+     * indistinguíveis para quem navega por lista de controles — e a barra
+     * superior tem exatamente isso, um chip por provedor.
+     *
+     * **Diz "a conta do" e não "ao"** para não colidir com o botão primário da
+     * etapa de conexão, que se chama "Conectar ao {service}". Os dois aparecem na
+     * mesma tela, e dois controles com o mesmo nome acessível deixam quem usa
+     * leitor de tela sem como escolher entre eles. A distinção também é honesta:
+     * o chip age sobre a **conta**, o botão da etapa conduz o fluxo.
+     */
+    reconnectFor: 'Reconectar a conta do {service}',
+    connectFor: 'Conectar a conta do {service}',
+    configureFor: 'Configurar a credencial do {service}',
+
+    /** Nome acessível do chip inteiro, com o estado já resolvido. */
+    label: '{service}: {state}',
+  },
+
+  /**
+   * Barra de ações do rodapé do conteúdo (FR-016 a FR-019).
+   *
+   * Existe **apenas** em Destinos e Entrada. As demais etapas mantêm as ações
+   * dentro do cartão que as explica (FR-061), e "Pular o {serviço}" continua
+   * adjacente ao cartão da fase (FR-062).
+   */
+  actionBar: {
+    label: 'Ações da etapa',
+    advance: 'Avançar',
+    back: 'Voltar',
+    /** Prefixo do motivo, para que a frase leia como impedimento e não como erro. */
+    blockedPrefix: 'Para avançar:',
+  },
+
   common: {
+    /** Conjunção de lista, usada por `listAnd`. */
+    and: 'e',
     save: 'Salvar',
     cancel: 'Cancelar',
     back: 'Voltar',
@@ -790,4 +894,19 @@ export function format(template: string, values: Record<string, string | number>
 /** Plural simples: pt-BR só precisa de "um" e "outros" nos textos deste app. */
 export function plural(count: number, one: string, other: string): string {
   return format(count === 1 ? one : other, { count });
+}
+
+/**
+ * Une nomes em linguagem natural: `a`, `a e b`, `a, b e c`.
+ *
+ * Vive aqui, junto do dicionário, porque a conjunção é texto de interface — e
+ * porque `Intl.ListFormat` resolveria isto sozinho mas traria consigo a escolha
+ * de locale em tempo de execução, que este projeto não tem (idioma único,
+ * declarado). A vírgula e o "e" são literais deste módulo, não dos chamadores.
+ */
+export function listAnd(items: readonly string[]): string {
+  if (items.length === 0) return '';
+  if (items.length === 1) return items[0] ?? '';
+  const inicio = items.slice(0, -1).join(', ');
+  return `${inicio} ${t.common.and} ${items[items.length - 1] ?? ''}`;
 }

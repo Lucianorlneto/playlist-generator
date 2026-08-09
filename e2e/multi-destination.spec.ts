@@ -5,7 +5,6 @@ import {
   ateEntrada,
   botaoConectar,
   botaoCriar,
-  botaoReconectar,
   fmt,
   incluirPendentes,
   SPOTIFY,
@@ -222,23 +221,31 @@ test.describe('US3 — dois destinos, um depois do outro', () => {
 
     await ateRevisaoDoYouTube(page);
 
-    // As duas contas aparecem no cabeçalho ao mesmo tempo.
-    const contas = page.getByRole('list', { name: t.connect.accountsLabel });
-    await expect(contas).toContainText(DISPLAY_NAME);
-    await expect(contas).toContainText(YT_CHANNEL_NAME);
+    /*
+      As duas contas aparecem na barra superior ao mesmo tempo.
+
+      **Só o seletor mudou na feature 007**: o cabeçalho de contas — uma `<ul>`
+      rotulada — virou um chip por provedor, permanente na barra superior. A
+      afirmação que este caso protege é a mesma de antes, palavra por palavra.
+    */
+    const barra = page.getByRole('banner');
+    await expect(barra).toContainText(DISPLAY_NAME);
+    await expect(barra).toContainText(YT_CHANNEL_NAME);
 
     // Desconectar do Spotify — o serviço já concluído — não derruba o YouTube.
     await page
       .getByRole('button', { name: fmt(t.connect.disconnect, { service: SPOTIFY }) })
       .click();
-    await expect(contas).not.toContainText(DISPLAY_NAME);
-    await expect(contas).toContainText(YT_CHANNEL_NAME);
+    await expect(barra).not.toContainText(DISPLAY_NAME);
+    await expect(barra).toContainText(YT_CHANNEL_NAME);
 
-    // `004/FR-025`, SC-004: o serviço desconectado **continua listado**, com
+    // `004/FR-025`, SC-004: o serviço desconectado **continua presente**, com
     // ação de reconexão. Antes ele sumia do cabeçalho levando junto o seu único
     // ponto de interação.
-    await expect(contas).toContainText(t.connect.disconnectedState);
-    await expect(botaoReconectar(page, SPOTIFY)).toBeVisible();
+    await expect(barra).toContainText(t.connectionChip.disconnected);
+    await expect(
+      barra.getByRole('button', { name: fmt(t.connectionChip.connectFor, { service: SPOTIFY }) }),
+    ).toBeVisible();
 
     // E o ciclo do YouTube continua exatamente onde estava.
     await expect(tituloRevisao(page, YOUTUBE)).toBeVisible();

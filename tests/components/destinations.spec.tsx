@@ -14,6 +14,7 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it } from 'vitest';
 
+import { DestinationsActionBar } from '@/features/destinations/DestinationsActionBar';
 import { DestinationsStep } from '@/features/destinations/DestinationsStep';
 import { format, t } from '@/i18n/pt-BR';
 import { useAppStore } from '@/store';
@@ -107,11 +108,28 @@ describe('FR-009 / SC-002 — motivo visível e atalho', () => {
   });
 });
 
+/**
+ * A etapa **e a sua faixa de ações**, que é onde o avanço mora desde a 007.
+ *
+ * As ações saíram de dentro da tela para o rodapé do conteúdo (FR-016). O
+ * comportamento não mudou — bloqueio, motivo escrito e destino de cada botão são
+ * os mesmos —, mudou onde o botão é desenhado. Renderizar os dois juntos é o que
+ * mantém estes casos medindo a etapa como o usuário a vê.
+ */
+function etapaCompleta() {
+  return (
+    <>
+      <DestinationsStep />
+      <DestinationsActionBar />
+    </>
+  );
+}
+
 describe('FR-011 — ao menos um destino para avançar', () => {
   it('permite avançar com um único destino', async () => {
     const user = userEvent.setup();
     seedCredentials({ spotify: CLIENT_ID, youtube: YT_CLIENT_ID });
-    render(<DestinationsStep />);
+    render(etapaCompleta());
 
     await user.click(checkbox(youtube));
 
@@ -122,7 +140,7 @@ describe('FR-011 — ao menos um destino para avançar', () => {
   it('bloqueia o avanço com nenhum destino, explicando o motivo', async () => {
     const user = userEvent.setup();
     seedCredentials({ spotify: CLIENT_ID, youtube: YT_CLIENT_ID });
-    render(<DestinationsStep />);
+    render(etapaCompleta());
 
     await user.click(checkbox(spotify));
     await user.click(checkbox(youtube));

@@ -210,9 +210,14 @@ test.describe('FR-047 — operação por teclado', () => {
  * FR-016, SC-010 e SC-012 nos **dois temas** (T063).
  *
  * O anel de foco passou a usar `outline` em vez de `box-shadow` (research §12),
- * e sua cor é `--accent-text` — que **diverge entre os temas**: `#9a5b00` no
- * claro, `#f4a900` no escuro. Verificar num tema só deixaria metade da
+ * e sua cor é `--accent-text` — que **diverge entre os temas**: `#816001` no
+ * claro, `#f5b301` no escuro. Verificar num tema só deixaria metade da
  * afirmação sem prova.
+ *
+ * Os dois valores mudaram na feature 007, junto com a paleta inteira. O que não
+ * mudou é a afirmação: o anel é `outline`, tem 2px e acompanha o tema. Um teste
+ * que citasse o hex sem citar o token estaria protegendo o valor em vez da
+ * regra — por isso a linha abaixo lê os dois de `src/styles/tokens.css`.
  *
  * Nenhuma asserção de comportamento é alterada aqui: o que se acrescenta é
  * verificação sobre o que já existia.
@@ -257,8 +262,26 @@ test.describe('FR-016 e SC-010 — foco visível nos dois temas', () => {
       // `box-shadow` desaparece em modo de cores forçadas; o foco não pode
       // depender dele.
       expect(foco.boxShadow === 'none' || foco.boxShadow === '').toBe(true);
-      // A cor do anel acompanha o tema.
-      expect(foco.outlineColor).toBe(tema === 'dark' ? 'rgb(244, 169, 0)' : 'rgb(154, 91, 0)');
+
+      /*
+        A cor do anel acompanha o tema, e o valor esperado é lido do próprio
+        `--accent-text` em vigor — não de um hex copiado para cá. Comparar contra
+        uma cópia significaria que trocar a paleta quebra este teste por um
+        motivo que nada tem a ver com foco visível, que é o que ele protege.
+      */
+      const esperado = await page.evaluate(() =>
+        getComputedStyle(document.documentElement).getPropertyValue('--accent-text').trim(),
+      );
+      const emRgb = await page.evaluate((hex) => {
+        const sonda = document.createElement('span');
+        sonda.style.color = hex;
+        document.body.append(sonda);
+        const cor = getComputedStyle(sonda).color;
+        sonda.remove();
+        return cor;
+      }, esperado);
+
+      expect(foco.outlineColor).toBe(emRgb);
     });
 
     test(`o ThemeControl é uma parada única de Tab no tema ${tema}`, async ({ page }) => {
@@ -284,6 +307,128 @@ test.describe('FR-016 e SC-010 — foco visível nos dois temas', () => {
       expect(await page.locator('[role="radio"][tabindex="-1"]').count()).toBe(2);
     });
   }
+});
+
+/**
+ * 007/FR-039, FR-040 e SC-008 — o caminho de teclado pelas três zonas.
+ *
+ * A feature moveu controles entre zonas e criou outros. O risco não é que algum
+ * fique inacessível — isso o teste anterior pegaria —, é que a **ordem** deixe
+ * de seguir o olho: barra superior → trilha → conteúdo → barra de ações. Uma
+ * ordem de tabulação que salta do conteúdo de volta para o cabeçalho é
+ * navegável e é desorientadora, e nenhuma asserção de "existe e é focável"
+ * percebe isso.
+ */
+test.describe('007 — ordem de tabulação e foco visível na casca nova', () => {
+  test.use({ viewport: { width: 1280, height: 800 } });
+
+  /** Em que zona da casca vive o elemento em foco. */
+  async function zonaFocada(page: Page): Promise<'topbar' | 'rail' | 'main' | 'fora'> {
+    return page.evaluate(() => {
+      const ativo = document.activeElement;
+      if (ativo === null) return 'fora';
+      if (ativo.closest('header') !== null) return 'topbar';
+      if (ativo.closest('nav[aria-label]') !== null) return 'rail';
+      if (ativo.closest('main') !== null) return 'main';
+      return 'fora';
+    });
+  }
+
+  test('a ordem é barra superior → trilha → conteúdo, sem voltar atrás', async ({ page }) => {
+    await mockSpotify(page);
+    await seedCredential(page, CLIENT_ID, 'spotify');
+    await ateEntrada(page, LISTA);
+
+    const ordem = ['topbar', 'rail', 'main'] as const;
+    let maisLonge = -1;
+
+    // O primeiro Tab pousa no link de pular, que vive fora das três zonas.
+    await page.keyboard.press('Tab');
+
+    for (let passo = 0; passo < 40; passo += 1) {
+      await page.keyboard.press('Tab');
+      const zona = await zonaFocada(page);
+      if (zona === 'fora') continue;
+
+      const indice = ordem.indexOf(zona);
+      expect(
+        indice,
+        `o foco voltou de "${ordem[maisLonge] ?? '?'}" para "${zona}" — a ordem de tabulação descolou da ordem visual`,
+      ).toBeGreaterThanOrEqual(maisLonge);
+      maisLonge = Math.max(maisLonge, indice);
+
+      if (maisLonge === ordem.length - 1) break;
+    }
+
+    expect(maisLonge, 'a tabulação nunca alcançou a área principal').toBe(ordem.length - 1);
+  });
+
+  test('todo controle criado ou movido pela feature tem foco visível por outline', async ({
+    page,
+  }) => {
+    await mockSpotify(page);
+    await seedCredential(page, CLIENT_ID, 'spotify');
+    await ateEntrada(page, LISTA);
+
+    /*
+      Os controles que a 007 criou ou moveu: a ação do chip de conexão, na barra
+      superior, e a ação de recomeçar, que saiu do cabeçalho para o rodapé da
+      trilha. O `ThemeControl` já é coberto pelo bloco anterior, nos dois temas.
+
+      Os alvos são seletores CSS e não localizadores porque o foco precisa chegar
+      **por teclado**: `focus()` programático não casa `:focus-visible` no
+      Chromium, e `getComputedStyle` não consulta pseudoclasse — a medição leria
+      o estilo em repouso e passaria por engano.
+    */
+    const alvos = [
+      'header button[aria-label*="a conta do"]',
+      'nav[aria-label] button',
+    ];
+
+    for (const seletor of alvos) {
+      await expect(page.locator(seletor).first()).toBeVisible();
+      await focarPorTeclado(page, seletor);
+
+      const estilo = await page.locator(seletor).first().evaluate((node) => {
+        const s = getComputedStyle(node);
+        return { style: s.outlineStyle, width: s.outlineWidth, shadow: s.boxShadow };
+      });
+
+      expect(estilo.style, `o foco de "${seletor}" não é desenhado por outline`).toBe('solid');
+      expect(Number.parseFloat(estilo.width)).toBeGreaterThanOrEqual(2);
+      // `box-shadow` desaparece em modo de cores forçadas; o foco não pode
+      // depender dele (FR-028).
+      expect(estilo.shadow === 'none' || estilo.shadow === '').toBe(true);
+    }
+  });
+
+  test('a barra superior está em toda etapa, e a trilha também em largura ampla', async ({
+    page,
+  }) => {
+    await mockSpotify(page);
+    await seedCredential(page, CLIENT_ID, 'spotify');
+    await page.goto('/');
+
+    // Configuração
+    await expect(page.getByRole('banner')).toBeVisible();
+    await expect(page.getByRole('navigation', { name: t.rail.title })).toBeVisible();
+    await acionar(page, t.common.next);
+
+    // Destinos
+    await expect(page.getByRole('banner')).toBeVisible();
+    await expect(page.getByRole('navigation', { name: t.rail.title })).toBeVisible();
+    await acionar(page, t.common.next);
+
+    // Entrada
+    await page.getByLabel(t.input.textareaLabel).fill(LISTA);
+    await expect(page.getByRole('banner')).toBeVisible();
+    await expect(page.getByRole('navigation', { name: t.rail.title })).toBeVisible();
+    await acionar(page, t.input.start);
+
+    // Ciclo do serviço
+    await expect(page.getByRole('banner')).toBeVisible();
+    await expect(page.getByRole('navigation', { name: t.rail.title })).toBeVisible();
+  });
 });
 
 /**

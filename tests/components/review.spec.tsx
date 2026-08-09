@@ -331,31 +331,43 @@ describe('FR-044 · piso de legibilidade da grade densa', () => {
   const PISO_REM = 0.875;
   const PISO_ENTRELINHA_REM = 1.25;
 
-  it('o nome de faixa usa `--text-item`, e ele não encolheu', () => {
-    expect(remOf('item')).toBeGreaterThanOrEqual(PISO_REM);
-    expect(remOf('item') * lineHeightOf('item')).toBeGreaterThanOrEqual(PISO_ENTRELINHA_REM);
-  });
-
-  it('a linha de artista usa `--text-body`, e ela não encolheu', () => {
+  /**
+   * **O degrau mudou de nome; o piso não mudou de valor.**
+   *
+   * Até a feature 006 o nome da faixa usava `--text-item` e a linha de artista
+   * usava `--text-body` — dois degraus distintos que mediam o mesmo 0,9375rem e
+   * só divergiam em entrelinha e peso. A 007 renormalizou a escala e fundiu os
+   * dois em `--text-body` (`contracts/token-migration.md` §4), que é o piso de
+   * texto com conteúdo do sistema.
+   *
+   * O que este bloco protege continua sendo o mesmo: a tela mais densa do
+   * aplicativo não pode ser onde a legibilidade sai barata. O piso permanece nos
+   * 0,875rem de `text-sm`, agora conferido num degrau só porque só há um.
+   */
+  it('o nome de faixa e a linha de artista usam `--text-body`, e ele não encolheu', () => {
     expect(remOf('body')).toBeGreaterThanOrEqual(PISO_REM);
     expect(remOf('body') * lineHeightOf('body')).toBeGreaterThanOrEqual(PISO_ENTRELINHA_REM);
   });
 
-  it('a linha renderizada aplica de fato esses dois degraus', () => {
-    // Sem esta asserção, os degraus poderiam ficar generosos no arquivo de
-    // estilo e a linha continuar usando outro — o piso valeria no papel.
+  it('`--text-item` não existe mais — a escala tem seis degraus, não sete', () => {
+    // Um degrau removido da escala não quebra nada: o utilitário deixa de
+    // emitir CSS e o texto herda o tamanho de cima, em silêncio. Esta asserção
+    // é o que impede alguém de "consertar" a falha reintroduzindo o nome.
+    expect(INDEX_CSS).not.toMatch(/--text-item\s*:/u);
+  });
+
+  it('a linha renderizada aplica de fato esse degrau, no nome e no artista', () => {
+    // Sem esta asserção, o degrau poderia ficar generoso no arquivo de estilo e
+    // a linha continuar usando outro — o piso valeria no papel.
     seedItems();
     const { container } = render(<ReviewScreen provider="spotify" />);
 
-    const nome = container.querySelector('.text-item');
-    expect(nome, 'nenhum elemento usa `text-item` na revisão').not.toBeNull();
-    expect(nome?.textContent).not.toBe('');
-
-    const artista = nome?.parentElement?.querySelector('.text-body');
-    expect(artista, 'a linha de artista não usa `text-body`').not.toBeNull();
+    const linhas = container.querySelectorAll('.text-body');
+    expect(linhas.length, 'nenhum elemento usa `text-body` na revisão').toBeGreaterThanOrEqual(2);
+    expect([...linhas].some((el) => el.textContent !== '')).toBe(true);
   });
 
-  it('o numeral da goteira é tabular — a coluna depende disso', () => {
+  it('o numeral é tabular — a coluna depende disso', () => {
     seedItems();
     const { container } = render(<ReviewScreen provider="spotify" />);
 

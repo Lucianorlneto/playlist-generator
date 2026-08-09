@@ -87,6 +87,19 @@ export default tseslint.config(
     rules: { 'tp/no-raw-visual-values': 'error' },
   },
   {
+    /**
+     * A fechadura em volta da biblioteca de ícones vale para **todo** o `src/`,
+     * não só para as camadas visuais: o ponto é que exista um único lugar onde
+     * o mapa de papéis é escrito, e um `import` num serviço ou num slice do
+     * store abriria o mesmo buraco que um `import` numa tela (007/FR-059).
+     *
+     * O próprio `src/ui/icons.ts` é a exceção, resolvida dentro da regra.
+     */
+    files: ['src/**/*.{ts,tsx}'],
+    plugins: { tp },
+    rules: { 'tp/no-icon-library-import': 'error' },
+  },
+  {
     // O módulo de textos é justamente onde os literais devem estar.
     files: ['src/i18n/**/*.ts', 'src/i18n/**/*.tsx'],
     rules: { 'tp/no-ui-text-literals': 'off' },

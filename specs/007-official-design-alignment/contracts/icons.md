@@ -13,25 +13,33 @@ um mapa único em `src/ui/icons.ts`. **Nenhuma superfície importa da biblioteca
 Coluna "ícone no design" é o nome que aparece no arquivo `.pen` — a chave de
 rastreabilidade entre desenho e código.
 
-| Papel | Ícone no design | Conjunto | Onde aparece |
-| --- | --- | --- | --- |
-| `brand` | `Logo Mark.png` | **arte local** — `src/assets/imgs/` | Símbolo da marca na barra superior |
-| `theme-light` | `sun` | Lucide | Controle de tema |
-| `theme-dark` | `moon` | Lucide | Controle de tema |
-| `theme-system` | `monitor` | Lucide | Controle de tema |
-| `restart` | `rotate-ccw` | Lucide | Recomeçar o fluxo |
-| `reconnect` | `refresh-cw` | Lucide | Ação do chip de conexão |
-| `advance` | `arrow-right` | Lucide | Botão primário da barra de ações |
-| `back` | `arrow-left` | Lucide | Botão discreto da barra de ações |
-| `done` | `check` | Lucide | Degrau concluído, caixa de seleção, confirmação |
-| `status-ok` | `circle-check` | Lucide | Texto de estado da barra de ações |
-| `confident` | `gem` | Lucide | Selo de correspondência confiante |
-| `hint` | `info` | Lucide | Caixa de dica, aviso informativo |
-| `queue` | `list-ordered` | Lucide | Cabeçalho do painel "Ordem de execução" |
-| `loading` | `loader-circle` | Lucide | Estado de carregamento |
-| `external` | `external-link` | Lucide | Link que sai da aplicação |
-| `provider-spotify` | `spotify-logo` | Phosphor | Identificação do provedor |
-| `provider-youtube` | `youtube-logo` | Phosphor | Identificação do provedor |
+| Papel | Ícone no design | Conjunto | Exportação (`react-icons` 5.5.0) | Onde aparece |
+| --- | --- | --- | --- | --- |
+| `brand` | `Logo Mark.png` | **arte local** — `src/assets/imgs/` | — (arte, não componente) | Símbolo da marca na barra superior |
+| `theme-light` | `sun` | Lucide | `LuSun` | Controle de tema |
+| `theme-dark` | `moon` | Lucide | `LuMoon` | Controle de tema |
+| `theme-system` | `monitor` | Lucide | `LuMonitor` | Controle de tema |
+| `restart` | `rotate-ccw` | Lucide | `LuRotateCcw` | Recomeçar o fluxo |
+| `reconnect` | `refresh-cw` | Lucide | `LuRefreshCw` | Ação do chip de conexão |
+| `advance` | `arrow-right` | Lucide | `LuArrowRight` | Botão primário da barra de ações |
+| `back` | `arrow-left` | Lucide | `LuArrowLeft` | Botão discreto da barra de ações |
+| `done` | `check` | Lucide | `LuCheck` | Degrau concluído, caixa de seleção, confirmação |
+| `status-ok` | `circle-check` | Lucide | `LuCircleCheck` | Texto de estado da barra de ações |
+| `confident` | `gem` | Lucide | `LuGem` | Selo de correspondência confiante |
+| `hint` | `info` | Lucide | `LuInfo` | Caixa de dica, aviso informativo |
+| `queue` | `list-ordered` | Lucide | `LuListOrdered` | Cabeçalho do painel "Ordem de execução" |
+| `loading` | `loader-circle` | Lucide | `LuLoaderCircle` | Estado de carregamento |
+| `external` | `external-link` | Lucide | `LuExternalLink` | Link que sai da aplicação |
+| `provider-spotify` | `spotify-logo` | Phosphor | `PiSpotifyLogo` | Identificação do provedor |
+| `provider-youtube` | `youtube-logo` | Phosphor | `PiYoutubeLogo` | Identificação do provedor |
+
+**Subcaminhos**: `react-icons/lu` (Lucide) e `react-icons/pi` (Phosphor). Os
+dezesseis nomes acima foram resolvidos contra `react-icons@5.5.0` em 2026-08-09
+(T003) e todos existem. Registro das variantes descartadas, para que a próxima
+atualização de versão saiba o que já foi conferido: `LuCheckCircle`,
+`LuXCircle`, `LuAlertTriangle` e `LuLoader2` **não** existem nesta versão — o
+Lucide renomeou a família `*-circle` para prefixo `Circle*` e a `loader-2` para
+`loader-circle`.
 
 **A marca é o único papel que resolve para arte em vez de componente.** Ela não
 se tinge pelo contexto e não existe em biblioteca alguma. Os outros dezesseis vêm
@@ -53,15 +61,13 @@ O arquivo de design não desenha selo para correspondência incerta nem para nã
 encontrada — só o "confiante" (`gem`). Como FR-063 estabelece que silêncio não é
 remoção, os dois selos existentes permanecem e recebem papel por analogia:
 
-| Papel | Analogia | Justificativa |
-| --- | --- | --- |
-| `uncertain` | Ícone de atenção do mesmo conjunto | Mesma família visual do `gem`; a distinção entre os três estados é por forma, tinta e rótulo (FR-024) |
-| `missing` | Ícone de ausência do mesmo conjunto | Idem |
+| Papel | Analogia | Exportação (`react-icons` 5.5.0) | Justificativa |
+| --- | --- | --- | --- |
+| `uncertain` | Ícone de atenção do mesmo conjunto | `LuTriangleAlert` | Mesma família visual do `gem`; a distinção entre os três estados é por forma, tinta e rótulo (FR-024) |
+| `missing` | Ícone de ausência do mesmo conjunto | `LuSearchX` | Idem. Entre os candidatos de ausência (`LuCircleX`, `LuBan`, `LuSearchX`), o escolhido é o único que diz **a busca não encontrou** em vez de **proibido** ou **removido** — o estado é ausência de resultado, não erro do usuário |
 
-**Os dois nomes de exportação são resolvidos por T003**, junto com os dezesseis
-da §1 — dezoito ao todo. A prosa acima descreve a intenção; o nome exato só
-existe contra a versão instalada, e deixá-lo para a tarefa que escreve o mapa
-significaria escolher às cegas.
+**Resolvidos por T003 em 2026-08-09**, junto com os dezesseis da §1 — dezoito ao
+todo. Ambos existem em `react-icons/lu`.
 
 A analogia adotada MUST ser registrada no guia de estilo (FR-064).
 
@@ -95,8 +101,11 @@ A analogia adotada MUST ser registrada no guia de estilo (FR-064).
 
 | Momento | Tamanho do pacote | Delta | Data |
 | --- | --- | --- | --- |
-| Antes de `react-icons` | _a preencher (T001)_ | — | |
+| Antes de `react-icons` | JS 357,79 kB (gzip 107,57 kB) · CSS 26,34 kB (gzip 5,84 kB) | — | 2026-08-09 |
 | Depois, com os dezesseis ícones | _a preencher (T085)_ | | |
+
+Medido com `rm -rf dist && npm run build`, contando os artefatos de
+`dist/assets/` — o `.map` não entra, porque não é transferido ao navegador.
 
 O acréscimo deve corresponder aos ícones efetivamente usados, não ao conjunto. A
 marca não entra na conta: ela é arte local e já estava versionada.

@@ -88,7 +88,14 @@ const COLOR_PREFIX =
   '(?:bg|text|border|ring|outline|fill|stroke|divide|decoration|placeholder|caret|from|via|to|shadow)';
 
 /** Degraus válidos da escala de espaçamento (contracts/tokens.md §4). */
-const SPACING_STEPS = new Set(['0', '1', '2', '3', '4', '6', '8', '12']);
+/**
+ * Os degraus da escala de espaçamento.
+ *
+ * `0.5` entrou na feature 007: o arquivo de design usa 2px 73 vezes como respiro
+ * entre título e linha de apoio, e colapsá-lo em 4px engordaria a trilha inteira
+ * (`contracts/tokens.md` §4).
+ */
+const SPACING_STEPS = new Set(['0', '0.5', '1', '2', '3', '4', '6', '8', '12']);
 
 const SPACING_PREFIX =
   '(?:p|px|py|pt|pb|pl|pr|ps|pe|m|mx|my|mt|mb|ml|mr|ms|me|gap|gap-x|gap-y|space-x|space-y|size|w|h|min-w|min-h|max-w|max-h|top|bottom|left|right|inset|inset-x|inset-y|translate-x|translate-y|basis)';
@@ -172,7 +179,7 @@ describe('T012 · nenhum utilitário derivado de token removido sobrevive em src
   it('FR-014 · nenhum degrau de tipografia fora dos seis declarados', () => {
     const offences = scan(
       new RegExp(`\\b(?:[a-z-]+:)*text-(?:${REMOVED_TEXT_SIZES.join('|')})\\b`, 'gu'),
-      'use `text-step`, `text-section`, `text-body`, `text-item`, `text-meta` ou `text-data`',
+      'use `text-page`, `text-step`, `text-section`, `text-body`, `text-meta` ou `text-data`',
     );
     expect(offences, `\n${report(offences)}`).toEqual([]);
   });
@@ -194,7 +201,7 @@ describe('T012 · nenhum utilitário derivado de token removido sobrevive em src
               file: file.path,
               line: index + 1,
               utility: match[0],
-              hint: 'degraus válidos: 0, 1, 2, 3, 4, 6, 8, 12',
+              hint: 'degraus válidos: 0, 0.5, 1, 2, 3, 4, 6, 8, 12',
             });
           }
           match = matcher.exec(text);

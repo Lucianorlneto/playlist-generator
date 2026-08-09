@@ -11,9 +11,31 @@ as regras de carregamento. **Nenhum deles carrega informação** (FR-035).
 
 | Elemento | Recurso | Onde aparece | Peso |
 | --- | --- | --- | --- |
-| Fundo ambiente | `src/assets/imgs/Ambient Backdrop.png` | Área principal, todas as etapas | ~617 KB |
-| Fotografia de clima | `src/assets/imgs/loja-de-discos-….jpg` | Painel lateral da etapa de Destinos | ~285 KB |
-| Adesivos | 11 PNGs em `src/assets/imgs/` — Vinyl 1‑2, Cassette 1‑3, Headphones 1‑2, Boombox, Star 1‑2, Play Button | Etapa de Destinos | ~23 KB no total |
+| Fundo ambiente | `src/assets/imgs/Ambient Backdrop.png` | Área principal, todas as etapas | 617.326 B |
+| Fotografia de clima | `src/assets/imgs/loja-de-discos-1637873416794_1920x1279 (1).jpg` | Painel lateral da etapa de Destinos | 292.118 B |
+| Adesivos | 11 PNGs em `src/assets/imgs/` — ver tabela abaixo | Etapa de Destinos | 23.104 B no total |
+
+Os nomes de arquivo foram conferidos contra a pasta em 2026-08-09 (T004). São
+literais, **com espaços**, e a fotografia carrega também parênteses e um sufixo
+numérico — quem escrever o `import` precisa do nome exato:
+
+| Adesivo | Arquivo | Peso |
+| --- | --- | --- |
+| Vinil 1 | `Vinyl 1.png` | 3.856 B |
+| Vinil 2 | `Vinyl 2.png` | 1.806 B |
+| Fita 1 | `Cassette 1.png` | 2.843 B |
+| Fita 2 | `Cassette 2.png` | 3.057 B |
+| Fita 3 | `Cassette 3.png` | 2.675 B |
+| Fone 1 | `Headphones 1.png` | 2.172 B |
+| Fone 2 | `Headphones 2.png` | 2.447 B |
+| Rádio | `Boombox.png` | 2.652 B |
+| Estrela 1 | `Star 1.png` | 501 B |
+| Estrela 2 | `Star 2.png` | 551 B |
+| Botão de play | `Play Button.png` | 660 B |
+
+A marca é `Logo Mark.png` (644 B) e **não** entra nesta tabela — ver §2. A pasta
+`src/assets/icons/` não existe; os PNGs de ícone de interface foram removidos em
+2026-08-09 (`contracts/icons.md` §3, regra 7).
 
 Todos versionados no repositório. **Nenhuma referência remota sobrevive** — a URL
 de terceiro que o arquivo de design usava no fundo ambiente foi substituída pelo

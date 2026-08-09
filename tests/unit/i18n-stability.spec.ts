@@ -105,6 +105,17 @@ describe('FR-035 e SC-012 · nenhum texto da aplicação mudou nesta feature', (
       'queue.skipEndsFlow',
       // 006/FR-013 a FR-015 — comando global de recomeço.
       'flow.',
+      // 007/FR-010 a FR-015 — a trilha vertical de etapas: título, ação de
+      // recomeço e as duas famílias de linha de apoio.
+      'rail.',
+      // 007/FR-007 a FR-009 — os três estados do chip de conexão.
+      'connectionChip.',
+      // 007/FR-016 a FR-019 — barra de ações de Destinos e Entrada.
+      'actionBar.',
+      // 007 — conjunção de lista, consumida por `listAnd` para compor a linha
+      // de apoio derivada de Destinos. Vive em `common` porque não pertence a
+      // nenhuma superfície: é gramática.
+      'common.and',
     ];
 
     const novas = Object.keys(atual).filter((chave) => !(chave in gravado));

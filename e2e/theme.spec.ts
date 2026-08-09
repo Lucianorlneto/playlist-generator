@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
 import { expect, test, type Page } from '@playwright/test';
 
 import { t } from '../src/i18n/pt-BR';
@@ -18,6 +21,35 @@ import { mockSpotify, seedCredential } from './support/spotify-mock';
  */
 
 const KEY = 'tp.v2.theme';
+
+/**
+ * O `--bg` de cada tema, lido de `src/styles/tokens.css`.
+ *
+ * **Nenhum hex é copiado para este arquivo.** A afirmação que estes casos
+ * protegem é "o tema certo já está no primeiro quadro, e sobrevive à recarga" —
+ * não "o fundo escuro é `#0d1219`". Copiar o valor faria a feature 007, que
+ * troca a paleta inteira por decisão de projeto (FR-001), quebrar um teste que
+ * nada tem a ver com paleta; e faria a próxima troca quebrá-lo de novo.
+ *
+ * O `:root` do arquivo é o tema claro; o bloco `[data-theme='dark']` é o escuro.
+ */
+const TOKENS_CSS = readFileSync(join(process.cwd(), 'src/styles/tokens.css'), 'utf8');
+
+function bgDoBloco(seletor: string): string {
+  const inicio = TOKENS_CSS.indexOf(`${seletor} {`);
+  if (inicio === -1) throw new Error(`Bloco "${seletor}" não encontrado em tokens.css`);
+
+  const trecho = TOKENS_CSS.slice(inicio);
+  const match = /--bg:\s*#([0-9a-f]{6})\s*;/iu.exec(trecho);
+  if (match?.[1] === undefined) throw new Error(`--bg não declarado em "${seletor}"`);
+
+  const hex = match[1];
+  const canal = (posicao: number): number => Number.parseInt(hex.slice(posicao, posicao + 2), 16);
+  return `rgb(${String(canal(0))}, ${String(canal(2))}, ${String(canal(4))})`;
+}
+
+const BG_CLARO = bgDoBloco(':root');
+const BG_ESCURO = bgDoBloco("[data-theme='dark']");
 
 /** Grava a preferência antes de a página carregar — como um retorno de visita. */
 async function semearPreferencia(page: Page, preference: string): Promise<void> {
@@ -79,7 +111,7 @@ test.describe('FR-010 e SC-004 · o tema correto já está no primeiro quadro', 
     expect(interativo?.[1]).toBe('light');
 
     // E a cor efetivamente pintada é a do tema claro.
-    await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(250, 247, 240)');
+    await expect(page.locator('body')).toHaveCSS('background-color', BG_CLARO);
 
     await context.close();
   });
@@ -91,14 +123,14 @@ test.describe('FR-010 e SC-004 · o tema correto já está no primeiro quadro', 
     const pageEscura = await escuro.newPage();
     await mockSpotify(pageEscura);
     await pageEscura.goto('/');
-    await expect(pageEscura.locator('body')).toHaveCSS('background-color', 'rgb(13, 18, 25)');
+    await expect(pageEscura.locator('body')).toHaveCSS('background-color', BG_ESCURO);
     await escuro.close();
 
     const claro = await browser.newContext({ colorScheme: 'light' });
     const pageClara = await claro.newPage();
     await mockSpotify(pageClara);
     await pageClara.goto('/');
-    await expect(pageClara.locator('body')).toHaveCSS('background-color', 'rgb(250, 247, 240)');
+    await expect(pageClara.locator('body')).toHaveCSS('background-color', BG_CLARO);
     await claro.close();
   });
 });
@@ -109,7 +141,7 @@ test.describe('SC-005 · a escolha sobrevive à recarga', () => {
     await page.goto('/');
 
     await page.getByRole('radio', { name: t.theme.dark }).click();
-    await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(13, 18, 25)');
+    await expect(page.locator('body')).toHaveCSS('background-color', BG_ESCURO);
 
     await page.reload();
 
@@ -124,10 +156,10 @@ test.describe('SC-005 · a escolha sobrevive à recarga', () => {
     await page.goto('/');
 
     await page.getByRole('radio', { name: t.theme.dark }).click();
-    await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(13, 18, 25)');
+    await expect(page.locator('body')).toHaveCSS('background-color', BG_ESCURO);
 
     await page.getByRole('radio', { name: t.theme.system }).click();
-    await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(250, 247, 240)');
+    await expect(page.locator('body')).toHaveCSS('background-color', BG_CLARO);
 
     await page.reload();
     await expect(page.getByRole('radio', { name: t.theme.system })).toBeChecked();
@@ -159,7 +191,7 @@ test.describe('FR-007 e SC-003 · trocar de tema não perturba o trabalho', () =
 
     // A troca acontece **com a busca em andamento**, que é o cenário do FR-007.
     await page.getByRole('radio', { name: t.theme.dark }).click();
-    await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(13, 18, 25)');
+    await expect(page.locator('body')).toHaveCSS('background-color', BG_ESCURO);
 
     expect(await etapaAtual.textContent()).toBe(etapaAntes);
     // …e a execução chegou ao fim sem reiniciar nem ser cancelada: as três
@@ -209,12 +241,12 @@ test.describe('FR-011 · registro corrompido não quebra nem fala', () => {
     await mockSpotify(page);
     await page.goto('/');
 
-    await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(250, 247, 240)');
+    await expect(page.locator('body')).toHaveCSS('background-color', BG_CLARO);
     await expect(page.getByRole('radio', { name: t.theme.system })).toBeChecked();
     expect(erros).toEqual([]);
 
     // Nenhum alerta visível sobre armazenamento.
-    expect(await corDeFundo(page)).toBe('rgb(250, 247, 240)');
+    expect(await corDeFundo(page)).toBe(BG_CLARO);
 
     await context.close();
   });

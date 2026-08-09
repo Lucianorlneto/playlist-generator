@@ -56,6 +56,8 @@
   --color-inherit: inherit;
 
   --color-bg: var(--bg);
+  /* Substrato das zonas da casca — barra superior e trilha (FR-006, FR-010). */
+  --color-surface-zone: var(--surface-zone);
   --color-surface: var(--surface);
   --color-surface-raised: var(--surface-raised);
 
@@ -69,10 +71,23 @@
   --color-accent-deep: var(--accent-deep);
   --color-accent-ink: var(--accent-ink);
   --color-accent-text: var(--accent-text);
+  --color-accent-tint: var(--accent-tint);
 
   --color-state-confident: var(--state-confident);
   --color-state-uncertain: var(--state-uncertain);
   --color-state-missing: var(--state-missing);
+  --color-state-live: var(--state-live);
+
+  /**
+   * Cor de marca por provedor (FR-023).
+   *
+   * Emitidas como utilitário de cor porque o ícone do provedor precisa delas —
+   * e **só** o ícone e o filete. Nunca preenchimento de ação, nunca portadora de
+   * estado, nunca texto: os pares aprovados as declaram exclusivamente como
+   * `ui`, e `tests/unit/contrast.spec.ts` recusa qualquer par de texto com elas.
+   */
+  --color-brand-spotify: var(--brand-spotify);
+  --color-brand-youtube: var(--brand-youtube);
 
   --color-state-confident-tint: var(--state-confident-tint);
   --color-state-uncertain-tint: var(--state-uncertain-tint);
@@ -112,9 +127,13 @@
  * Valor fora da escala é violação, não exceção (data-model.md §3).
  */
 @theme {
-  /* --- Espaçamento: 7 degraus (contracts/tokens.md §4) ------------------- */
+  /* --- Espaçamento: 8 degraus (contracts/tokens.md §4) ------------------- */
   --spacing: initial;
 
+  /* O degrau de 2px entra na 007 porque o arquivo de design o usa 73 vezes: é o
+     respiro entre o nome da etapa e a linha de apoio, e colapsá-lo em 4px
+     engordaria a trilha inteira. */
+  --spacing-0\.5: 0.125rem;
   --spacing-1: 0.25rem;
   --spacing-2: 0.5rem;
   --spacing-3: 0.75rem;
@@ -127,43 +146,60 @@
      `inset-0`, `p-0` e `min-w-0` dependem dele e nenhum deles introduz medida. */
   --spacing-0: 0px;
 
-  /* --- Raio: 3 degraus --------------------------------------------------- */
+  /* --- Raio: 5 degraus (contracts/tokens.md §4) -------------------------- */
   --radius-*: initial;
 
-  --radius-control: 4px;
-  --radius-card: 8px;
+  --radius-hair: 2px;
+  --radius-control: 8px;
+  /* Sobe de 8px para 12px, revertendo uma decisão da 005. A tese de lá era que
+     "cantos generosos são o registro visual do painel de SaaS genérico"; o
+     design oficial os reabre, e FR-001 diz que ele vence. A decisão substituída
+     fica registrada no guia de estilo, com o motivo (FR-044). */
+  --radius-card: 12px;
+  --radius-panel: 16px;
   --radius-pill: 9999px;
 
   /* --- Tipografia: 6 degraus (contracts/tokens.md §3) -------------------- */
   --text-*: initial;
 
-  --text-step: 1.625rem;
+  /* Título de tela. Novo na 007 — o degrau que faltava acima de `step`. */
+  --text-page: 2rem;
+  --text-page--line-height: 1.15;
+  --text-page--letter-spacing: -0.02em;
+  --text-page--font-weight: 700;
+
+  --text-step: 1.5rem;
   --text-step--line-height: 1.2;
   --text-step--letter-spacing: -0.02em;
   --text-step--font-weight: 600;
 
-  --text-section: 1.0625rem;
+  --text-section: 1rem;
   --text-section--line-height: 1.35;
   --text-section--font-weight: 600;
 
-  --text-body: 0.9375rem;
+  /* `--text-item` foi fundido aqui na 007. Eram dois nomes para o mesmo corpo
+     (0,9375rem), separados só pela entrelinha e pelo peso — distinção que o
+     componente declara melhor do que um degrau de escala. */
+  --text-body: 0.875rem;
   --text-body--line-height: 1.55;
   --text-body--font-weight: 400;
-
-  --text-item: 0.9375rem;
-  --text-item--line-height: 1.4;
-  --text-item--font-weight: 500;
 
   --text-meta: 0.8125rem;
   --text-meta--line-height: 1.45;
   --text-meta--font-weight: 400;
 
+  /* Piso de legibilidade: reservado a rótulo tabular, numeral e selo. **Nenhum
+     texto que carregue conteúdo desce abaixo de `--text-meta`** — o tamanho mais
+     frequente do arquivo de design é 12,5px, e adotá-lo literalmente encolheria
+     a interface inteira (contracts/tokens.md §3). */
   --text-data: 0.75rem;
   --text-data--line-height: 1.4;
   --text-data--letter-spacing: 0.03em;
   --text-data--font-weight: 500;
 
-  /* --- Família única (FR-034) -------------------------------------------- */
+  /* --- Família única (FR-026, FR-027) ----------------------------------- */
+  /* Inalterada em relação à 005, por exigência do FR-027: o `@font-face`, o
+     subset e a substituta de métrica compatível ficam como estão. */
   --font-*: initial;
 
   --font-sans:
@@ -171,26 +207,44 @@
     Roboto, 'Helvetica Neue', Arial, sans-serif;
 
   /* --- Layout (contracts/tokens.md §5) ----------------------------------- */
-  --container-measure: 46rem;
+  /* Coluna primária de leitura. Encolhe de 46rem para 42.5rem porque deixou de
+     ser a tela inteira: agora divide a largura com a trilha e, em Destinos, com
+     o painel lateral. */
+  --container-measure: 42.5rem;
 
   /* Largura do painel modal. Vive aqui, e não como valor em colchete no
      componente, porque é restrição de layout do sistema — não uma medida
-     escolhida no olho dentro do `Dialog` (contracts/token-migration.md §5b). */
+     escolhida no olho dentro do `Dialog`. */
   --container-panel: 32rem;
 
-  /* Abaixo daqui a goteira colapsa em prefixo de linha. Declarado como
-     breakpoint para que o componente possa usar a variante `gutter:` em vez de
-     repetir a medida. */
-  --breakpoint-gutter: 40rem;
+  /* Abaixo daqui a casca de três zonas colapsa: a trilha vira `StepSummary` no
+     topo do conteúdo e o painel lateral desce para baixo da coluna primária
+     (FR-037, FR-053). Substitui `--breakpoint-gutter`, que saiu com a goteira.
+
+     Medido em T042, não estimado: 18.5rem de trilha + 42.5rem de coluna de
+     leitura + 2rem de respiro lateral = 63rem de mínimo absoluto. 64rem é o
+     primeiro rem inteiro acima disso. Abaixo, a coluna de leitura teria de
+     encolher para caber a trilha — e a trilha existe para servir o conteúdo,
+     não o contrário.
+
+     **O valor existe duas vezes**: aqui e em `src/styles/breakpoints.ts`, porque
+     CSS não lê constante de JavaScript e `@media` não aceita `var()`.
+     `tests/components/shell.spec.tsx` falha se as duas divergirem. */
+  --breakpoint-shell: 64rem;
 }
 
 /**
- * Goteira: a coluna reservada à esquerda em todas as telas (design.md §4).
- * Vive fora do `@theme` porque não é um degrau de escala — é uma medida
- * estrutural única, consumida pelo utilitário `gutter-row`.
+ * Medidas estruturais da casca (contracts/tokens.md §5).
+ *
+ * Vivem como propriedade customizada simples, fora do `@theme`, porque não
+ * pertencem a nenhum espaço de nome que o Tailwind reconheça — não são degraus
+ * de uma escala, são as três dimensões que definem as zonas. É o mesmo lugar em
+ * que `--gutter` vivia na 005, pela mesma razão.
  */
 :root {
-  --gutter: 2.5rem;
+  --rail-width: 18.5rem;
+  --side-panel-width: 20.625rem;
+  --topbar-height: 4.25rem;
 }
 
 /**
@@ -208,6 +262,88 @@
   padding: var(--spacing-4);
   /* `none` no tema escuro, por decisão de contracts/tokens.md §4. */
   box-shadow: var(--elevation-card);
+}
+
+/**
+ * As medidas das três zonas (`contracts/tokens.md` §5).
+ *
+ * Utilitários nomeados, e não `min-h-topbar` escrito no componente, por uma
+ * razão que é o coração desta feature: `--topbar-height`, `--rail-width` e
+ * `--side-panel-width` **não pertencem a nenhum espaço de nome que o Tailwind
+ * reconheça**. `min-h-topbar` não é erro — é uma classe que não emite CSS
+ * nenhum, e a barra superior ficaria sem altura sem que nada falhasse.
+ *
+ * Declarar o consumo aqui é o que torna a medida utilizável sem inventar um
+ * degrau falso na escala de espaçamento para acomodá-la.
+ */
+@utility zone-topbar {
+  min-height: var(--topbar-height);
+}
+
+@utility zone-rail {
+  width: var(--rail-width);
+  flex-shrink: 0;
+}
+
+@utility zone-side-panel {
+  width: var(--side-panel-width);
+  flex-shrink: 0;
+}
+
+/**
+ * A marca sobre cada substrato (FR-049, FR-060; `contracts/decor.md` §2).
+ *
+ * `Logo Mark.png` é arte composta contra o quase-preto. No tema Papel ela pousa
+ * sobre um off-white e perde definição — o problema que nenhum teste automatizado
+ * percebe, porque a imagem carrega, tem o tamanho certo e simplesmente não se vê.
+ *
+ * O tratamento é declarado por tema, como o contrato exige. No escuro, como
+ * entregue. No claro, um contraste leve que recupera a silhueta sem inverter a
+ * arte — inverter mudaria a marca, que não é nossa para mudar.
+ */
+@utility brand-mark {
+  filter: none;
+}
+
+:root .brand-mark {
+  filter: contrast(1.15) saturate(1.1);
+}
+
+[data-theme='dark'] .brand-mark {
+  filter: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .brand-mark {
+    filter: none;
+  }
+}
+
+/**
+ * Glifo de ícone (FR-051, SC-017).
+ *
+ * As três medidas que amarram um ícone ao texto em volta, num lugar só:
+ *
+ * - `1em` faz o tamanho **acompanhar a escala tipográfica do contexto**. O ícone
+ *   ao lado de um rótulo `text-meta` encolhe junto; o de um título `text-step`
+ *   cresce junto. É o que impede a escala finita de tipografia de ser contornada
+ *   por uma escala paralela de ícones, escolhida no olho a cada uso.
+ * - `flex-shrink: 0` protege o glifo dentro de um flex apertado. O caso real é o
+ *   chip de conexão com nome de conta longo: só o texto deve truncar
+ *   (`contracts/shell.md` §2).
+ * - O deslocamento vertical alinha o centro óptico do glifo à linha de base do
+ *   texto. Sem ele o ícone pousa alto e a linha inteira parece torta.
+ *
+ * Vive aqui, e não como valor em colchete no `Icon`, porque `1em` e `-0.125em`
+ * são **relações**, não degraus de escala — não há token para elas, e escrevê-las
+ * no componente é exatamente o que `tp/no-raw-visual-values` existe para recusar.
+ */
+@utility icon-glyph {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  flex-shrink: 0;
+  vertical-align: -0.125em;
 }
 
 /**
@@ -254,31 +390,17 @@
 }
 
 /**
- * A goteira (design.md §4) — a estrutura que faz cinco telas parecerem cinco
- * páginas do mesmo documento.
+ * Numeral tabular.
  *
- * Abaixo de `--breakpoint-gutter` a coluna colapsa e o numeral vira prefixo em
- * linha. A medida aparece literal na consulta porque `@media` não aceita `var()`;
- * ela espelha `--breakpoint-gutter` do `@theme` acima, e mover uma sem a outra
- * é o modo de falha a vigiar.
- */
-@utility gutter-row {
-  display: grid;
-  grid-template-columns: var(--gutter) minmax(0, 1fr);
-  column-gap: var(--spacing-2);
-  align-items: start;
-
-  @media (width < 40rem) {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
-/**
- * Numeral tabular (design.md §5).
+ * **Não é mais parte da goteira.** Na 005 este utilitário fazia duas coisas: dava
+ * o corpo tipográfico do numeral da goteira e ligava `tabular-nums`. A goteira
+ * saiu com a feature 007 (FR-029); a numeração tabular permaneceu, porque a
+ * diferença medida entre `08` e `11` sem `tabular-nums` era de 4,6px de coluna
+ * torta nas telas de resultado.
  *
- * `tabular-nums` mora aqui e não em cada uso: T004 mediu 4,6 px de diferença
- * entre `08` e `11` sem ele, e um numeral que esquecesse a declaração não
- * quebraria teste nenhum — só deixaria a coluna torta.
+ * Removê-lo junto com a goteira seria a regressão que a denylist de
+ * `no-orphan-tokens` **não pegaria** — o utilitário continuaria existindo, e só
+ * o alinhamento das colunas quebraria (contracts/token-migration.md §6.1).
  */
 @utility data-numeral {
   font-size: var(--text-data);
@@ -302,12 +424,17 @@
 }
 
 /**
- * Movimento reduzido (FR-020).
+ * Movimento reduzido (FR-035).
  *
- * O sistema quase não tem movimento: a régua do indicador de etapa avança em
- * 200ms e o resto é instantâneo. Sob `prefers-reduced-motion` até ela para de
- * animar — **sem perda de informação**, porque a régua já é `aria-hidden` e o
- * estado que ela mostra está dito por escrito na lista de etapas.
+ * O sistema quase não tem movimento: o conector da trilha e a transição de
+ * estado dos degraus levam 200ms, e o resto é instantâneo. Sob
+ * `prefers-reduced-motion` até eles param de animar — **sem perda de
+ * informação**, porque o conector já é `aria-hidden` e o estado que ele mostra
+ * está dito por escrito no nome e na linha de apoio de cada degrau.
+ *
+ * A mesma regra cobre a decoração da 007: adesivo, fundo ambiente e fotografia
+ * são suprimidos ou tornados estáticos aqui, sem que cada componente precise
+ * repetir a consulta (contracts/decor.md §4).
  *
  * A regra é declarada em `!important` porque precisa vencer utilitários de
  * transição escritos no componente. É o único `!important` do arquivo, e o

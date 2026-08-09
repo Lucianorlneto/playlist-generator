@@ -1,9 +1,7 @@
 import { PROVIDER_ORDER } from '@/domain/providers';
-import { validateSelection } from '@/domain/validation';
 import { nameOf } from '@/features/credential/providerText';
 import { format, plural, t } from '@/i18n/pt-BR';
 import { useAppStore } from '@/store';
-import { Button } from '@/ui/Button';
 import { StepHeading } from '@/ui/StepHeading';
 
 import { DestinationSelector } from './DestinationSelector';
@@ -21,9 +19,7 @@ import { DestinationSelector } from './DestinationSelector';
 export function DestinationsStep() {
   const stepToken = useAppStore((state) => state.stepToken);
   const destinations = useAppStore((state) => state.destinations);
-  const goToStep = useAppStore((state) => state.goToStep);
 
-  const validation = validateSelection(destinations);
   const count = destinations.selected.length;
 
   const [first, second] = PROVIDER_ORDER;
@@ -51,27 +47,12 @@ export function DestinationsStep() {
         </p>
       )}
 
-      <div className="flex flex-wrap gap-2">
-        <Button
-          variant="ghost"
-          onClick={() => {
-            goToStep('credential');
-          }}
-        >
-          {t.common.back}
-        </Button>
-        <Button
-          variant="primary"
-          disabled={!validation.ok}
-          onClick={() => {
-            goToStep('input');
-          }}
-        >
-          {t.common.next}
-        </Button>
-      </div>
-
-      {!validation.ok && <p className="field-message">{t.destinations.noneSelected}</p>}
+      {/*
+        As ações **saíram desta tela** na feature 007 e vivem na barra de ações
+        do rodapé do conteúdo, junto com a contagem de destinos e a explicação de
+        "nenhum selecionado" (FR-016). O que ficou aqui é o que a etapa é: o
+        seletor e o que ele exige saber.
+      */}
     </section>
   );
 }

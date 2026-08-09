@@ -28,7 +28,7 @@ discordar desta tabela, o teste está certo e a tabela se corrige.
 | `--accent` | **Primária.** Preenchimento de ação | `#F5B301` | `#F5B301` | design `pl-accent` |
 | `--accent-deep` | Hover e ativo do preenchimento | `#DFA301` | `#DFA301` | derivado |
 | `--accent-ink` | Texto sobre preenchimento âmbar | `#141c26` | `#0D1117` | design |
-| `--accent-text` | Âmbar para texto, link, borda, foco | `#896401` | `#F5B301` | ajustado |
+| `--accent-text` | Âmbar para texto, link, borda, foco | `#816001` | `#F5B301` | ajustado ×2 — ver nota |
 | `--state-confident` | Correspondência confiante | `#1F766E` | `#4FD1C5` | design `pl-confident`, ajustado no claro |
 | `--state-uncertain` | Correspondência incerta | `#7A5C00` | `#F0C04A` | ajustado — **não** pode ser `--accent` |
 | `--state-missing` | Não encontrada, erro | `#D31608` | `#F97066` | design `pl-danger`, ajustado no claro |
@@ -50,6 +50,25 @@ um.
 - **As cores de marca e de estado divergem por tema.** Foram escolhidas contra um substrato quase-preto e não sobrevivem ao off-white: `#1DB954` sobre `#faf7f0` dá 2,42:1. As variantes claras são escurecidas preservando matiz e saturação.
 - **`--surface-zone` inverte a direção entre os temas.** No escuro é mais claro que `--bg`; no claro é mais escuro. É o degrau de luminosidade que separa a zona do conteúdo, e ele só funciona afastando-se do substrato.
 
+### Ajustes feitos na implementação (T008)
+
+A Fase 0 mediu os dezoito tokens propostos e **nenhum reprovou**: as 27 razões da
+§2 passaram na primeira execução de `tests/unit/contrast.spec.ts`. Um único valor
+mudou, e por margem em vez de reprovação:
+
+| Token | De | Para | Razão |
+| --- | --- | --- | --- |
+| `--accent-text` (claro) | `#896401` | `#816001` | Dava 4,58:1 sobre `--surface-zone` — passava por 0,08 no par #10, que é `text`. Qualquer acerto futuro no substrato da zona o derrubaria, e a falha apareceria como numeral ilegível na trilha. Escurecido um degrau preservando matiz e saturação: 4,94:1 |
+
+**Os cinco pares que T008 previa escurecer não foram tocados**, e a razão é que a
+previsão lia os números contra o piso errado. `--state-live`, `--brand-spotify`,
+`--brand-youtube` e `--rule-strong` sobre `--surface-zone` pousam entre 3,11 e
+3,15 — mas são pares `ui`, cujo mínimo é **3**, não 4,5. Passam com folga de 4% a
+5% sobre o próprio piso. Escurecê-los custaria a função que FR-023 lhes dá: o
+verde do Spotify escurecido mais um degrau deixa de identificar o Spotify, e um
+acento identificador que não identifica é pior do que um contraste justo. Os
+valores da §1 permanecem como estão, e `contrast.spec.ts` é a prova.
+
 ---
 
 ## 2. Pares aprovados
@@ -70,9 +89,9 @@ Mínimos: `text` = 4,5:1 · `large-text` = 3:1 · `ui` (borda, ícone, anel de f
 | 6 | `--ink-muted` | `--surface-zone` | text | Linha de apoio da trilha, etapa pendente | 5,08 | 5,88 |
 | 7 | `--ink-muted` | `--surface` | text | Meta dentro de cartão | 5,99 | 5,60 |
 | 8 | `--ink-muted` | `--surface-raised` | text | Meta em linha destacada | 5,22 | 4,98 |
-| 9 | `--accent-text` | `--bg` | text | Link, texto de acento | 5,05 | 10,21 |
-| 10 | `--accent-text` | `--surface-zone` | text | Numeral da etapa atual | 4,58 | 9,70 |
-| 11 | `--accent-text` | `--surface` | text | Link dentro de cartão | 5,40 | 9,24 |
+| 9 | `--accent-text` | `--bg` | text | Link, texto de acento | 5,44 | 10,21 |
+| 10 | `--accent-text` | `--surface-zone` | text | Numeral da etapa atual | 4,94 | 9,70 |
+| 11 | `--accent-text` | `--surface` | text | Link dentro de cartão | 5,82 | 9,24 |
 | 12 | `--accent-ink` | `--accent` | text | Rótulo do botão primário | 9,26 | 10,21 |
 | 13 | `--accent-ink` | `--accent-deep` | text | Rótulo do botão primário em hover | 7,66 | 8,45 |
 | 14 | `--state-confident` | `--surface` | text | Selo "confiante" | 5,42 | 9,18 |
@@ -175,12 +194,30 @@ que não pertencem a nenhum deles vivem como propriedade customizada simples, co
 | `--rail-width` | 18.5rem (296px) | Largura da trilha de etapas | simples |
 | `--side-panel-width` | 20.625rem (330px) | Painel lateral de apoio | simples |
 | `--topbar-height` | 4.25rem (68px) | Altura da barra superior | simples |
-| `--breakpoint-shell` | **a medir** | Abaixo daqui a casca colapsa | `--breakpoint-*` |
+| `--breakpoint-shell` | **64rem** (1024px) | Abaixo daqui a casca colapsa | `--breakpoint-*` |
 
-**`--breakpoint-shell` é a única medida não fixada por este contrato.** A trilha
-(296px) mais a coluna de leitura confortável não cabem abaixo de ~64rem, mas o
-valor exato depende de medição na implementação. A tarefa que o fixar MUST
-registrá-lo aqui. Ele **substitui** `--breakpoint-gutter`, que sai com a goteira.
+**`--breakpoint-shell` foi medido em T042 e fixado em 64rem.** A conta é
+fechada, não estimada:
+
+| Parcela | Medida |
+| --- | --- |
+| Trilha de etapas (`--rail-width`) | 18,5rem |
+| Coluna primária de leitura (`--container-measure`) | 42,5rem |
+| Respiro lateral da área principal (`p-4` dos dois lados) | 2rem |
+| **Mínimo absoluto** | **63rem** |
+
+64rem é o primeiro rem inteiro acima do mínimo, com 1rem de folga. Abaixo disso
+a coluna de leitura teria de encolher, e encolher a medida de leitura para caber
+a trilha inverteria a prioridade — a trilha existe para servir o conteúdo.
+
+O painel lateral de Destinos (20,625rem) **não** cabe nesta largura, e não
+deveria: a soma com o gap daria 85,125rem. Ele desce para baixo da coluna por
+`flex-wrap`, que é a forma executável de FR-020 — o painel nunca rouba a largura
+de leitura, em nenhuma janela.
+
+Ele **substitui** `--breakpoint-gutter`, que sai com a goteira. O número existe
+também em `src/styles/breakpoints.ts`, porque CSS não lê constante de JavaScript;
+`tests/components/shell.spec.tsx` falha se as duas cópias divergirem.
 
 ---
 

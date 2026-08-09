@@ -3,7 +3,6 @@ import { useMemo } from 'react';
 import { parseInput } from '@/domain/parser';
 import { format, plural, t } from '@/i18n/pt-BR';
 import { useAppStore } from '@/store';
-import { Button } from '@/ui/Button';
 import { StepHeading } from '@/ui/StepHeading';
 import { TextArea } from '@/ui/TextArea';
 
@@ -22,7 +21,6 @@ export function InputScreen() {
   const stepToken = useAppStore((state) => state.stepToken);
   const rawText = useAppStore((state) => state.rawText);
   const setRawText = useAppStore((state) => state.setRawText);
-  const running = useAppStore((state) => state.search.running);
 
   const lineCount = useMemo(
     () => rawText.split(/\r?\n/u).filter((line) => line.trim() !== '').length,
@@ -44,17 +42,6 @@ export function InputScreen() {
   );
 
   const empty = rawText.trim() === '';
-
-  function start(): void {
-    const store = useAppStore.getState();
-    const lines = parseInput(store.rawText);
-    if (lines.length === 0) return;
-
-    store.setLines(lines);
-    store.buildQueue();
-    store.startQueue();
-    store.goToStep('service');
-  }
 
   return (
     <section className="flex flex-col gap-4">
@@ -90,21 +77,11 @@ export function InputScreen() {
         </p>
       )}
 
-      {empty && <p className="field-message">{t.input.emptyHint}</p>}
-
-      <div className="flex flex-wrap gap-2">
-        <Button variant="primary" disabled={empty || running} onClick={start}>
-          {t.input.start}
-        </Button>
-        <Button
-          variant="ghost"
-          onClick={() => {
-            useAppStore.getState().goToStep('destinations');
-          }}
-        >
-          {t.common.back}
-        </Button>
-      </div>
+      {/*
+        As ações e a explicação de lista vazia **saíram desta tela** na feature
+        007 e vivem na barra de ações do rodapé do conteúdo (FR-016). O que ficou
+        aqui é o campo e o que ele diz sobre o que foi colado.
+      */}
     </section>
   );
 }

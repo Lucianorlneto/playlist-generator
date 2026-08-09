@@ -37,13 +37,29 @@ describe('FR-006 · três opções, não um interruptor', () => {
   });
 
   it('o nome acessível é a palavra, não o ícone — inclusive no modo colapsado', () => {
-    // O rótulo é `sr-only` abaixo do breakpoint da goteira, e `sr-only` continua
-    // na árvore de acessibilidade. Se ele fosse removido do DOM, esta consulta
-    // por nome falharia — que é exatamente a regressão a impedir.
+    // O rótulo é `sr-only` abaixo do ponto de corte da casca, e `sr-only`
+    // continua na árvore de acessibilidade. Se ele fosse removido do DOM, esta
+    // consulta por nome falharia — que é exatamente a regressão a impedir.
     render(<ThemeControl />);
 
     for (const label of [t.theme.light, t.theme.dark, t.theme.system]) {
       expect(screen.getByRole('radio', { name: label })).toBeInTheDocument();
+    }
+  });
+
+  it('007/FR-030 · os ícones vêm do mapa de papéis e são decorativos', () => {
+    // Os três SVGs escritos à mão da 005 saíram; entraram `theme-light`,
+    // `theme-dark` e `theme-system` do mapa único. O que **não** pode mudar é a
+    // semântica: o ícone acompanha um rótulo e por isso é decoração — se ele
+    // ganhasse nome acessível, o leitor de tela leria "sol Claro" (FR-058).
+    const { container } = render(<ThemeControl />);
+
+    const glifos = container.querySelectorAll('.icon-glyph');
+    expect(glifos).toHaveLength(3);
+    for (const glifo of glifos) {
+      expect(glifo.getAttribute('aria-hidden')).toBe('true');
+      // Herda a cor do contexto; nunca fixa a própria (SC-017).
+      expect(glifo.getAttribute('color')).toBe('currentColor');
     }
   });
 
