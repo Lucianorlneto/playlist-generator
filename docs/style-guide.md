@@ -1,10 +1,14 @@
 # Guia de Estilo
 
-**Importador de Playlist por Texto** · sistema de design da feature 005 · 2026-08-07
+**Importador de Playlist por Texto** · sistema de design da feature 007 · 2026-08-09
 
 Este documento é o **árbitro de decisões visuais futuras**. Quando surgir a dúvida "de que cor
 fica este texto?", "quanto espaço vai aqui?" ou "isto é um selo ou um botão?", a resposta está
 aqui — e se não estiver, a lacuna é do guia.
+
+A feature 007 realinhou a interface ao arquivo de design oficial. O que mudou foi o **esqueleto**
+e os **valores**; o comportamento é o mesmo, linha por linha. As decisões da 005 que este sistema
+substitui estão registradas na **seção 11, com o motivo** — não apagadas.
 
 ---
 
@@ -18,11 +22,13 @@ aqui — e se não estiver, a lacuna é do guia.
 | Nomes semânticos e escalas finitas | `src/styles/index.css` |
 | Lista fechada de pares aprovados | `src/domain/theme/approvedPairs.ts` |
 | Razões de contraste | produzidas por `tests/unit/contrast.spec.ts` |
+| Papéis de ícone | `src/ui/icons.ts` |
+| Composição da trilha de etapas | `src/domain/rail/index.ts` |
 | Anatomia de cada componente | o próprio componente em `src/ui/` e `src/features/` |
 
-Divergência entre este guia e o código **se resolve corrigindo o guia** (FR-036). Nunca
-duplicando o valor: um hex copiado para cá vira a segunda cópia que diverge em silêncio, e a
-cópia errada é sempre a que alguém lê primeiro.
+Divergência entre este guia e o código **se resolve corrigindo o guia**. Nunca duplicando o
+valor: um hex copiado para cá vira a segunda cópia que diverge em silêncio, e a cópia errada é
+sempre a que alguém lê primeiro.
 
 Os números de contraste da seção 3 foram **produzidos pelo teste**, não recalculados à mão. Se
 esta tabela e o teste discordarem, o teste está certo.
@@ -38,150 +44,147 @@ não tem capa de álbum como herói, não tem descoberta.
 copiou de um setlist, e reconcilia linha a linha contra o catálogo de um serviço — acertando
 umas, hesitando em outras, falhando em algumas — até virar playlist.
 
-O mundo dele é o da **lista**: o setlist rabiscado, o verso da capa do disco com as faixas
-numeradas, a folha da rádio com a programação, o J-card da fita cassete datilografado.
-**Documento, não vitrine.**
-
 Consequência prática, e é a que resolve a maioria das dúvidas de layout: **o herói é a linha, não
-a capa.** Se o produto fosse um player, a arte do álbum seria o elemento maior da tela. Como ele é
-um conciliador, a capa é apoio de 32px e a linha ocupa o espaço.
+a capa.** Se o produto fosse um player, a arte do álbum seria o elemento maior da tela. Como ele
+é um conciliador, a capa é apoio de 32px e a linha ocupa o espaço.
+
+O que a 007 acrescentou a essa tese: o conciliador agora **diz onde você está**. O fluxo tem cinco
+etapas e antes elas eram uma faixa fina no topo; agora são uma trilha permanente à esquerda, com
+nome, numeral e o que foi decidido em cada uma.
 
 ---
 
 ## 2. Cor
 
 Nomes **semânticos**, nunca descritivos. `--ink-muted` sobrevive a uma troca de paleta;
-`--cinza-claro` não. Componente consome nome, jamais valor (FR-004) — a regra de lint
+`--cinza-claro` não. Componente consome nome, jamais valor — a regra de lint
 `tp/no-raw-visual-values` recusa o contrário.
 
-### Os 14 tokens
+### Os 18 tokens
 
 | Token | Papel | Papel (claro) | Noite (escuro) |
 | --- | --- | --- | --- |
-| `--bg` | Fundo da página | `#faf7f0` | `#0d1219` |
-| `--surface` | Superfície elevada, cartão | `#ffffff` | `#1a2332` |
-| `--surface-raised` | Hover, linha alternada, campo em foco | `#f4efe4` | `#223045` |
-| `--rule` | Divisor e borda em repouso | `#e3dccd` | `#2c3a4d` |
-| `--rule-strong` | Borda de controle, contorno de imagem externa | `#8f887a` | `#5e7a9d` |
-| `--ink` | Texto principal | `#141c26` | `#e8eaed` |
-| `--ink-muted` | Texto secundário | `#5a6473` | `#9aa8b8` |
-| `--accent` | **Primária.** Preenchimento de ação | `#f4a900` | `#f4a900` |
-| `--accent-deep` | Hover e ativo do preenchimento | `#d99700` | `#c98600` |
-| `--accent-ink` | Texto sobre preenchimento âmbar | `#141c26` | `#0d1219` |
-| `--accent-text` | Âmbar para texto, link, borda, foco | `#9a5b00` | `#f4a900` |
-| `--state-confident` | Correspondência confiante | `#14706b` | `#4ec4b8` |
+| `--bg` | Fundo da página e da área principal | `#faf7f0` | `#0d1117` |
+| `--surface-zone` | Barra superior e trilha de etapas | `#f1ece0` | `#12171f` |
+| `--surface` | Cartão, painel | `#ffffff` | `#161c25` |
+| `--surface-raised` | Hover, linha alternada, campo focado | `#f4efe4` | `#1e2632` |
+| `--rule` | Filete decorativo, divisor em repouso | `#e3dccd` | `#252d3a` |
+| `--rule-strong` | Contorno **significante** | `#8b8476` | `#5e7a9d` |
+| `--ink` | Texto principal | `#141c26` | `#e9eef5` |
+| `--ink-muted` | Texto secundário **e etapa pendente** | `#5a6473` | `#8a94a6` |
+| `--accent` | **Primária.** Preenchimento de ação | `#f5b301` | `#f5b301` |
+| `--accent-deep` | Hover e ativo do preenchimento | `#dfa301` | `#dfa301` |
+| `--accent-ink` | Texto sobre preenchimento âmbar | `#141c26` | `#0d1117` |
+| `--accent-text` | Âmbar para texto, link, borda, foco | `#816001` | `#f5b301` |
+| `--state-confident` | Correspondência confiante | `#1f766e` | `#4fd1c5` |
 | `--state-uncertain` | Correspondência incerta | `#7a5c00` | `#f0c04a` |
-| `--state-missing` | Não encontrada, erro | `#b3261e` | `#ff8a7a` |
+| `--state-missing` | Não encontrada, erro | `#d31608` | `#f97066` |
+| `--state-live` | Sessão viva no chip de conexão | `#349842` | `#3fb950` |
+| `--brand-spotify` | Acento identificador do provedor | `#189946` | `#1db954` |
+| `--brand-youtube` | Acento identificador do provedor | `#ff3126` | `#ff3b30` |
 
-### Três coisas que não são óbvias na tabela
+### Seis coisas que não são óbvias na tabela
 
-**`--accent` é idêntico nos dois temas.** É a âncora da identidade: a cor da ação não muda quando o
-substrato muda. Os fundos divergem em temperatura — quente no claro, azul no escuro — e é a
-primária, mais a família de tinta, que mantém os dois reconhecíveis como o mesmo produto.
+**`--accent` é idêntico nos dois temas.** É a âncora da identidade: a cor da ação não muda quando
+o substrato muda.
 
-**`--accent` e `--accent-text` são dois tokens porque precisam ser.** Âmbar cheio sobre fundo claro
-dá **2,0:1** — reprovado para texto e para borda. `--accent` é **só preenchimento**;
-`--accent-text` é o âmbar de texto, link, borda e foco. No tema escuro os dois coincidem, porque
-ali não há divergência a fazer.
+**Não existe `--ink-faint`.** O arquivo de design usa uma terceira tinta (`#5f6878`) para a etapa
+pendente da trilha. Ela reprova em todos os substratos, e todo valor que passa fica
+indistinguível de `--ink-muted` — razão 1,03 no escuro, 1,07 no claro. A etapa pendente se
+distingue por **forma**, não por tinta. Este é o achado mais consequente da feature: a medição de
+contraste alterou o **desenho**, não só os valores.
 
-**`--rule` e `--rule-strong` não são graus da mesma coisa.** São funções diferentes:
+**`--rule` não é contorno significante.** `#252d3a` sobre `--bg` dá 1,37:1. É separação
+decorativa. Tudo que carregue significado usa `--rule-strong`.
 
-| Token | Papel | Contraste exigido | Onde |
-| --- | --- | --- | --- |
-| `--rule` | Reforça uma separação que a luminosidade já faz | Nenhum | `app-card`, divisores, listas |
-| `--rule-strong` | **É** o delimitador | ≥ 3:1 em toda superfície | Campo, botão secundário, contorno de capa |
+**`--state-uncertain` é deliberadamente deslocado do âmbar de ação**, nos dois temas. Os dois
+aparecem na mesma tela, e o selo "incerta" não pode ser o mesmo hex do botão primário.
 
-Trocar um pelo outro não é questão de intensidade. Um cartão com `--rule-strong` fica pesado sem
-motivo; um campo com `--rule` deixa de ser identificável — e o portão pega o segundo.
+**`--surface-zone` inverte a direção entre os temas.** No escuro é mais claro que `--bg`; no claro
+é mais escuro. É o degrau de luminosidade que separa a zona do conteúdo, e ele só funciona
+afastando-se do substrato.
+
+**Cor de marca nunca é ação, estado ou texto.** É acento identificador: tinge o ícone do provedor
+e nada mais. A restrição tem base medida — `#ff3b30` sobre `--surface-raised` dá 4,29:1 e
+reprovaria como texto. `tp/no-raw-visual-values` recusa `bg-brand-*`.
 
 ### Fundos tingidos de estado
 
-Não são tokens próprios: são **derivados** por `color-mix` do token de estado com `--surface`, a
-12% no claro e 15% no escuro. `--state-confident-tint`, `--state-uncertain-tint`,
-`--state-missing-tint`, `--state-neutral-tint`; o filete de cada selo é o mesmo estado a 30%
-(`--state-*-edge`).
-
-Derivar em vez de declarar é o que impede que trocar o teal de "confiante" exija editar dois
+Continuam **derivados** por `color-mix` do token de estado com `--surface`, a 12% no claro e 15%
+no escuro. Não são tokens próprios — derivar impede que trocar uma cor de estado exija editar dois
 valores e esquecer um.
+
+O mesmo vale para `--accent-tint`, usado no disco da etapa atual da trilha.
 
 ---
 
 ## 3. Pares aprovados e contraste
 
-**Lista fechada.** Combinação que não está aqui é proibida em qualquer componente — no mesmo
-espírito da tabela de hosts do Princípio II. `tests/unit/contrast.spec.ts` percorre a lista inteira
-nos dois temas e falha por par reprovado.
+**Lista fechada de 27 combinações.** Combinação que não está em
+`src/domain/theme/approvedPairs.ts` é proibida em qualquer componente. É essa fechadura que torna
+a verificação exaustiva: sem ela o portão só cobriria os pares que alguém lembrou de escrever, e
+a omissão passaria como aprovação.
 
-Mínimos WCAG 2.x: `text` = 4,5:1 · `large-text` = 3:1 · `ui` (borda, ícone, anel de foco) = 3:1.
+Mínimos: `text` = 4,5:1 · `large-text` = 3:1 · `ui` (borda, ícone, anel de foco) = 3:1.
 
-| # | Frente | Fundo | Uso | Mínimo | Claro | Escuro | Onde aparece |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | `--ink` | `--bg` | text | 4,5:1 | **16,0** | **15,6** | Texto corrido da página |
-| 2 | `--ink` | `--surface` | text | 4,5:1 | **17,2** | **13,1** | Texto dentro de cartão |
-| 3 | `--ink-muted` | `--bg` | text | 4,5:1 | **5,6** | **7,8** | Meta, legenda, texto de ajuda |
-| 4 | `--ink-muted` | `--surface` | text | 4,5:1 | **6,0** | **6,5** | Meta dentro de cartão |
-| 5 | `--accent-ink` | `--accent` | text | 4,5:1 | **8,6** | **9,4** | Rótulo do botão primário |
-| 6 | `--accent-ink` | `--accent-deep` | text | 4,5:1 | **6,8** | **6,2** | Botão primário em hover |
-| 7 | `--accent-text` | `--bg` | text | 4,5:1 | **5,1** | **9,4** | Link e numeral da goteira |
-| 8 | `--accent-text` | `--surface` | text | 4,5:1 | **5,4** | **7,9** | Link dentro de cartão |
-| 9 | `--accent-text` | `--bg` | ui | 3:1 | **5,1** | **9,4** | Anel de foco |
-| 10 | `--state-confident` | `--surface` | text | 4,5:1 | **5,9** | **7,5** | Selo "confiante" |
-| 11 | `--state-uncertain` | `--surface` | text | 4,5:1 | **6,3** | **9,3** | Selo "incerta" |
-| 12 | `--state-missing` | `--surface` | text | 4,5:1 | **6,5** | **6,9** | Selo "não encontrada", erro |
-| 13 | `--rule-strong` | `--bg` | ui | 3:1 | **3,3** | **4,2** | Borda de controle e contorno de capa, sobre a página |
-| 14 | `--rule-strong` | `--surface` | ui | 3:1 | **3,5** | **3,6** | Borda de controle dentro de cartão |
-| 15 | `--rule-strong` | `--surface-raised` | ui | 3:1 | **3,1** | **3,0** | Borda de campo em foco, linha alternada |
+A lista cresceu de 15 (feature 005) para 27. O crescimento **não vem de cores novas**: vem de
+substratos novos. Texto e ícone sobre `--surface-zone` — a barra superior e a trilha — são
+combinações que não existiam antes de a casca de três zonas existir.
 
-**Proibido em qualquer contexto**: texto claro sobre `--accent` (2,0:1). Não existe variante de
-componente que o permita, e o teste de contraste tem um caso dedicado a garantir que nenhuma
-apareça (FR-046).
+Os pares deliberadamente **ausentes**, e por quê:
+
+- `--brand-*` como texto — proibido por decisão de sistema, com base medida;
+- `--accent` como texto sobre qualquer substrato claro — 1,73:1. Só preenchimento;
+- qualquer coisa sobre `--rule` — `--rule` é filete, não substrato.
+
+Todos os 27 passam nos dois temas. Um único valor foi ajustado na implementação: `--accent-text`
+no tema claro saiu de `#896401` para `#816001`, porque o primeiro dava 4,58:1 sobre
+`--surface-zone` — passava por 0,08, e qualquer acerto futuro no substrato da zona o derrubaria.
 
 ---
 
 ## 4. Tipografia
 
-**Space Grotesk**, variável, **família única** (FR-034). Grotesca geométrica com maneirismos reais
-— o `g` de perna cortada, o `a` de topo reto — que assinam sem custar legibilidade.
-
-Nenhuma família de exibição separada. A hierarquia vem de peso, tamanho e espaço, não de uma
-segunda fonte. É escolha, não economia: um conciliador não precisa de voz editorial.
+Família única: **Space Grotesk**, variável, subsetada, com substituta de métrica compatível.
+**Inalterada em relação à 005** — a 007 não tocou no `@font-face`, no subset nem no fallback.
 
 ### A escala — 6 degraus, e nada fora deles
 
-| Token | Tamanho | Peso | Ajuste | Uso |
-| --- | --- | --- | --- | --- |
-| `--text-step` | 1,625rem | 600 | `letter-spacing: -0.02em` | Título de etapa |
-| `--text-section` | 1,0625rem | 600 | — | Título de seção |
-| `--text-body` | 0,9375rem | 400 | `line-height: 1.55` | Corpo |
-| `--text-item` | 0,9375rem | 500 | — | Nome de faixa na conciliação |
-| `--text-meta` | 0,8125rem | 400 | — | Secundário, legenda, entrada original |
-| `--text-data` | 0,75rem | 500 | `tabular-nums`, `+0.03em` | Numeral, duração, contagem |
+| Degrau | Tamanho | Peso | Uso |
+| --- | --- | --- | --- |
+| `--text-data` | 0,75rem | 500 | Rótulo tabular, numeral, selo |
+| `--text-meta` | 0,8125rem | 400 | Meta, legenda, linha de apoio |
+| `--text-body` | 0,875rem | 400 | Texto corrido, rótulo de item |
+| `--text-section` | 1rem | 600 | Título de seção, título de cartão |
+| `--text-step` | 1,5rem | 600 | Título de seção interna de tela |
+| `--text-page` | 2rem | 700 | **Título de tela** |
 
-`--text-*: initial` está declarado no `@theme`: `text-sm`, `text-lg` e companhia **não existem**.
-Valor fora da escala é violação, não exceção.
+`--text-*: initial` está declarado: o Tailwind **não** gera `text-xl` nem `text-7xl` sob demanda.
+
+**Piso de legibilidade**: `--text-data` é reservado a rótulo tabular, numeral e selo. **Nenhum
+texto que carregue conteúdo desce abaixo de `--text-meta`.** O tamanho mais frequente do arquivo
+de design é 12,5px — 98 ocorrências —, abaixo do degrau `meta`; adotá-lo literalmente encolheria
+a interface inteira. O agrupamento preserva a proporção do desenho e descarta a precisão falsa de
+meio pixel.
+
+**Pesos**: 500 (corrente), 600 (ênfase), 700 (título). O peso 800 aparece 7 vezes no arquivo de
+design e é normalizado para 700.
 
 ### `--text-data` é obrigatoriamente tabular
 
-Número de linha, duração, contagem de faixas e orçamento de cota precisam **alinhar em coluna**.
-Os algarismos de Space Grotesk são **proporcionais por padrão** — `08` mede 15,8px e `11` mede
-11,2px, uma diferença de mais de um terço da largura do numeral.
+O utilitário `data-numeral` liga `font-variant-numeric: tabular-nums`. Sem ele, a diferença medida
+entre `08` e `11` desalinha a coluna em 4,6px nas telas de resultado.
 
-Por isso `tabular-nums` mora no utilitário `data-numeral`, não em cada uso. Um numeral que
-esquecesse a declaração não quebraria build nem teste — só deixaria a coluna torta.
-
-### Piso de legibilidade da grade densa (FR-044)
-
-Na tela de revisão, **nome de faixa e linha de artista não podem encolher** abaixo do que existia
-antes da 005: 0,875rem de corpo e 1,25rem de entrelinha absoluta.
-`tests/components/review.spec.tsx` fixa esse piso. Personalidade tipográfica não pode sair cara
-justamente na tela mais densa do aplicativo.
+**O utilitário sobreviveu à goteira, e de propósito.** Ele fazia duas coisas: dava o corpo do
+numeral da goteira e ligava `tabular-nums`. A goteira saiu; a numeração tabular ficou. Removê-lo
+junto seria uma regressão que a denylist **não pegaria** — o utilitário continuaria existindo, e
+só o alinhamento quebraria.
 
 ### A fonte embarcada
 
-Arquivo versionado em `src/assets/fonts/space-grotesk-subset.woff2` — **24 KB**, contra o teto de
-80 KB do SC-013. Nenhuma entrada no `package.json`, nenhuma origem remota (FR-039). A licença é
-SIL OFL 1.1 e o texto integral acompanha o arquivo em `src/assets/fonts/OFL.txt`, como a própria
-licença exige de redistribuição.
+Arquivo versionado em `src/assets/fonts/space-grotesk-subset.woff2` — **24 KB**. Nenhuma entrada
+no `package.json`, nenhuma origem remota. A licença é SIL OFL 1.1 e o texto integral acompanha o
+arquivo em `src/assets/fonts/OFL.txt`.
 
 Reproduzir o subconjunto, com `fontTools` em ambiente descartável:
 
@@ -201,39 +204,46 @@ pyftsubset sg-wght-400-700.ttf \
 `--layout-features+=tnum` **não é opcional**: `tnum` não está no conjunto que o `pyftsubset` retém
 por padrão, e sem essa linha a feature sairia em silêncio.
 
-### Fallback sem deslocamento (FR-037, SC-015)
+### Fallback sem deslocamento
 
 Durante o `swap`, a pilha nativa desenha o texto. O `@font-face` de fallback traz
 `size-adjust: 93.72%` — derivado da razão entre a altura de x de Space Grotesk (486/1000) e a de
-Arial (1062/2048) — mais `ascent-override` e `descent-override`. **Recalcular junto se o arquivo da
-fonte for trocado.**
+Arial (1062/2048) — mais `ascent-override` e `descent-override`. **Recalcular junto se o arquivo
+da fonte for trocado.**
 
 ---
 
-## 5. Espaçamento, raio, profundidade
+## 5. Espaçamento, raio, profundidade, layout
 
-### Espaçamento — 7 degraus
+### Espaçamento — 8 degraus
 
-`--space-1: 0.25rem` · `--space-2: 0.5rem` · `--space-3: 0.75rem` · `--space-4: 1rem` ·
-`--space-6: 1.5rem` · `--space-8: 2rem` · `--space-12: 3rem`
+`--spacing-0.5: 0.125rem` · `--spacing-1: 0.25rem` · `--spacing-2: 0.5rem` ·
+`--spacing-3: 0.75rem` · `--spacing-4: 1rem` · `--spacing-6: 1.5rem` · `--spacing-8: 2rem` ·
+`--spacing-12: 3rem`
 
 `--spacing: initial` está declarado: o Tailwind **não** gera `p-5` nem `p-13` sob demanda. Zero
 (`--spacing-0`) existe porque `inset-0` e `min-w-0` dependem dele, mas não é degrau — é a ausência
 de espaço.
 
-### Raio — 3 degraus
+O degrau de 2px entrou na 007 porque o arquivo de design o usa 73 vezes: é o respiro entre o nome
+da etapa e a linha de apoio, e colapsá-lo em 4px engordaria a trilha inteira.
 
-`--radius-control: 4px` · `--radius-card: 8px` · `--radius-pill: 9999px`
+### Raio — 5 degraus
 
-O raio de cartão caiu de 12px para 8px. É deliberado: cantos generosos são o registro visual do
-painel de SaaS genérico, e a tese do desenho é documento.
+| Token | Valor | Uso |
+| --- | --- | --- |
+| `--radius-hair` | 2px | Conector da trilha, barra de progresso |
+| `--radius-control` | 8px | Botão, campo, caixa de seleção |
+| `--radius-card` | 12px | Cartão, painel |
+| `--radius-panel` | 16px | Zona, cartão de destino, diálogo |
+| `--radius-pill` | 9999px | Chip, selo |
 
 ### Profundidade — assimétrica, e isso é escolha
 
 | Tema | Mecanismo |
 | --- | --- |
 | Claro | Um nível: `0 1px 2px rgb(20 28 38 / 6%), 0 4px 12px rgb(20 28 38 / 5%)` |
-| Escuro | **Nenhuma sombra.** Degrau de luminosidade (`--bg` → `--surface` → `--surface-raised`) mais filete de 1px |
+| Escuro | **Nenhuma sombra.** Degrau de luminosidade (`--bg` → `--surface-zone` → `--surface` → `--surface-raised`) mais filete de 1px |
 
 Sombra preta sobre fundo quase-preto não é visível. Aplicar o mesmo sistema aos dois substratos
 produziria um tema escuro chapado, com custo de renderização e nenhum benefício.
@@ -244,284 +254,547 @@ Existe **um** nível. Um segundo degrau para um elemento pequeno é escala fora 
 
 | Token | Valor | Papel |
 | --- | --- | --- |
-| `--measure` | 46rem | Largura máxima da coluna de conteúdo |
+| `--container-measure` | 42,5rem | Coluna primária de leitura |
 | `--container-panel` | 32rem | Largura do painel modal |
-| `--gutter` | 2,5rem | Goteira à esquerda: numeral e marca de estado |
-| `--breakpoint-gutter` | 40rem | Abaixo disto a goteira vira prefixo em linha |
+| `--rail-width` | 18,5rem | Largura da trilha de etapas |
+| `--side-panel-width` | 20,625rem | Painel lateral de apoio |
+| `--topbar-height` | 4,25rem | Altura mínima da barra superior |
+| `--chip-max-width` | 18,75rem | Teto de largura do chip de conexão |
+| `--breakpoint-shell` | 64rem | Abaixo daqui a casca colapsa |
+
+**`--breakpoint-shell` foi medido, não estimado**: 18,5rem de trilha + 42,5rem de coluna de
+leitura + 2rem de respiro lateral = 63rem de mínimo absoluto. 64rem é o primeiro rem inteiro
+acima disso. Abaixo, a coluna de leitura teria de encolher para caber a trilha — e a trilha existe
+para servir o conteúdo, não o contrário.
+
+O valor existe **duas vezes**: aqui e em `src/styles/breakpoints.ts`, porque CSS não lê constante
+de JavaScript e `@media` não aceita `var()`. `tests/components/shell.spec.tsx` falha se as duas
+divergirem.
+
+As três medidas de zona vivem como propriedade customizada simples, fora do `@theme`, porque não
+pertencem a nenhum espaço de nome que o Tailwind reconheça. Elas são consumidas pelos utilitários
+`zone-topbar`, `zone-rail`, `zone-side-panel` e `chip-measure` — **não** por `min-h-topbar`
+escrito no componente, que seria uma classe que não emite CSS nenhum.
 
 ---
 
-## 6. A assinatura: o número de linha que não solta
+## 6. A casca de três zonas
 
-**A goteira numerada é o elemento único desta interface, e ela é informação, não ornamento.**
-
-O número ao lado de uma faixa é **o número da linha que a pessoa colou**. Ele nasce na tela de
-entrada e sobrevive a tudo: à busca, à correspondência incerta, à edição manual, à deduplicação, à
-falha parcial, à reconexão depois de a sessão expirar, à retomada em lote. A linha 7 continua sendo
-a linha 7 na tela de falhas e no resumo.
+**A estrutura permanente da aplicação, e a assinatura desta versão.**
 
 ```text
-┌────┬────────────────────────────────────────┐
-│ 07 │ Caetano Veloso — Sozinho               │ ← entrada, como digitada
-│    │ ▸ Caetano Veloso · Sozinho      4:12   │ ← correspondência
-│    │ ◆ confiante                            │ ← estado: tinta + ícone + palavra
-├────┼────────────────────────────────────────┤
-│ 08 │ tim maia  -  azul da cor do mar        │
-│    │ ▸ Tim Maia · Azul da Cor do Mar 3:58   │
-│    │ ◇ incerta            [ver alternativas]│
-└────┴────────────────────────────────────────┘
+┌─ Barra superior ─────────────────────────────────────────────┐
+│ Marca            Chip Spotify · Chip YouTube │ ⌗ Tema        │
+├─ Trilha ──────────┬─ Área principal ─────────────────────────┤
+│ ETAPAS            │  ┌ Coluna primária ─┐  ┌ Painel lateral ┐│
+│  ① Configuração   │  │                  │  │   (opcional)   ││
+│  ② Destinos       │  └──────────────────┘  └────────────────┘│
+│  ③ Entrada        │                                          │
+│  ④ Serviço        ├─ Barra de ações (só Destinos e Entrada) ─┤
+│  ⑤ Resumo         │  Estado em texto            Voltar  Ir → │
+│ ↺ Recomeçar       │                                          │
+└───────────────────┴──────────────────────────────────────────┘
 ```
 
-Isso resolve o problema mais difícil que o produto tem — *"quais das minhas 60 linhas não entraram,
-e por quê?"* — com um recurso gráfico em vez de prosa. E é o que justifica a numeração existir:
-marcadores numerados costumam ser decoração, válidos apenas quando a ordem carrega informação de
-que o leitor precisa. Aqui carrega — é a chave primária do domínio exposta na interface.
+**Ordem no DOM = ordem visual de leitura**: barra superior → trilha → conteúdo → barra de ações.
+Nenhuma reordenação por CSS que descole as duas — é o que faz a ordem de tabulação seguir o olho
+sem `tabindex` positivo em lugar nenhum.
 
-Três consequências que amarram o resto do sistema:
+### O que cada zona responde
 
-- os algarismos tabulares deixam de ser refinamento e viram **requisito funcional**;
-- a goteira fixa deixa de ser capricho de layout e vira **a estrutura que unifica as telas** — a
-  borda esquerda do conteúdo fica na mesma posição em todo o fluxo, e é o que faz cinco telas
-  parecerem cinco páginas do mesmo documento;
-- o âmbar ganha um segundo trabalho além do botão: é a cor da identidade da linha.
+| Zona | A pergunta que ela responde | Substrato |
+| --- | --- | --- |
+| Barra superior | "Estou conectado?" | `--surface-zone` |
+| Trilha | "Onde eu estou, e o que já decidi?" | `--surface-zone` |
+| Área principal | "O que faço agora?" | `--bg` |
+| Barra de ações | "Posso avançar? Se não, por quê?" | `--bg` |
 
-**Toda a ousadia está aqui.** O resto — botões, campos, diálogos, cartões — é deliberadamente
-sóbrio. A régua de progresso foi rebaixada a indicador comum de propósito: dois elementos
-memoráveis é o mesmo que nenhum.
+### A trilha decide nada
 
-A regra de origem é `lineNumeral()` em `src/domain/run/numeral.ts` — função pura, uma só, porque
-três telas diferentes precisam produzir o mesmo numeral para a mesma linha.
+`src/app/StepRail.tsx` **desenha** o que `src/domain/rail/` devolve. Quais degraus existem, como
+se numeram e o que cada um declara é regra de negócio, e regra de negócio não mora em componente.
+A regra "a etapa Resumo só existe com mais de um destino" tinha duas cópias antes da 007 — entre
+o indicador e o redutor da fila — e agora tem um lar único, testável sem DOM.
+
+### Anatomia do indicador — a distinção é por forma
+
+| Estado | Disco | Conteúdo | Conector | Tinta do nome |
+| --- | --- | --- | --- | --- |
+| `done` | Preenchido `--accent` | Ícone `check` em `--accent-ink` | `--accent` | `--ink` |
+| `current` | Tingido (`--accent-tint`) | Numeral em `--accent-text` | `--rule` | `--ink` |
+| `pending` | Vazado, contorno `--rule-strong` | Numeral em `--ink-muted` | `--rule` | `--ink-muted` |
+
+**Esta tabela é a razão pela qual `--ink-faint` não existe.** Preenchido / tingido / vazado é
+forma, e forma sobrevive a cores forçadas e a daltonismo.
+
+### A linha de apoio nunca afirma o que não aconteceu
+
+Uma regra, e ela cobre quatro requisitos: **enquanto a etapa não está concluída, a linha descreve
+o que fazer; depois de concluída, descreve o que foi decidido.**
+
+É o que separa esta implementação do mockup. O arquivo de design mostra "Spotify e YouTube" sob
+Destinos já na tela de Configuração — e reproduzir isso seria a trilha declarando uma escolha que
+o usuário ainda não fez.
+
+### Largura estreita
+
+Abaixo de `--breakpoint-shell` a trilha **não é renderizada**: o `StepSummary` toma o seu lugar no
+topo do conteúdo, o painel lateral desce para baixo da coluna primária, e a ação de recomeçar
+migra para a barra superior.
+
+A troca acontece em JavaScript e não por `display: none` porque as duas formas carregam
+`aria-current="step"`, e duas cópias — mesmo com uma escondida — seriam dois portadores da mesma
+afirmação para qualquer coisa que leia o DOM sem aplicar CSS.
+
+O `StepSummary` é **informação, não navegação**: sem estado de abertura, sem controle acionável
+novo, sem parada de tabulação adicional.
+
+### A barra de ações, e onde ela não existe
+
+**Apenas Destinos e Entrada. A lista é fechada**, e vive num único ponto —
+`ACTION_BAR_BY_STEP` em `src/app/Shell.tsx`.
+
+Configuração, ciclo de serviço e Resumo mantêm as ações **dentro do cartão que as explica**. Em
+particular, "Pular o {serviço}" permanece adjacente ao cartão de conexão, reautorização, orçamento
+e revisão. Redesenhar sim; realocar não — mover a ação para uma faixa genérica desfaria a ligação
+entre o que se pula e onde se está.
+
+Quando o avanço não é possível, o **motivo é dito por escrito** na faixa, e a indisponibilidade é
+perceptível sem cor: o botão fica `disabled` — atributo que o navegador anuncia e o teclado
+respeita — e o motivo está à esquerda, com prefixo e ícone.
 
 ---
 
 ## 7. Componentes
 
-Regra transversal, e é a que mais importa (FR-047):
+Regra transversal, e é a que mais importa: **estado nunca depende só de cor.** Todo estado carrega
+pelo menos dois canais entre tinta, forma, ícone e palavra.
 
-> **Preenchimento sólido significa acionável.**
-> Selo e indicador de estado **nunca** usam preenchimento sólido. Usam fundo tingido + ícone +
-> rótulo textual + tinta na cor do estado.
-
-É essa separação **por forma**, não uma diferença de matiz, que impede o selo "incerta" âmbar de
-ser lido como o botão primário âmbar.
-
-Estados obrigatórios para todo elemento interativo (FR-015): repouso, foco por teclado, hover,
-ativo, desabilitado e — quando aplicável — erro e carregando.
+Segunda regra transversal: **preenchimento sólido significa acionável — e principal.** Estado usa
+fundo tingido com contorno, ícone e rótulo, nunca preenchimento. É o que impede o selo "incerta",
+que é âmbar, de ser confundido com o botão de avançar, que também é âmbar.
 
 ### 7.1 `Button` — `src/ui/Button.tsx`
 
-Ação. Variantes resolvidas por **mapa explícito de literais**, nunca por concatenação: uma classe
-montada em tempo de execução não é emitida no CSS, e a falha só aparece no build.
+`--radius-control` (8px). Quatro variantes, e só uma tem fundo cheio.
 
-| Variante | Repouso | Hover | Quando usar |
-| --- | --- | --- | --- |
-| `primary` | `--accent`, texto `--accent-ink` | `--accent-deep` | A ação que faz a etapa avançar. **Uma por tela.** |
-| `secondary` | `--surface`, texto `--ink`, borda `--rule-strong` | `--surface-raised` | Ações de apoio |
-| `danger` | `--surface`, texto e borda `--state-missing` | fundo tingido de `--state-missing` | Remover credencial, descartar rascunho |
-| `ghost` | Transparente, texto `--ink-muted` | `--surface-raised`, texto `--ink` | Ação terciária, dentro de linha |
+| Variante | Repouso | Hover | Ativo | Desabilitado |
+| --- | --- | --- | --- | --- |
+| `primary` | `--accent` sólido, texto `--accent-ink` | `--accent-deep` | `--accent-deep` | `opacity: 50%`, cursor bloqueado, sem hover |
+| `secondary` | `--surface`, contorno `--rule-strong` | `--surface-raised` | idem | idem |
+| `danger` | `--surface`, tinta e contorno `--state-missing` | `--state-missing-tint` | idem | idem |
+| `ghost` | transparente, tinta `--ink-muted` | `--surface-raised`, tinta `--ink` | idem | idem |
 
-**Quando não usar**: para navegação entre páginas — use link. Para estado — use selo.
+**Foco**: `outline` de 2px em `--accent-text`, com `outline-offset: 2px`. Nunca `box-shadow`.
 
-- **Foco**: `outline: 2px solid var(--accent-text)`, offset 2px. Nunca `box-shadow`.
-- **Desabilitado**: opacidade reduzida + `cursor: not-allowed`, sem alteração de matiz.
-- **Tamanhos**: `md` (padrão) e `sm`.
-- **Mudança na 005**: `primary` deixou de ser verde com texto claro e passou a âmbar com texto
-  escuro. Texto claro sobre âmbar é proibido — não há variante que o permita.
+**`danger` não é preenchido** de propósito: um botão destrutivo sólido competiria com a ação
+primária da mesma tela pela mesma pista visual.
 
 ### 7.2 `TextField` e `TextArea` — `src/ui/`
 
-| Estado | Tratamento |
+`--radius-control` (8px). Contorno `--rule-strong` — carrega significado, é ele que separa a área
+digitável do substrato.
+
+| Estado | Aparência |
 | --- | --- |
-| Repouso | Fundo `--surface`, borda `--rule-strong`, texto `--ink` |
-| Foco | `outline` em `--accent-text`; fundo passa a `--surface-raised` |
-| Erro | Borda `--state-missing` + mensagem abaixo em `--state-missing`, com ícone |
-| Desabilitado | Opacidade reduzida, borda `--rule` |
+| Repouso | `--surface`, contorno `--rule-strong` |
+| Foco | Fundo passa a `--surface-raised`, mais o `outline` do anel de foco |
+| Erro | Contorno `--state-missing`, `aria-invalid`, mensagem com `role="alert"` |
+| Aviso | Mensagem em `--state-uncertain`, **sem** invalidar o campo |
+| Desabilitado | Herda o padrão do navegador; nenhum estilo próprio |
 
-Rótulo **sempre** associado e visível, nunca substituído por *placeholder*. Mensagem de erro nunca
-depende só de cor (FR-017).
-
-`TextArea` é onde a lista é colada — a área de maior importância do fluxo. Usa `--text-body` com
-entrelinha 1,55, e é o único lugar onde a altura cresce com o conteúdo.
+O `TextArea` difere em uma coisa: `font-mono`. A lista colada é dado tabular, e o alinhamento
+entre "título - artista" de linhas sucessivas é o que deixa conferir de relance.
 
 ### 7.3 `Toggle` — `src/ui/Toggle.tsx`
 
-Alternância booleana. Trilho em `--rule-strong` quando desligado, `--accent` quando ligado, botão
-em `--surface`. **Estado anunciado por texto**, não só pela posição.
+`<button role="switch">` com `aria-checked`. Trilho `--radius-pill`.
 
-**Quando não usar**: quando existirem mais de dois estados, ou quando "não escolhido" precisar ser
-distinguível — foi por isso que o controle de tema é `radiogroup`, e não interruptor.
+Ligado: trilho `--accent`, botão com o glifo `done` dentro. Desligado: trilho `--surface-raised`,
+contorno `--rule-strong`, botão liso.
+
+**O glifo é a distinção por forma.** Sem ele, a única diferença entre os dois estados seria a
+posição do botão e a cor do trilho — e a posição sozinha é sutil num controle de 48px.
 
 ### 7.4 `Dialog` — `src/ui/Dialog.tsx`
 
-Sobreposição modal sobre `<dialog>` nativo. Véu em `--scrim`: `--ink` a 35% no claro, preto a 55%
-no escuro. Painel em `--surface`, `--radius-card`, largura `--container-panel`.
+`<dialog>` nativo, `showModal()` sempre. `--radius-panel` (16px), contorno `--rule-strong`, véu
+`--scrim`, largura `--container-panel`.
 
-Foco preso dentro enquanto aberto, devolvido ao gatilho ao fechar, fecha por `Esc`. **No tema
-escuro o painel não recebe sombra** — separa-se do véu por luminosidade.
+**Analogia declarada** — ver seção 12.
 
 ### 7.5 `StatusBadge` — `src/features/review/StatusBadge.tsx`
 
-**O componente onde a decisão do FR-047 mais importa.**
+O componente onde a regra de FR-024 mais importa. Anatomia: fundo tingido + contorno na cor do
+estado + ícone + rótulo textual. **Nunca preenchimento sólido.**
 
-Anatomia fixa: fundo tingido (12% claro / 15% escuro) + ícone + rótulo textual + tinta na cor do
-estado. Filete de 1px na cor do estado a 30%. `--radius-pill`.
-
-| Estado | Cor | Ícone | Rótulo |
+| Estado | Tinta | Ícone (papel) | Rótulo |
 | --- | --- | --- | --- |
-| Confiante | `--state-confident` | Losango cheio | "confiante" |
-| Incerta | `--state-uncertain` | Losango vazado | "incerta" |
-| Não encontrada | `--state-missing` | Traço | "não encontrada" |
-| Neutro | `--ink-muted` | — | contexto |
+| `confident` | `--state-confident` | `confident` (`gem`) | "Confiante" |
+| `uncertain` | `--state-uncertain` | `uncertain` | "Incerta" |
+| `not_found` | `--state-missing` | `missing` | "Não encontrada" |
+| `unparsed` | `--state-uncertain` | `uncertain` | "Não interpretada" |
+| `searching` | `--ink-muted` | `loading` | "Buscando" |
+| `pending` · `discarded` | `--ink-muted` | — | Rótulo próprio |
 
-**Três canais redundantes** — cor, forma do ícone e palavra — porque o modo de cores forçadas
-remove o primeiro e o daltonismo compromete a distinção teal/âmbar para parte dos usuários. Restar
-dois canais é o objetivo, não o acidente.
+`pending` e `discarded` não têm ícone: são ausência de resultado, não um resultado. Dar-lhes um
+glifo sugeriria que algo foi decidido.
 
-Os ícones são SVG e não glifos: `◆` e `◇` estão fora do subconjunto embarcado e cairiam na pilha
-nativa, com forma e alinhamento imprevisíveis por sistema.
+### 7.6 `StepRail` e `StepSummary` — `src/app/`
 
-**Nunca** preenchimento sólido — é o que o separa de um botão.
+Ver seção 6.
 
-### 7.6 `StepIndicator` — `src/app/StepIndicator.tsx`
+### 7.7 `ConnectionChip` — `src/features/connect/ConnectionChip.tsx`
 
-Régua de `--accent` que preenche conforme o fluxo avança, com os nomes das etapas em `--text-meta`
-abaixo. Etapa atual em `--ink`, concluídas em `--ink-muted`, futuras em `--ink-muted` a 60%.
+Três estados, distinguíveis por **rótulo e forma**, não só por cor.
 
-Semântica preservada: `nav` + `ol`, `aria-current="step"` e a contagem "N de T" para leitor de
-tela. **A régua é `aria-hidden`** — duplica visualmente o que a lista já diz.
+| Estado | Ícone do provedor | Indicador | Conta | Ações |
+| --- | --- | --- | --- | --- |
+| `connected` | Cor de marca | Ponto `--state-live` preenchido | Identificador | Reconectar · Sair |
+| `disconnected` | Cor de marca, esmaecido | Anel vazado `--rule-strong` | — | Conectar |
+| `no-credential` | Neutro (`--ink-muted`) | Ausente | **Nunca** | Configurar |
 
-Transição de 200ms no preenchimento, suprimida sob `prefers-reduced-motion`.
+**`no-credential` nunca exibe identificador de conta** — nem vazio, nem genérico. Não houve
+autorização, e um lugar reservado para a conta sugere que houve.
 
-**Quando não usar**: para fases dentro de uma etapa. As seis fases do ciclo por serviço aparecem
-como sublinha textual, não como etapas globais — promovê-las tornaria o indicador ilegível.
+**Nenhum dos três é beco sem saída.** É o defeito que a feature 004 fechou e a 007 preserva: a
+lista era "provedores com sessão ativa", e o serviço sumia do cabeçalho no exato instante em que a
+sessão caía, levando junto o seu único ponto de interação.
 
-### 7.7 `ThemeControl` — `src/features/theme/ThemeControl.tsx`
+O nome acessível das ações diz "a conta do {serviço}" e não "ao {serviço}", para não colidir com o
+botão primário da etapa de conexão. Dois controles com o mesmo nome acessível deixam quem usa
+leitor de tela sem como escolher entre eles.
 
-Três opções em `radiogroup`: **Claro · Escuro · Sistema**.
+### 7.8 `ActionBar` — `src/app/ActionBar.tsx`
 
-| Estado | Tratamento |
-| --- | --- |
-| Selecionado | `--surface-raised`, texto `--ink`, borda `--rule-strong` |
-| Não selecionado | Transparente, texto `--ink-muted` |
-| Foco | `outline` em `--accent-text` no segmento focado |
+Estado à esquerda, ações à direita. Avançar é a **única** ação primária; retornar é `ghost`.
 
-Abaixo de `--breakpoint-gutter` mostra só ícones, **mantendo o nome acessível** (o rótulo vira
-`sr-only`, não desaparece). Setas navegam e selecionam; só o segmento selecionado fica na ordem de
-tabulação, de modo que o grupo inteiro é uma parada de Tab.
+Três estados do lado esquerdo, e eles dizem coisas diferentes:
 
-**Por que não é um interruptor**: um binário sol/lua satisfaz a letra do requisito e é mais
-compacto, mas torna "voltar a acompanhar o sistema" inalcançável depois do primeiro clique. O
-estado inicial viraria um beco sem saída.
+| Estado | Ícone | Texto |
+| --- | --- | --- |
+| Livre | `status-ok` em `--state-confident` | O estado da etapa |
+| Bloqueado | `hint` em `--state-uncertain` | "Para avançar:" + o motivo |
+| Ocupado | `loading` em `--ink-muted` | "Carregando…" |
 
-### 7.8 `SearchProgress` — `src/features/review/SearchProgress.tsx`
-
-Continua usando `<progress>` **nativo**, por acessibilidade. Preenchimento em `--accent`, trilho em
-`--surface-raised`, contagem em `--text-data` tabular para que o número não dance enquanto sobe.
-
-É por causa deste componente que `color-scheme` precisa ser declarado por tema — sem isso o tema
-escuro entrega uma barra clara no meio da tela.
+**Bloqueado e ocupado não são o mesmo estado.** No primeiro o usuário precisa *fazer* algo; no
+segundo, *esperar*. Tratá-los juntos faria a faixa acusar o usuário de não ter feito nada quando o
+aplicativo é que está trabalhando.
 
 ### 7.9 `MatchRow` — `src/features/review/MatchRow.tsx`
 
-**Onde a assinatura vive.** Ver seção 6.
+A linha da tela mais densa. Caixa de seleção, numeral tabular, entrada como colada em
+`--text-meta`, correspondência em `--text-body`.
 
-Estrutura: goteira (`--gutter`, com caixa de seleção e numeral) + coluna de conteúdo com entrada
-original, correspondência e selo empilhados. Abaixo do breakpoint a goteira colapsa e o numeral
-vira prefixo em linha, preservando o alinhamento tabular.
+**Capa de terceiro recebe contorno `--rule-strong`**: são imagens com cores arbitrárias e precisam
+de contorno para se separar do fundo nos dois temas. É por causa deste uso que `--rule-strong`
+precisa dos 3:1 que tem.
 
-Capa de álbum (`i.scdn.co`, `i.ytimg.com`): 32px, 1px de `--rule-strong`, `--radius-control`. São
-imagens de terceiro com cores arbitrárias e precisam de contorno para se separar do fundo nos dois
-temas (FR-021).
+### 7.10 `ThemeControl` — `src/features/theme/ThemeControl.tsx`
 
-### 7.10 Componentes menores
+Três opções, não um interruptor. Padrão de `radiogroup`: setas movem **e** selecionam, e só o
+segmento selecionado fica na ordem de tabulação — o grupo inteiro é **uma** parada de Tab.
 
-| Componente | Tratamento |
+Um interruptor binário tornaria "acompanhar o sistema" inalcançável depois do primeiro clique.
+
+Abaixo do ponto de corte da casca sobra só o ícone; o rótulo vira `sr-only`, não desaparece.
+
+### 7.11 Componentes menores
+
+| Componente | Anatomia |
 | --- | --- |
-| `StepHeading` | `--text-step`. Recebe foco na transição de etapa |
-| `CopyButton` | `ghost`; confirmação por texto, não só por ícone |
-| `MaskedValue` | `--text-data` tabular; alternância de visibilidade anunciada |
-| `VersionHintBadge` | Anatomia de selo neutro; nunca preenchimento sólido |
-| `RateLimitWaiting` | `--ink-muted` + contagem em `--text-data`; sem animação sob movimento reduzido |
-| `LiveRegion` | Sem estilo próprio; aceita `data-numeral` quando a mensagem visível é contagem |
-| `DraftRecoveryBanner` | `--surface`, guia de 3px em `--accent` à esquerda (`guide-edge`), texto `--ink` |
-| `FolderNotice`, `AuthError` | Faixa informativa; erro usa `--state-missing` com ícone e rótulo |
+| `CopyButton` | `Button` `secondary` `sm` + `LiveRegion` que anuncia o desfecho |
+| `VersionHintBadge` | `status-badge` com tinta `--state-uncertain` e ícone `uncertain` |
+| `RateLimitWaiting` | Cartão `--radius-card`, fundo `--state-uncertain-tint`, ícone `loading` girando |
+| `LiveRegion` | `aria-live` sempre presente, mesmo vazia |
+| `QueueIndicator` | `role="status"` com ícone `queue` e a posição por extenso |
+| `DraftRecoveryBanner` | `guide-edge` (barra âmbar de 3px), fundo `--surface` |
+| `Greeting` | `--text-meta`, degrada para "Olá" sem conta conectada |
 
-### 7.11 Utilitários nomeados
+### 7.12 Utilitários nomeados
 
-Recorrência que aparece em três ou mais lugares vira utilitário, **nunca string copiada**.
+Recorrência que aparece em três ou mais lugares vira utilitário, nunca string copiada entre
+componentes.
 
-| Utilitário | Papel |
+| Utilitário | O que carrega |
 | --- | --- |
-| `app-card` | Superfície + borda `--rule` + `--radius-card` + espaçamento + `shadow-card` |
-| `focus-ring` | `outline` de 2px em `--accent-text` com offset de 2px |
-| `status-badge` | Anatomia base do selo, sem preenchimento sólido |
-| `field-message` | Mensagem sob campo |
-| `gutter-row` | Grade de duas colunas (goteira + conteúdo) com colapso responsivo |
-| `data-numeral` | `--text-data` com `tabular-nums` e tracking |
-| `guide-edge` | Guia lateral de 3px em `--accent` |
+| `app-card` | Cartão: raio, contorno, superfície, respiro, profundidade |
+| `focus-ring` | Anel de foco por `outline` |
+| `status-badge` | Anatomia base do selo de estado |
+| `field-message` | Mensagem de apoio de campo |
+| `data-numeral` | Numeral tabular |
+| `guide-edge` | Barra âmbar de 3px à esquerda |
+| `icon-glyph` | Tamanho em `1em`, proteção em flex, alinhamento óptico |
+| `zone-topbar` · `zone-rail` · `zone-side-panel` · `chip-measure` | As medidas das zonas |
+| `brand-mark` · `sticker` · `sticker-faint` · `ambient-backdrop` · `mood-photo-veil` | Tratamento de decoração por tema |
 
 ---
 
-## 8. Interação e acessibilidade
+## 8. Ícones
+
+**Uma superfície pede um papel, nunca um componente.** `<Icon role="advance" />`, nunca
+`<LuArrowRight />`.
+
+`src/ui/icons.ts` é o único arquivo do projeto que importa de `react-icons`. A regra é imposta
+duas vezes: `tp/no-icon-library-import` pega no editor,
+`tests/unit/icon-roles.spec.ts` pega em CI.
+
+### Os dezenove papéis
+
+`brand` · `theme-light` · `theme-dark` · `theme-system` · `restart` · `reconnect` · `advance` ·
+`back` · `done` · `status-ok` · `confident` · `uncertain` · `missing` · `hint` · `queue` ·
+`loading` · `external` · `provider-spotify` · `provider-youtube`
+
+Dezoito vêm da biblioteca — dezesseis do Lucide, dois do Phosphor. **A marca é o único que resolve
+para arte**: `Logo Mark.png`, que não existe em biblioteca alguma, não herda `currentColor` e
+exige tratamento por tema.
+
+### As três regras de consumo
+
+1. **Cor vem do contexto.** `currentColor`, sempre. Um ícone que fixa a própria cor sobrevive à
+   troca de tema com a cor errada, e a falha é invisível em revisão de código.
+2. **Tamanho acompanha o tipo do contexto.** `1em`, nunca medida avulsa — é o que impede a escala
+   finita de tipografia de ser contornada por uma escala paralela de ícones.
+3. **Semântica pelo papel na frase.** Decorativo quando acompanha rótulo textual; nome acessível
+   próprio quando é o único conteúdo de um controle.
+
+**Importação por subcaminho** (`react-icons/lu`, `react-icons/pi`), nunca do índice raiz: o índice
+puxa a árvore inteira sem emitir aviso nenhum.
+
+### Por que uma dependência, se o projeto escreve SVG à mão
+
+Decisão de padronização explícita do autor, registrada no **Complexity Tracking** do plano.
+Transcrever os dezesseis SVGs à mão era mais simples e tecnicamente viável; o que se ganha em
+troca é rastreabilidade — o nome do ícone no arquivo de design mapeia para um componente nomeado,
+e não para um caminho SVG anônimo que ninguém consegue conferir contra o desenho.
+
+---
+
+## 9. Decoração
+
+Três elementos, todos versionados localmente, todos servidos da própria origem. **Nenhum carrega
+informação.**
+
+| Elemento | Recurso | Onde |
+| --- | --- | --- |
+| Fundo ambiente | `Ambient Backdrop.png` (617 KB) | Área principal, todas as etapas |
+| Fotografia de clima | `loja-de-discos-….jpg` (292 KB) | Painel lateral de Destinos |
+| Adesivos | 11 PNGs (23 KB no total) | Painel lateral de Destinos |
+
+### Peso sem teto, proteção comportamental
+
+A primeira visita transfere ~930 KB de decoração. **Não há teto de peso**, por decisão explícita
+registrada no plano. A contrapartida é obrigatória:
+
+- fora do caminho crítico de renderização;
+- carregamento diferido e decodificação assíncrona;
+- espaço pré-dimensionado — nada se desloca quando o recurso chega;
+- sem imagem alguma, a tela permanece plenamente utilizável e sem buraco.
+
+Os portões são `e2e/decor-loading.spec.ts` e `e2e/no-remote-origin.spec.ts`.
+
+### Tratamento por tema é obrigatório
+
+**Um único tratamento para os dois substratos é erro, não simplificação.** As artes foram
+compostas contra um quase-preto, e a medição de T074 quantifica o que isso significa:
+
+| Arte | Sobre `--bg` claro | Sobre `--bg` escuro |
+| --- | --- | --- |
+| `Vinyl 2.png` | **1,40** | 12,62 |
+| demais adesivos | 1,67 – 2,80 | 6,31 – 10,57 |
+| `Logo Mark.png` | 1,88 | 9,42 |
+
+**Todas as doze artes perdem entre 4× e 9× de contraste no tema claro.** `Vinyl 2` cruza o limiar
+em que a silhueta deixa de ser perceptível e recebe variante própria (`sticker-faint`); as demais
+usam o tratamento genérico.
+
+**Nenhum teste automatizado pega isto.** `src`, `alt` vazio, tamanho e carregamento diferido estão
+corretos nos doze casos. É o item de maior risco da conferência manual.
+
+---
+
+## 10. Interação e acessibilidade
 
 ### Foco
 
-`outline`, **nunca** `box-shadow`. O modo de cores forçadas descarta sombra e preserva contorno —
-um foco feito de `box-shadow` desaparece exatamente para quem mais depende dele.
+`outline` de 2px em `--accent-text`, com `outline-offset: 2px`. **Nunca `box-shadow`** — o modo de
+cores forçadas descarta sombra e preserva contorno, e um foco feito de sombra desaparece
+exatamente para quem mais depende dele.
 
-Cor: `--accent-text`, que diverge entre os temas (5,1:1 no claro, 9,4:1 no escuro), ambos acima do
-mínimo de 3:1.
+### Ordem de tabulação
+
+Barra superior → trilha → conteúdo → barra de ações. Igual à ordem visual, garantida pela ordem no
+DOM. Nenhum `tabindex` positivo em lugar nenhum.
+
+O link "Ir para o conteúdo" vem antes de tudo e aponta para o `<main>` da área principal. Ele
+importa mais na 007 do que importava antes: há mais controles a pular.
 
 ### Estado nunca depende só de cor
 
-Todo estado carrega **palavra e forma** além da cor (FR-017). É o que faz a informação sobreviver
-ao modo de alto contraste e ao daltonismo — e sai de graça da decisão do FR-047.
+Todo estado carrega pelo menos dois canais entre tinta, forma, ícone e palavra. É por isso que a
+etapa pendente da trilha é um disco **vazado**, e não uma tinta mais fraca.
+
+### Cores forçadas
+
+As três zonas ganham contorno próprio sob `@media (forced-colors: active)`. Neste modo o navegador
+descarta `background-color`, e o degrau de luminosidade que separa `--bg` de `--surface-zone`
+desaparece — as três zonas viram uma superfície só, e a estrutura fica ilegível justamente para
+quem mais depende de estrutura.
 
 ### Movimento
 
-Praticamente nenhum. A régua de etapa avança em 200ms; o resto é instantâneo. Sob
-`prefers-reduced-motion: reduce`, também a régua para de animar, **sem perda de informação** — ela
-já é `aria-hidden` e o estado está dito por escrito.
+O sistema quase não tem movimento: conector da trilha e transição de estado dos degraus em 200ms,
+e o resto é instantâneo. Sob `prefers-reduced-motion` até eles param — sem perda de informação,
+porque o conector já é `aria-hidden` e o estado está escrito no nome e na linha de apoio.
+
+A mesma regra cobre a decoração, sem que cada componente repita a consulta.
 
 ### Dois temas, sempre
 
-Todo token de cor existe nos dois temas. **Definição parcial é erro**, não recurso, e o teste de
-contraste falha por token ausente. A suíte de acessibilidade roda inteira duas vezes, uma por tema.
+Toda superfície nova nasce verificada nos dois. `tests/unit/contrast.spec.ts` falha por par
+reprovado **ou ausente**, e também quando um token existe em apenas um tema.
+
+A árvore de zonas e componentes é **idêntica** entre os temas; a única divergência autorizada é
+cromática.
 
 ### Tela estreita
 
-Sem rolagem horizontal em 320 px. Nenhum contêiner usa largura fixa em pixels; as colunas usam
-`minmax(0, …)` para que o conteúdo encolha em vez de estourar a página.
+De 320px a 1920px, nenhuma rolagem horizontal. A casca colapsa em 64rem. A 200% de zoom de texto
+as três zonas continuam legíveis e nenhuma corta conteúdo — é por isso que a barra superior usa
+`min-height` e não `height`.
 
 ---
 
-## 9. Os portões que sustentam este documento
+## 11. Decisões da 005 que este sistema substitui
 
-Nenhum invariante desta feature sobrevive como prosa. Cada regra acima tem verificação executável:
+**Registradas com o motivo, não apagadas.** Uma decisão revertida sem explicação vira folclore, e
+alguém a reintroduz achando que está corrigindo um esquecimento.
 
-| Regra | Portão |
+### 11.1 A goteira numerada
+
+**O que era**: uma coluna reservada de 2,5rem à esquerda, em todas as telas, carregando o numeral
+da linha. A 005 a chamava de "a assinatura" e escrevia que ela era "o elemento único desta
+interface".
+
+**Por que sai**: o arquivo de design oficial não a tem, e FR-001 diz que ele vence. Mas o motivo
+mais forte é que **a trilha faz melhor o que a goteira fazia**. A tese da goteira era "a borda
+esquerda do conteúdo fica na mesma posição em todo o fluxo, e é o que faz cinco telas parecerem
+cinco páginas do mesmo documento". A trilha entrega a mesma continuidade e ainda **diz onde você
+está** — a goteira parecia consistente, a trilha informa.
+
+**O que sobrevive**: o numeral. Ele continua sendo o número da linha que a pessoa colou, continua
+nascendo na entrada e sobrevivendo à busca, à edição e à falha parcial. O que mudou é que ele
+deixou de ter coluna própria. `lineNumeral()` em `src/domain/run/numeral.ts` continua sendo a
+origem única, e `data-numeral` continua garantindo o alinhamento tabular.
+
+### 11.2 A coluna única de 46rem
+
+**O que era**: uma coluna centralizada, com a largura da linha de texto confortável.
+
+**Por que muda para 42,5rem**: ela deixou de ser a tela inteira. Agora divide a largura com a
+trilha (18,5rem) e, em Destinos, com o painel lateral. Encolher a medida foi a alternativa a
+encolher a trilha, e a trilha carrega estado.
+
+### 11.3 O indicador horizontal de etapas
+
+**O que era**: `StepIndicator` — uma régua de progresso `aria-hidden` mais uma lista horizontal com
+`aria-current="step"` e contagem "N de T" para leitor de tela.
+
+**Por que sai**: era uma faixa fina que competia por atenção com a goteira e perdia. A 005 a
+rebaixou de propósito — "dois elementos memoráveis é o mesmo que nenhum".
+
+**O que sobrevive**: os três comportamentos acessíveis, integralmente. A régua virou o conector
+vertical entre discos, também `aria-hidden`; a contagem virou o `ordinal` do domínio; o
+`aria-current="step"` permanece literal, e continua aparecendo **uma única vez** por etapa.
+
+### 11.4 O raio de cartão fechado em 8px
+
+**O que era**: a 005 fechou o raio de cartão de 12px para 8px com uma tese explícita — "cantos
+generosos são o registro visual do painel de SaaS genérico, e a tese do desenho é documento, não
+painel".
+
+**Por que reverte**: o arquivo de design oficial reabre para 12px, e FR-001 diz que ele vence. A
+tese da 005 não estava errada; ela foi **substituída por uma decisão de outra autoridade**. Fica
+registrada porque é um argumento bom, e quem quiser reabri-lo precisa saber que ele já foi feito.
+
+### 11.5 `--text-item` como degrau próprio
+
+**O que era**: um sétimo degrau tipográfico, 0,9375rem, para o nome de faixa na conciliação.
+
+**Por que sai**: media exatamente o mesmo que `--text-body` e divergia só em entrelinha e peso —
+distinção que o componente declara melhor do que a escala. Foi fundido em `--text-body`.
+
+O **piso de legibilidade** que ele protegia continua valendo: nenhum texto com conteúdo desce
+abaixo de `--text-meta`, e a tela mais densa do aplicativo não é onde a legibilidade sai barata.
+
+### 11.6 `SessionHeader` como lista de contas
+
+**O que era**: uma `<ul>` no cabeçalho listando "destinos selecionados com credencial salva".
+
+**Por que sai**: o chip de conexão cobre tudo que ele mostrava e mais — o estado `no-credential`,
+que ele simplesmente não exibia. Manter os dois significaria a mesma informação em dois lugares,
+com estados que podem divergir.
+
+**O que sobrevive**: o defeito que a 004 fechou continua fechado. Nenhum estado é beco sem saída, e
+"Desconectar" permanece — o arquivo de design não a desenha, mas silêncio do design não é remoção,
+e sem ela quem quer trocar de conta fica sem caminho.
+
+---
+
+## 12. Analogias adotadas
+
+O arquivo de design não desenha todas as superfícies que a aplicação tem. **Silêncio do design não
+é remoção**: a superfície permanece e recebe vocabulário por analogia com a coisa mais próxima que
+o design define.
+
+| Superfície | Analogia | Justificativa |
+| --- | --- | --- |
+| `Dialog` | O **painel** — cartão de destino e painel lateral | É a superfície mais alta da pilha; daí `--radius-panel` (16px), contorno `--rule-strong` e largura `--container-panel` |
+| Selo "incerta" | O selo de correspondência confiante | Mesma família visual do `gem`; a distinção entre os três estados é por forma, tinta e rótulo. Ícone: `LuTriangleAlert` |
+| Selo "não encontrada" | Idem | Ícone: `LuSearchX` — entre os candidatos de ausência, o único que diz **a busca não encontrou** em vez de **proibido** ou **removido**. O estado é ausência de resultado, não erro do usuário |
+| `VersionHintBadge` | O selo de correspondência | Anatomia completa: fundo tingido, contorno, ícone `uncertain` e rótulo. Nunca preenchimento sólido |
+| `RateLimitWaiting` | A **caixa de dica** | Cartão baixo, fundo tingido, contorno na cor do estado. Tinta de "incerta" e não de erro: uma pausa por limite de taxa é o serviço pedindo calma, não uma falha, e pintá-la de vermelho ensinaria o usuário a temer o normal |
+| `ReauthDialog` | O `Dialog` | Herda a analogia de painel |
+| `DraftRecoveryBanner` | Cartão com `guide-edge` | Barra âmbar de 3px à esquerda: preenchimento é o único uso autorizado do âmbar cheio, e a barra migra a informação de fundo tingido para estrutura |
+
+---
+
+## 13. Os portões que sustentam este documento
+
+Este guia descreve; os testes obrigam.
+
+| Portão | O que garante |
 | --- | --- |
-| Contraste dos pares aprovados, nos dois temas | `tests/unit/contrast.spec.ts` |
-| Nenhum token removido sobreviveu; escalas finitas respeitadas | `tests/unit/no-orphan-tokens.spec.ts` |
-| Nenhum valor visual avulso no componente | `tp/no-raw-visual-values` (ESLint) |
-| Zero violação de acessibilidade, nos dois temas | `tests/a11y/steps.spec.tsx` |
-| Piso de legibilidade da grade densa | `tests/components/review.spec.tsx` |
-| Nenhuma origem remota | `tests/unit/no-secrets.spec.ts` + `e2e/no-remote-origin.spec.ts` |
-| Textos existentes inalterados | `tests/unit/i18n-stability.spec.ts` |
-| Chave de tema em sincronia com o script de arranque | `tests/unit/theme-boot-sync.spec.ts` |
-| Sem piscada de tema, persistência, troca durante execução | `e2e/theme.spec.ts` |
-| Foco visível e teclado, nos dois temas | `e2e/keyboard.spec.ts` |
-| Sem rolagem horizontal em 320 px, nos dois temas | `e2e/narrow-viewport.spec.ts` |
+| `tests/unit/contrast.spec.ts` | Os 27 pares nos dois temas; token ausente em um tema é erro |
+| `tests/unit/no-orphan-tokens.spec.ts` | Nenhum utilitário de token removido sobrevive em `src/` |
+| `tests/unit/icon-roles.spec.ts` | Todo papel resolve; nenhuma importação da biblioteca fora do mapa |
+| `tests/unit/rail-composition.spec.ts` | A trilha nunca afirma uma escolha que não aconteceu |
+| `tests/components/shell.spec.tsx` | As três zonas, nos dois temas e nas duas larguras |
+| `tests/components/action-bar.spec.tsx` | O motivo do bloqueio é dito por escrito |
+| `tests/a11y/steps.spec.tsx` | axe em todas as etapas, nos dois temas e nas duas larguras |
+| `e2e/decor-loading.spec.ts` | Conteúdo operável antes da decoração; nada se desloca |
+| `e2e/no-remote-origin.spec.ts` | Nenhuma requisição a terceiro, inclusive decorativa |
+| `e2e/narrow-viewport.spec.ts` | De 320px a 1920px, sem rolagem horizontal |
+| `e2e/keyboard.spec.ts` | Ordem de tabulação pelas três zonas; foco visível |
+| `tp/no-raw-visual-values` | Valor visual avulso no componente |
+| `tp/no-icon-library-import` | Importação de ícone fora do mapa |
+| `tp/no-dynamic-classname` | Classe montada em tempo de execução |
 
-Se você mudar um valor e um destes falhar, **o portão está certo até prova em contrário**.
+**O modo de falha que todos eles existem para pegar é o mesmo**: no Tailwind, utilitário
+inexistente **não é erro**. A classe simplesmente não emite CSS, o build passa, o `typecheck`
+passa, e a tela fica sem estilo até alguém abri-la.
 
 ---
 
-## 10. Fronteira que este guia não atravessa
+## 14. Fronteira que este guia não atravessa
 
-Escrita de interface — voz ativa, erro que não se desculpa, tela vazia como convite — **não é
-assunto deste documento**. A feature 005 congelou todos os textos existentes de propósito: mexer em
-copy junto com identidade visual misturaria duas mudanças de natureza diferente na mesma revisão.
+**Ele não descreve o que a aplicação faz.** Fluxo, regras de correspondência, cota, fila de
+serviços e persistência vivem nas specs de cada feature e nos contratos delas.
 
-Os únicos textos que nasceram aqui são os do controle de tema. Revisão de copy do fluxo fica
-registrada como candidata a feature própria.
+**Ele não substitui a conferência manual.** As asserções estruturais não pegam desalinhamento de
+2px, peso tipográfico errado nem adesivo invisível sobre o tema claro. A lista de conferência tela
+a tela é versionada em
+`specs/007-official-design-alignment/checklists/design-fidelity.md`.
+
+**Ele não decide texto.** Todo rótulo vive em `src/i18n/pt-BR.ts`, e a revisão de copy do fluxo
+continua sendo uma feature própria que ninguém abriu.

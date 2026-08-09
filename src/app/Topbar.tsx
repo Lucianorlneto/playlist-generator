@@ -94,8 +94,13 @@ export function Topbar({ narrow = false }: TopbarProps) {
           carrega significado — de um lado o estado das contas, do outro os
           controles da aplicação —, e `--rule` dá 1,37:1, que é filete
           (`contracts/tokens.md` §1).
+
+          **Some abaixo do ponto de corte.** Ali a barra quebra em várias linhas,
+          e um divisor vertical entre grupos que deixaram de estar lado a lado
+          vira um traço solto no fim de uma linha — separando nada de nada. Foi o
+          que a conferência de fidelidade em 375px mostrou.
         */}
-        <span aria-hidden="true" className="bg-rule-strong h-6 w-px shrink-0" />
+        <span aria-hidden="true" className="bg-rule-strong hidden h-6 w-px shrink-0 shell:block" />
 
         <ThemeControl />
 

@@ -461,7 +461,12 @@
 }
 
 :root .mood-photo-veil {
-  background-image: linear-gradient(to top, var(--surface-zone) 10%, rgb(255 255 255 / 35%) 100%);
+  /* O degrau de branco existe para a fotografia não brigar com o off-white ao
+     redor, e **só isso**. A primeira versão usava 35% e lavava a imagem inteira:
+     a foto virava um retângulo pálido, que é a versão clara do mesmo problema
+     que FR-049 existe para impedir no escuro. 14% dá o assentamento sem apagar
+     o assunto. */
+  background-image: linear-gradient(to top, var(--surface-zone) 6%, rgb(255 255 255 / 14%) 100%);
 }
 
 [data-theme='dark'] .mood-photo-veil {

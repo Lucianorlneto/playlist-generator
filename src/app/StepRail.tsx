@@ -172,7 +172,13 @@ export function StepRail() {
         FR-065). Em largura estreita a trilha não é renderizada e a ação migra
         para a barra superior; **nunca existe nos dois lugares** (FR-054).
       */}
-      <div className="border-rule mt-6 border-t pt-4">
+      {/*
+        `empty:hidden` porque `ResetFlow` devolve `null` quando não há trabalho a
+        descartar — comportamento da feature 006, preservado. Sem isso, o filete
+        divisor fica sozinho no rodapé da trilha, anunciando uma seção que não
+        existe. Foi o que a primeira conferência de fidelidade mostrou.
+      */}
+      <div className="border-rule mt-6 border-t pt-4 empty:hidden">
         <ResetFlow />
       </div>
     </nav>

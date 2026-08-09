@@ -99,13 +99,42 @@ A analogia adotada MUST ser registrada no guia de estilo (FR-064).
 
 ## 5. Medição de pacote (SC-018)
 
-| Momento | Tamanho do pacote | Delta | Data |
+| Momento | JS | CSS | Data |
 | --- | --- | --- | --- |
-| Antes de `react-icons` | JS 357,79 kB (gzip 107,57 kB) · CSS 26,34 kB (gzip 5,84 kB) | — | 2026-08-09 |
-| Depois, com os dezesseis ícones | _a preencher (T085)_ | | |
+| Antes de `react-icons` | 357,79 kB (gzip 107,57 kB) | 26,34 kB (gzip 5,84 kB) | 2026-08-09 |
+| Depois, com a feature inteira | 409,75 kB (gzip 139,24 kB) | 31,20 kB (gzip 6,92 kB) | 2026-08-09 |
+| **Delta** | **+51,96 kB (gzip +31,67 kB)** | **+4,86 kB (gzip +1,08 kB)** | |
 
 Medido com `rm -rf dist && npm run build`, contando os artefatos de
 `dist/assets/` — o `.map` não entra, porque não é transferido ao navegador.
 
-O acréscimo deve corresponder aos ícones efetivamente usados, não ao conjunto. A
-marca não entra na conta: ela é arte local e já estava versionada.
+### O acréscimo corresponde aos ícones usados, não ao conjunto
+
+**O delta acima não é dos ícones.** Ele mede a feature inteira, que acrescentou
+`Shell`, `Topbar`, `StepRail`, `StepSummary`, `ActionBar`, `ConnectionChip`,
+`Greeting`, `Stickers`, `AmbientBackdrop`, `MoodPanel`, o domínio da trilha e as
+duas faixas de ação. A pergunta do SC-018 é outra: **entrou o conjunto ou só o
+que se usa?**
+
+A resposta é medida contando quantas assinaturas de caminho SVG de cada conjunto
+aparecem no pacote emitido:
+
+| Conjunto | Caminhos no conjunto | Caminhos no pacote | Peso dos dados |
+| --- | --- | --- | --- |
+| Lucide (`react-icons/lu`) | 2.197 | **22** | 625 B |
+| Phosphor (`react-icons/pi`) | 8.951 | **3** | 1.332 B |
+
+Os dois conjuntos somam **6,45 MB** de fonte (`lu/index.mjs` 793 kB +
+`pi/index.mjs` 5,66 MB). O que chegou ao pacote foram **1.957 bytes de dados de
+caminho** — os dezoito papéis, alguns compartilhando geometria entre si.
+
+A importação por subcaminho fez o que FR-056 esperava dela. Importar do índice
+raiz teria trazido os 6,45 MB **sem emitir aviso nenhum**, e o custo só
+apareceria aqui.
+
+Os recursos decorativos entram como arquivos próprios, fora do JS:
+`Ambient Backdrop.png` 617,33 kB e a fotografia de clima 292,12 kB — os ~930 kB
+que FR-069 autorizou sem teto, com a proteção comportamental descrita em
+`contracts/decor.md` §3.
+
+A marca não entra na conta: é arte local e já estava versionada.

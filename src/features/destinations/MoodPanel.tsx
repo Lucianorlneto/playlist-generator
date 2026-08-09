@@ -1,5 +1,4 @@
 import moodPhoto from '@/assets/imgs/loja-de-discos-1637873416794_1920x1279 (1).jpg';
-import { t } from '@/i18n/pt-BR';
 import { Stickers } from '@/ui/Stickers';
 
 /**
@@ -9,12 +8,18 @@ import { Stickers } from '@/ui/Stickers';
  * `--side-panel-width` ao lado dela, e em largura estreita desce para baixo, pelo
  * `flex-wrap` do `Shell`. É a forma executável de FR-020.
  *
- * ## O que ele carrega, e o que não carrega
+ * ## Ele é decoração inteira, e nenhum texto
  *
- * A fotografia e os adesivos são **decoração** — `aria-hidden`, `alt` vazio,
- * carregados de forma diferida. Nenhuma informação vive aqui que não esteja na
- * coluna primária, e com imagens desabilitadas a etapa continua completa
- * (SC-014). O texto de apoio existe porque é conteúdo, não legenda da foto.
+ * A primeira versão repetia aqui o título e a introdução da etapa. Ficou óbvio
+ * na primeira conferência de fidelidade por que isso está errado: **a mesma
+ * frase aparecia duas vezes na mesma tela**, uma na coluna de leitura e outra a
+ * 30cm dela. Repetir não é reforçar — é dividir a atenção entre duas cópias e
+ * obrigar o leitor a conferir se dizem a mesma coisa.
+ *
+ * O painel ficou com o que o arquivo de design põe nele: clima. Fotografia e
+ * adesivos, ambos `aria-hidden` com `alt` vazio, carregados de forma diferida.
+ * Com imagens desabilitadas a etapa continua completa, porque **nada** que
+ * exista aqui é informação (SC-014).
  *
  * A sobreposição em degradê é **declarada por tema** (FR-049): a que o design
  * mostra caminha para o quase-preto e escureceria demais sobre papel. As duas
@@ -28,7 +33,7 @@ export function MoodPanel() {
         desloca quando ela carrega (FR-070, SC-020), e sem imagem o painel não
         colapsa num buraco.
       */}
-      <div className="mood-photo aspect-video w-full">
+      <div className="mood-photo aspect-[3/4] w-full">
         <img
           src={moodPhoto}
           alt=""
@@ -40,11 +45,13 @@ export function MoodPanel() {
         <span aria-hidden="true" className="mood-photo-veil" />
       </div>
 
-      <div className="relative flex flex-col gap-2 p-4">
-        <Stickers />
-        <p className="text-ink text-section">{t.destinations.groupLabel}</p>
-        <p className="text-ink-muted text-meta">{t.destinations.intro}</p>
-      </div>
+      {/*
+        Os adesivos sobrepõem o painel inteiro. **Sem `-z-10`**: a primeira
+        versão os punha atrás, e como o painel tem fundo próprio eles ficavam
+        invisíveis — o defeito que só a conferência visual pega, porque `src`,
+        `alt` e tamanho estavam todos corretos.
+      */}
+      <Stickers />
     </div>
   );
 }

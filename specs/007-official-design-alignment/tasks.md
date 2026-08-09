@@ -249,9 +249,9 @@ quando uma zona, um componente ou um token deixa de estar presente.
 só com o guia em mãos, como deve ser um chip de conexão desconectado — e conferir
 com a aplicação e com o arquivo de design.
 
-- [ ] T079 [US5] Reescrever `docs/style-guide.md` descrevendo as famílias de cor com seus papéis, as escalas de tipo, espaço, raio e profundidade, e a anatomia e os estados de cada componente — inclusive repouso, foco, hover, ativo, desabilitado, erro e carregando (FR-043, SC-009)
-- [ ] T080 [P] [US5] Registrar em `docs/style-guide.md` as decisões da 005 substituídas, **com o motivo**, a partir de `contracts/token-migration.md` §6: a goteira numerada, a coluna única de 46rem, o indicador horizontal, e a tese do raio fechado de 8px que o design oficial reverte para 12px (FR-044)
-- [ ] T081 [P] [US5] Registrar em `docs/style-guide.md` a analogia adotada para cada superfície que o design não desenha — diálogo de confirmação, selo de versão, aviso de espera por limite de taxa, selos de correspondência incerta e não encontrada (FR-064, `contracts/icons.md` §2)
+- [X] T079 [US5] Reescrever `docs/style-guide.md` descrevendo as famílias de cor com seus papéis, as escalas de tipo, espaço, raio e profundidade, e a anatomia e os estados de cada componente — inclusive repouso, foco, hover, ativo, desabilitado, erro e carregando (FR-043, SC-009)
+- [X] T080 [P] [US5] Registrar em `docs/style-guide.md` as decisões da 005 substituídas, **com o motivo**, a partir de `contracts/token-migration.md` §6: a goteira numerada, a coluna única de 46rem, o indicador horizontal, e a tese do raio fechado de 8px que o design oficial reverte para 12px (FR-044)
+- [X] T081 [P] [US5] Registrar em `docs/style-guide.md` a analogia adotada para cada superfície que o design não desenha — diálogo de confirmação, selo de versão, aviso de espera por limite de taxa, selos de correspondência incerta e não encontrada (FR-064, `contracts/icons.md` §2)
 
 ---
 
@@ -260,12 +260,12 @@ com a aplicação e com o arquivo de design.
 **Purpose**: fechar a migração com o portão que a declara encerrada e conferir o
 que nenhum teste pega.
 
-- [ ] T082 Reescrever a denylist de `tests/unit/no-orphan-tokens.spec.ts` a partir de `contracts/token-migration.md` §5, literalmente: resquício da goteira, `text-item`, importação de `@/app/StepIndicator` ou `@/features/connect/SessionHeader`, hex da paleta anterior fora de `tokens.css`, e importação de ícone fora do mapa. **Este teste é o critério objetivo de "a migração terminou"**. FR-060 **não** precisa de entrada na denylist: os nove PNGs que eram ícone de interface foram removidos do repositório em 2026-08-09, e a marca é exceção declarada (FR-029, FR-056, FR-059, FR-060, SC-011, SC-016)
-- [ ] T083 [P] Criar `specs/007-official-design-alignment/checklists/design-fidelity.md` com a lista de conferência tela a tela — composição de zonas, hierarquia de componentes, proporção e ritmo do espaçamento, peso tipográfico e alinhamento, e legibilidade da decoração **no tema claro também** — versionada junto com a feature (FR-073)
-- [ ] T084 Percorrer as onze telas nos dois temas contra o arquivo de design com `npm run dev`, preencher `specs/007-official-design-alignment/checklists/design-fidelity.md` e não deixar discrepância aberta (SC-001a)
-- [ ] T085 Medir o pacote **depois** com `npm run build` e comparar com a linha de base de T001, registrando o resultado na linha "Depois" da tabela de `contracts/icons.md` §5; o acréscimo deve corresponder aos ícones efetivamente usados, não ao conjunto (SC-018)
-- [ ] T086 Rodar o portão local completo — `npm run lint`, `npm run typecheck`, `npm test` — e corrigir o que falhar (Fluxo de Desenvolvimento da constituição)
-- [ ] T087 Rodar `npm run test:e2e` inteiro e confirmar que os sete arquivos da tabela de `quickstart.md` §8 passam **sem alteração de expectativa**; qualquer expectativa que precise mudar é sinal de que a feature saiu do escopo (FR-005, SC-006, SC-010)
+- [X] T082 Reescrever a denylist de `tests/unit/no-orphan-tokens.spec.ts` a partir de `contracts/token-migration.md` §5, literalmente: resquício da goteira, `text-item`, importação de `@/app/StepIndicator` ou `@/features/connect/SessionHeader`, hex da paleta anterior fora de `tokens.css`, e importação de ícone fora do mapa. **Este teste é o critério objetivo de "a migração terminou"**. FR-060 **não** precisa de entrada na denylist: os nove PNGs que eram ícone de interface foram removidos do repositório em 2026-08-09, e a marca é exceção declarada (FR-029, FR-056, FR-059, FR-060, SC-011, SC-016)
+- [X] T083 [P] Criar `specs/007-official-design-alignment/checklists/design-fidelity.md` com a lista de conferência tela a tela — composição de zonas, hierarquia de componentes, proporção e ritmo do espaçamento, peso tipográfico e alinhamento, e legibilidade da decoração **no tema claro também** — versionada junto com a feature (FR-073)
+- [X] T084 Percorrer as onze telas nos dois temas contra o arquivo de design com `npm run dev`, preencher `specs/007-official-design-alignment/checklists/design-fidelity.md` e não deixar discrepância aberta (SC-001a)
+- [X] T085 Medir o pacote **depois** com `npm run build` e comparar com a linha de base de T001, registrando o resultado na linha "Depois" da tabela de `contracts/icons.md` §5; o acréscimo deve corresponder aos ícones efetivamente usados, não ao conjunto (SC-018)
+- [X] T086 Rodar o portão local completo — `npm run lint`, `npm run typecheck`, `npm test` — e corrigir o que falhar (Fluxo de Desenvolvimento da constituição)
+- [X] T087 Rodar `npm run test:e2e` inteiro e confirmar que os sete arquivos da tabela de `quickstart.md` §8 passam **sem alteração de expectativa**; qualquer expectativa que precise mudar é sinal de que a feature saiu do escopo (FR-005, SC-006, SC-010)
 
 ---
 
