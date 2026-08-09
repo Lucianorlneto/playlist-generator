@@ -57,7 +57,7 @@ test.describe('SC-016 — tela de 375 px', () => {
     await expect(page.getByRole('heading', { name: t.input.heading })).toBeVisible();
     await page.getByLabel(t.input.textareaLabel).fill(LISTA);
     await semRolagemHorizontal(page);
-    await page.getByRole('button', { name: t.input.start, exact: true }).click();
+    await page.getByRole('button', { name: t.input.start }).click();
 
     // Etapa 4 — ciclo do Spotify: conexão, revisão e resultado.
     await botaoConectar(page, SPOTIFY).click();
@@ -114,7 +114,7 @@ test.describe('SC-016 — tela de 375 px', () => {
     await page.getByRole('button', { name: t.common.next, exact: true }).click();
     // Um título genérico, que cai na regra de margem e pede escolha humana.
     await page.getByLabel(t.input.textareaLabel).fill('Amor');
-    await page.getByRole('button', { name: t.input.start, exact: true }).click();
+    await page.getByRole('button', { name: t.input.start }).click();
     await botaoConectar(page, SPOTIFY).click();
     await expect(tituloRevisao(page, SPOTIFY)).toBeVisible();
 
@@ -139,7 +139,7 @@ test.describe('SC-016 — tela de 375 px', () => {
     await page.getByRole('button', { name: t.common.next, exact: true }).click();
     await page.getByRole('button', { name: t.common.next, exact: true }).click();
     await page.getByLabel(t.input.textareaLabel).fill('Bohemian Rhapsody - Queen');
-    await page.getByRole('button', { name: t.input.start, exact: true }).click();
+    await page.getByRole('button', { name: t.input.start }).click();
     await botaoConectar(page, SPOTIFY).click();
     await expect(tituloRevisao(page, SPOTIFY)).toBeVisible();
 
@@ -199,7 +199,7 @@ test.describe('FR-023 e SC-011 — 320 px nos dois temas', () => {
       // Etapa 3 — entrada, com uma linha deliberadamente longa.
       await page.getByLabel(t.input.textareaLabel).fill(LISTA);
       await semRolagemHorizontal(page);
-      await page.getByRole('button', { name: t.input.start, exact: true }).click();
+      await page.getByRole('button', { name: t.input.start }).click();
 
       // Etapa 4 — serviço e revisão, onde a goteira colapsa em prefixo.
       await botaoConectar(page, SPOTIFY).click();

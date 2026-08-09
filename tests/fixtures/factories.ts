@@ -10,7 +10,6 @@ import {
   type MatchItem,
   type MatchStatus,
   type ProviderSession,
-  type RunOutcome,
   type ServiceRun,
   type TrackCandidate,
   type WorkDraft,
@@ -215,44 +214,6 @@ export function makeQueue(
   }
 
   return { order, currentIndex: 0, runs, ...rest };
-}
-
-/**
- * Fila com desfecho declarado por destino (`006/T002`).
- *
- * `exitAfterSkip` decide por **desfecho**, não por fase, e a fronteira de
- * FR-003 é `outcome !== 'skipped'` — o que exige montar filas com `completed`,
- * `partial`, `failed` e `skipped` misturados. Montar isso à mão em cada teste
- * convidaria ao estado impossível de um `outcome` sem a `phase` correspondente,
- * e um teste sobre estado impossível verifica um sistema que não existe.
- *
- * `null` é o destino que ainda não rodou: fica `pending`, sem desfecho.
- */
-export function makeQueueWithOutcomes(
-  order: ProviderId[],
-  outcomes: Partial<Record<ProviderId, RunOutcome | null>>,
-  overrides: Omit<Partial<ExecutionQueue>, 'runs'> = {},
-): ExecutionQueue {
-  const runs = {} as Record<ProviderId, ServiceRun>;
-
-  for (const provider of order) {
-    const outcome = outcomes[provider] ?? null;
-    runs[provider] =
-      outcome === null
-        ? makeRun(provider)
-        : makeRun(provider, {
-            outcome,
-            phase: outcome === 'skipped' ? 'skipped' : outcome === 'failed' ? 'failed' : 'done',
-            // "Rodou" significa ter chegado a existir na conta. Um desfecho
-            // `completed` ou `partial` sem `result` seria outro estado
-            // impossível: `outcomeOf` só os produz a partir de um resultado.
-            ...(outcome === 'completed' || outcome === 'partial'
-              ? { result: makeResult(outcome === 'partial' ? { addedCount: 1 } : {}) }
-              : {}),
-          });
-  }
-
-  return { order, currentIndex: 0, runs, ...overrides };
 }
 
 export function makeDestinations(

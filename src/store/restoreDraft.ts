@@ -9,7 +9,6 @@
  * recuperado e oferece descartar.
  */
 
-import { hasWork } from '@/domain/work';
 import { loadDraft } from '@/services/storage/draftRepo';
 
 import { useAppStore } from './index';
@@ -24,11 +23,15 @@ export function restoreDraft(migrated = false): RestoreOutcome {
   const draft = loadDraft();
   if (draft === null) return { restored: false, migrated: false };
 
-  // **Sem** `queueCounts` (`006/data-model §2`): um rascunho gravado com a fila
-  // montada e nada mais não vale restaurar — não há o que devolver ao usuário.
-  // A fronteira do botão de recomeço é outra, e o parâmetro é o que mantém as
-  // duas visíveis a partir do ponto de chamada.
-  if (!hasWork(draft)) return { restored: false, migrated: false };
+  const hasWork =
+    draft.rawText.trim() !== '' ||
+    draft.lines.length > 0 ||
+    draft.queue.order.some((provider) => {
+      const run = draft.queue.runs[provider];
+      return run !== undefined && (run.items.length > 0 || run.creation !== null);
+    });
+
+  if (!hasWork) return { restored: false, migrated: false };
 
   useAppStore.setState({
     rawText: draft.rawText,

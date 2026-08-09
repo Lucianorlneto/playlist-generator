@@ -4,7 +4,6 @@ import { linesFor } from '@/domain/run/lines';
 import { capabilitiesOf, type ProviderId } from '@/domain/providers';
 import { nameOf } from '@/features/credential/providerText';
 import { ListReduction } from '@/features/input/ListReduction';
-import { SkipButton } from '@/features/service/SkipButton';
 import { format, plural, t } from '@/i18n/pt-BR';
 import { useAppStore } from '@/store';
 import { Button } from '@/ui/Button';
@@ -145,12 +144,15 @@ export function QuotaEstimateScreen({ provider }: QuotaEstimateScreenProps) {
             >
               {t.quota.reduceList}
             </Button>
-            <SkipButton
-              provider={provider}
+            <Button
               variant="secondary"
               size="sm"
-              label={format(t.quota.skipDestination, { service })}
-            />
+              onClick={() => {
+                dispatchRun({ type: 'skipped' }, provider);
+              }}
+            >
+              {format(t.quota.skipDestination, { service })}
+            </Button>
           </div>
 
           {/* Declaração da premissa — texto, não ação (FR-034). */}
@@ -166,7 +168,14 @@ export function QuotaEstimateScreen({ provider }: QuotaEstimateScreenProps) {
           >
             {t.quota.proceed}
           </Button>
-          <SkipButton provider={provider} label={format(t.quota.skipDestination, { service })} />
+          <Button
+            variant="ghost"
+            onClick={() => {
+              dispatchRun({ type: 'skipped' }, provider);
+            }}
+          >
+            {format(t.quota.skipDestination, { service })}
+          </Button>
         </div>
       )}
 

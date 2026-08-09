@@ -369,18 +369,6 @@ const messages = {
       'Pular o {service}? O que já foi criado nos outros serviços continua intacto e será relatado.',
     endService: 'Encerrar este serviço',
     skipped: 'O {service} foi pulado. Nada foi criado na sua conta desse serviço.',
-
-    // Confirmação do **único** caminho em que pular descarta trabalho: o último
-    // destino de uma fila em que nada rodou (`006/FR-005`). Nos outros cinco
-    // pontos de pulo não há diálogo (FR-012).
-    //
-    // Não confundir com `skipConfirm` acima, que existe desde a 002 e nunca foi
-    // renderizado: aquele texto tranquiliza sobre o que já foi criado em outros
-    // serviços — a mensagem do caso em que **algo rodou**, e é justamente nesse
-    // caso que FR-012 proíbe confirmar.
-    skipEndsFlowTitle: 'Pular o {service} encerra o fluxo',
-    skipEndsFlowBody:
-      'Este é o último serviço e nenhum outro foi concluído. Pular descarta a lista colada e a configuração da playlist.',
   },
 
   // -------------------------------------------------------------------------
@@ -632,25 +620,6 @@ const messages = {
       'O rascunho salvo veio de uma versão diferente do aplicativo e foi descartado por segurança.',
     keptAfterQuota:
       'O rascunho foi preservado. Você pode consultar o relato acima e descartá-lo quando quiser — não há retomada depois que o orçamento do dia acaba.',
-  },
-
-  // -------------------------------------------------------------------------
-  // Recomeço do fluxo (`006/US3`, US4) e o que sobrevive a um descarte
-  // -------------------------------------------------------------------------
-
-  flow: {
-    reset: 'Recomeçar',
-    resetTitle: 'Recomeçar do zero?',
-    resetBody: 'A lista colada, as correções e a configuração da playlist serão descartadas.',
-    /**
-     * `resetKeeps` é compartilhado com a confirmação de pular que encerra o
-     * fluxo (`006/ui-contract §3`): o que é preservado é literalmente o mesmo
-     * conjunto, e duas redações do mesmo fato divergiriam com o tempo.
-     */
-    resetKeeps: 'Suas credenciais e as contas conectadas continuam salvas.',
-    resetKeepsPlaylist:
-      'As playlists já criadas permanecem nas suas contas — nada é removido de lá.',
-    resetConfirm: 'Descartar e recomeçar',
   },
 
   errors: {

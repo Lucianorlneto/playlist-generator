@@ -2,9 +2,9 @@ import { useMemo } from 'react';
 
 import type { ProviderId } from '@/domain/providers';
 import { nameOf } from '@/features/credential/providerText';
-import { SkipButton } from '@/features/service/SkipButton';
 import { format, t } from '@/i18n/pt-BR';
 import { useAppStore } from '@/store';
+import { Button } from '@/ui/Button';
 import { StepHeading } from '@/ui/StepHeading';
 
 import { MatchRow } from './MatchRow';
@@ -29,6 +29,7 @@ export interface ReviewScreenProps {
 export function ReviewScreen({ provider }: ReviewScreenProps) {
   const stepToken = useAppStore((state) => state.stepToken);
   const run = useAppStore((state) => state.queue.runs[provider] ?? null);
+  const dispatchRun = useAppStore((state) => state.dispatchRun);
 
   // Estabilizado: `run?.items ?? []` cria um array novo quando não há execução,
   // o que invalidaria os `useMemo` abaixo a cada render.
@@ -90,7 +91,14 @@ export function ReviewScreen({ provider }: ReviewScreenProps) {
       <PlaylistConfigForm provider={provider} />
 
       <div>
-        <SkipButton provider={provider} />
+        <Button
+          variant="ghost"
+          onClick={() => {
+            dispatchRun({ type: 'skipped' }, provider);
+          }}
+        >
+          {format(t.queue.skipService, { service })}
+        </Button>
       </div>
     </section>
   );

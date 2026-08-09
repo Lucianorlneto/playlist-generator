@@ -9,7 +9,6 @@
  */
 
 import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import axe from 'axe-core';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
@@ -23,9 +22,7 @@ import { ResultScreen } from '@/features/result/ResultScreen';
 import { ReauthDialog } from '@/features/connect/ReauthDialog';
 import { SessionHeader } from '@/features/connect/SessionHeader';
 import { ReviewScreen } from '@/features/review/ReviewScreen';
-import { SkipButton } from '@/features/service/SkipButton';
 import { SummaryScreen } from '@/features/summary/SummaryScreen';
-import { ResetFlow } from '@/app/ResetFlow';
 import { t } from '@/i18n/pt-BR';
 import { configureProviderClient } from '@/services/providers/http';
 import { createRefresher } from '@/services/providers/spotify/auth';
@@ -490,74 +487,6 @@ describe('004/V17 — reconexão sem violação séria ou crítica', () => {
 
   it('o cabeçalho com um serviço desconectado não introduz violação', async () => {
     const { container } = render(<SessionHeader />);
-    await semViolacoes(container);
-  });
-});
-
-/**
- * V15 — os dois diálogos da `006` (`006/FR-023`, SC-008).
- *
- * Ambos são `<dialog>` nativo pelo primitivo `Dialog`, que a 004 trouxe. O que
- * este bloco audita não é o elemento — é o **conteúdo** que a 006 põe dentro
- * dele: título rotulando o diálogo, corpo e o par de ações.
- *
- * A contenção de foco continua fora do alcance do axe em happy-dom, e a prova
- * dela segue sendo o Playwright (D1 do `004/plan.md`).
- */
-describe('006 — diálogos de pular e de recomeçar', () => {
-  const linha006 = makeLine({ id: 'l006', index: 0 });
-
-  function semearTrabalho006(runs?: Record<string, ReturnType<typeof makeRun>>) {
-    useAppStore.setState({
-      step: 'service',
-      rawText: 'Bohemian Rhapsody - Queen',
-      lines: [linha006],
-      credentials: makeCredentials({ spotify: CLIENT_ID }),
-      sessions: makeSessions({ spotify: makeSession('spotify') }),
-      destinations: { selected: ['spotify'], locked: true },
-      queue: makeQueue(['spotify'], {
-        currentIndex: 0,
-        runs: runs ?? {
-          spotify: makeRun('spotify', { phase: 'connect', lineIds: [linha006.id] }),
-        },
-      }),
-    });
-  }
-
-  it('o diálogo de pular que encerra o fluxo não introduz violação', async () => {
-    semearTrabalho006();
-    const { container } = render(<SkipButton provider="spotify" />);
-
-    await userEvent.click(screen.getByRole('button', { name: /Pular/ }));
-    await semViolacoes(container);
-  });
-
-  it('o diálogo de recomeço não introduz violação', async () => {
-    semearTrabalho006();
-    const { container } = render(<ResetFlow />);
-
-    await userEvent.click(screen.getByRole('button', { name: t.flow.reset }));
-    await semViolacoes(container);
-  });
-
-  it('o diálogo de recomeço com playlist já criada também passa', async () => {
-    semearTrabalho006({
-      spotify: makeRun('spotify', {
-        phase: 'done',
-        outcome: 'completed',
-        lineIds: [linha006.id],
-        result: makeResult(),
-      }),
-    });
-    const { container } = render(<ResetFlow />);
-
-    await userEvent.click(screen.getByRole('button', { name: t.flow.reset }));
-    await semViolacoes(container);
-  });
-
-  it('o botão de recomeço no cabeçalho não introduz violação', async () => {
-    semearTrabalho006();
-    const { container } = render(<ResetFlow />);
     await semViolacoes(container);
   });
 });

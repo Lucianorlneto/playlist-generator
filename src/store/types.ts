@@ -134,14 +134,6 @@ export interface RunSlice {
   /** Aplica um evento do ciclo à execução corrente (ou à indicada). */
   dispatchRun: (event: RunEvent, provider?: ProviderId) => void;
   advance: () => void;
-  /**
-   * O ato inteiro de pular um destino (`006/FR-001`, FR-008): cancelar o que
-   * está em voo, encerrar, avançar a fila e chegar à tela certa.
-   *
-   * **Não confirma nada** (invariante S3): a confirmação de FR-005 é decisão da
-   * interface, que consulta `exitAfterSkip` antes de chamar.
-   */
-  skipService: (provider: ProviderId) => void;
   reduceUpcoming: (provider: ProviderId, lineIds: string[]) => void;
 
   setEstimate: (provider: ProviderId, estimate: QuotaEstimate | null) => void;
