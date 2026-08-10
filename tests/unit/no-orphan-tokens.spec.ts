@@ -472,10 +472,23 @@ describe('007 · a migração 005 → 007 terminou', () => {
       O que permanece em `src/assets/imgs/` é arte: os onze adesivos, a
       fotografia de clima, o fundo ambiente e a marca — que é exceção declarada
       (`contracts/icons.md` §1).
+
+      A marca são **três** arquivos, e não um. `Logo Mark.png` é o que a casca
+      importa hoje (`src/ui/icons.ts`); `logotipo.png` e `icon.png` são as outras
+      duas formas da identidade — a assinatura por extenso e o símbolo isolado —
+      mantidas aqui por decisão do autor para o uso que vier. Elas não são
+      importadas por nenhum módulo, então o Vite não as empacota: o custo é de
+      repositório, não de artefato servido.
+
+      Esta lista continua sendo o portão do FR-060 e **não** é o lugar de guardar
+      versão anterior de arte. Arquivo de backup não entra aqui; ou ele é a arte
+      em uso, ou sai da pasta.
     */
     const ARTE_PERMITIDA = new Set([
       'Ambient Backdrop.png',
       'Logo Mark.png',
+      'logotipo.png',
+      'icon.png',
       'Boombox.png',
       'Cassette 1.png',
       'Cassette 2.png',
