@@ -1,0 +1,70 @@
+[
+  {
+    "chave": "errors.",
+    "motivo": "Estados de erro de rede, de autorização e de plataforma. O arquivo de design não desenha nenhum deles — nem uma tela de erro existe nas quatorze. Cada mensagem é acionável por exigência própria (causa provável + próximo passo), e permanece por FR-008."
+  },
+  {
+    "chave": "connect.",
+    "motivo": "Conexão e **reconexão** por serviço. O arquivo desenha uma única tela de conexão (`DP6mq`), cujos três textos estão inventariados; o resto do ramo é o fluxo de perda de sessão no meio do trabalho, que a feature 004 construiu e que o arquivo não desenha em tela nenhuma — diálogo de reautorização, progresso preservado, custo da retomada, conta trocada."
+  },
+  {
+    "chave": "review.",
+    "motivo": "Revisão das correspondências. Os textos que o arquivo desenha estão inventariados um a um, nas telas `dIPW6` e `ND2Zm`; o que sobra são rótulos de coluna, nomes acessíveis por item, os demais estados de correspondência (duplicata, descartada, sem conteúdo, falha na busca), o progresso da busca e o motivo de atenção por cota — nenhum deles aparece no arquivo, que mostra a revisão sempre no mesmo estado."
+  },
+  {
+    "chave": "quota.",
+    "motivo": "Orçamento diário. A tela `TSwx6` mostra a estimativa **dentro do saldo**, e os seus textos estão inventariados; o restante é o caminho de bloqueio e o de esgotamento durante a criação, que o arquivo não desenha. É também o ramo mais assimétrico entre provedores, e a constituição exige que a limitação seja dita onde ela afeta o que o usuário pode fazer."
+  },
+  {
+    "chave": "reduction.",
+    "motivo": "Ajuste da lista para um destino posterior. O arquivo desenha o botão que leva a ele (`idpQO`, inventariado) e não desenha a tela. É um caminho inteiro da feature 002 sem correspondente visual."
+  },
+  {
+    "chave": "draft.",
+    "motivo": "Rascunho recuperado, descartado e degradado por falta de espaço. O arquivo desenha o aviso de recuperação (`eSD6r`, `QrTyG` e as duas ações, inventariados) e não desenha os demais estados — corrompido, de versão desconhecida, migrado, ou preservado após esgotamento de cota."
+  },
+  {
+    "chave": "flow.",
+    "motivo": "Confirmação de recomeço do zero. O arquivo desenha a ação no rodapé da trilha (`r9U2DT`, inventariada) e não desenha o diálogo — ele não desenha modal algum."
+  },
+  {
+    "chave": "theme.",
+    "motivo": "Controle de tema. O arquivo desenha os três segmentos como ícones, sem rótulo textual; os nomes existem porque um `radiogroup` precisa de nome acessível por opção, e 'Sistema' sozinho não diz o que faz."
+  },
+  {
+    "chave": "versionHints.",
+    "motivo": "Indícios de que a candidata é outra versão da gravação — ao vivo, cover, remix, acelerado. O arquivo desenha os três selos de correspondência e não este marcador, que a feature 003 acrescentou. Cada valor é uma palavra de vocabulário, não uma frase de interface."
+  },
+  {
+    "chave": "actionBar.",
+    "motivo": "Rótulos da barra de ações. O arquivo desenha os dois botões, cujos textos estão inventariados (`common.next`, `common.back`); o que sobra é o nome acessível da região e o prefixo 'Para avançar:', que existe para a frase ler como impedimento e não como erro."
+  },
+  {
+    "chave": "common.",
+    "motivo": "Vocabulário compartilhado: verbos de ação, estados de cópia, conjunção de lista. Os que o arquivo desenha estão inventariados um a um; o restante aparece em caminhos que ele não desenha — confirmação, remoção, carregamento, cópia para a área de transferência."
+  },
+  {
+    "chave": "credential.",
+    "motivo": "Etapa de Configuração. O arquivo a desenha com detalhe, e os seus textos estão inventariados na tela `Sim0L`; o que sobra são os estados de validação e de escrita — campo vazio, credencial salva, credencial removida, confirmação de remoção — que um mockup estático não mostra."
+  },
+  {
+    "chave": "input.",
+    "motivo": "Etapa de Entrada. O arquivo a desenha vazia (`okw1h`), e os textos daquele estado estão inventariados; o restante é a previsão de esforço, o aviso de lista grande e os estados de busca em andamento, nenhum deles visível numa tela sem dados."
+  },
+  {
+    "chave": "playlistConfig.",
+    "motivo": "Formulário da playlist. O arquivo o desenha preenchido em `dIPW6`, e esses textos estão inventariados; o que sobra são as validações de nome — obrigatório, só espaços, duplicado — e a confirmação de criação, que é um diálogo."
+  },
+  {
+    "chave": "result.",
+    "motivo": "Resultado por serviço. A tela `C13Hj` está inventariada campo a campo; o restante é o caminho de criação interrompida e retomada — parcial, itens restantes, linhas que falharam —, que o arquivo não desenha."
+  },
+  {
+    "chave": "summary.",
+    "motivo": "Resumo consolidado. A tela `w1fTC` está inventariada; o que sobra são os desfechos que ela não mostra — parcial, falhou, pulado — e o relato de listas divergentes entre destinos."
+  },
+  {
+    "chave": "providers.",
+    "motivo": "Textos específicos de cada serviço. Os que o arquivo desenha estão inventariados nas telas de Configuração e de resultado; o restante são avisos de formato de Client ID, placeholders de campo e o nome genérico usado quando ainda não há serviço atribuído à mensagem."
+  }
+]

@@ -76,6 +76,9 @@ function comTema(theme: (typeof THEMES)[number]): void {
 function semear(step: WizardStep): void {
   useAppStore.setState({
     step,
+    // `destinations` entrou na 008: a trilha lê a seleção viva, e não
+    // `queue.order`, porque a fila só existe depois da etapa Entrada (FR-028).
+    destinations: { selected: ['spotify', 'youtube'], locked: false },
     queue: makeQueue(['spotify', 'youtube']),
     credentials: makeCredentials({ spotify: CLIENT_ID, youtube: YT_CLIENT_ID }),
     sessions: makeSessions({ spotify: makeSession('spotify') }),
@@ -338,9 +341,9 @@ describe('FR-040 · a ordem no DOM é a ordem visual de leitura', () => {
   });
 });
 
-describe('FR-016 e FR-061 · a barra de ações existe só em Destinos e Entrada', () => {
+describe('FR-016 e FR-061 · a barra de ações existe em Configuração, Destinos e Entrada', () => {
   /** A lista fechada, repetida aqui de propósito — ver o comentário abaixo. */
-  const COM_FAIXA: readonly WizardStep[] = ['destinations', 'input'];
+  const COM_FAIXA: readonly WizardStep[] = ['credential', 'destinations', 'input'];
 
   it.each(MATRIZ)(
     'presença correta — etapa $step, tema $theme, estreito $narrow',
@@ -369,11 +372,19 @@ describe('FR-016 e FR-061 · a barra de ações existe só em Destinos e Entrada
     },
   );
 
-  it('em Configuração, no ciclo de serviço e no Resumo a faixa não existe', () => {
-    // Dito de novo, sem matriz, porque é a metade do requisito que se perde:
-    // "existe em Destinos e Entrada" é fácil de cumprir acrescentando a faixa
-    // em toda parte. O que FR-061 pede é a **ausência** nas outras três.
-    for (const step of ['credential', 'service', 'summary'] as const) {
+  it('no ciclo de serviço e no Resumo a faixa não existe', () => {
+    /*
+      Dito de novo, sem matriz, porque é a metade do requisito que se perde:
+      "existe em Configuração, Destinos e Entrada" é fácil de cumprir
+      acrescentando a faixa em toda parte. O que FR-061 pede é a **ausência** nas
+      outras duas.
+
+      **Configuração saiu desta lista na fidelidade de design da 008**, e a saída
+      é deliberada: o arquivo desenha a faixa também ali (nó `fVjnY`), com o
+      avanço e a contagem de serviços configurados. O que continua dentro dos
+      cartões é salvar e remover — ações sobre um Client ID, não sobre a etapa.
+    */
+    for (const step of ['service', 'summary'] as const) {
       semear(step);
       const { unmount } = render(
         <Shell>
@@ -563,6 +574,7 @@ describe('FR-054 · a ação de recomeçar não existe em dois lugares', () => {
     useAppStore.setState({
       step: 'input',
       rawText: 'Amor - Fulano\nOutra - Sicrano',
+      destinations: { selected: ['spotify'], locked: false },
       queue: makeQueue(['spotify']),
     });
   }
@@ -589,7 +601,12 @@ describe('FR-054 · a ação de recomeçar não existe em dois lugares', () => {
   it('sem trabalho a descartar, ela não aparece em largura nenhuma', () => {
     // Comportamento da feature 006, preservado: o comando some sozinho quando
     // não há o que descartar (FR-065).
-    useAppStore.setState({ step: 'credential', rawText: '', queue: makeQueue([]) });
+    useAppStore.setState({
+      step: 'credential',
+      rawText: '',
+      destinations: { selected: [], locked: false },
+      queue: makeQueue([]),
+    });
 
     const { unmount } = render(<Topbar narrow />);
     expect(screen.queryByRole('button', { name: t.flow.reset })).toBeNull();
@@ -597,5 +614,111 @@ describe('FR-054 · a ação de recomeçar não existe em dois lugares', () => {
 
     render(<Topbar narrow={false} />);
     expect(screen.queryByRole('button', { name: t.flow.reset })).toBeNull();
+  });
+});
+
+/**
+ * A linha de contexto do cabeçalho — 008/FR-009 a FR-013.
+ *
+ * O módulo puro (`tests/unit/header-context.spec.ts`) cobre **qual** linha cada
+ * etapa recebe. O que sobra para o componente é o que só existe renderizado: as
+ * duas tintas, a região viva e a ausência que não deixa buraco.
+ */
+describe('008/FR-010 · as duas tintas da linha de contexto', () => {
+  beforeEach(() => {
+    useAppStore.setState({
+      credentials: makeCredentials({ spotify: CLIENT_ID, youtube: YT_CLIENT_ID }),
+      sessions: makeSessions({ spotify: makeSession('spotify') }),
+    });
+    useAppStore.getState().goToStep('destinations');
+  });
+
+  it('o primeiro nome sai em `text-accent-text` e o complemento em `text-ink-muted`', () => {
+    const { container } = render(<Shell>{null}</Shell>);
+
+    // Filtrado pelo conteúdo: a tinta de acento também veste os verbos do chip
+    // de conexão, e um `querySelector` cru encontraria o primeiro deles.
+    const nome = [...container.querySelectorAll('.text-accent-text')].find((node) =>
+      node.textContent?.startsWith('Oi,'),
+    );
+    expect(nome, 'o primeiro nome não recebeu a tinta de acento').toBeDefined();
+    expect(nome?.textContent).toContain('Fulano');
+
+    const complemento = [...container.querySelectorAll('.text-ink-muted')].find((node) =>
+      node.textContent?.includes(t.header.destinationsComplement),
+    );
+    expect(complemento, 'o complemento não recebeu a tinta secundária').toBeDefined();
+  });
+
+  it('o nome usa `--accent-text` e nunca o âmbar cheio', () => {
+    // O arquivo desenha o nome em `--accent` cheio, que em tema claro dá 1,73:1
+    // como texto. `--accent-text` é a tinta legível equivalente, e no tema
+    // escuro os dois têm o mesmo valor — a divergência existe apenas no tema
+    // claro, que o arquivo não define.
+    const { container } = render(<Shell>{null}</Shell>);
+    const comAmbarCheio = [...container.querySelectorAll('[class]')].filter((node) =>
+      /\btext-accent\b(?!-)/u.test(node.getAttribute('class') ?? ''),
+    );
+    expect(comAmbarCheio).toEqual([]);
+  });
+
+  it('sem sessão, a linha exibe só o complemento — sem vírgula solta (FR-011)', () => {
+    useAppStore.setState({ sessions: makeSessions({}) });
+    const { container } = render(<Shell>{null}</Shell>);
+
+    const linha = [...container.querySelectorAll('p')].find((node) =>
+      node.textContent?.includes(t.header.destinationsComplement),
+    );
+    expect(linha, 'a linha sumiu por falta de nome').toBeDefined();
+    expect(linha?.textContent).toBe(t.header.destinationsComplement);
+    expect(linha?.textContent).not.toMatch(/,\s*$|\s{2}/u);
+  });
+
+  it.each(['credential', 'summary'] as const)(
+    'a etapa %s não desenha linha nenhuma, e não reserva altura para ela',
+    (step) => {
+      useAppStore.getState().goToStep(step);
+      const { container } = render(<Shell>{null}</Shell>);
+
+      const comComplemento = [...container.querySelectorAll('p')].filter(
+        (node) =>
+          node.textContent?.includes(t.header.destinationsComplement) === true ||
+          node.textContent?.includes(t.header.inputComplement) === true,
+      );
+      expect(comComplemento).toEqual([]);
+    },
+  );
+});
+
+describe('008/FR-013 · a região viva existe só na forma de serviço', () => {
+  beforeEach(() => {
+    useAppStore.setState({
+      credentials: makeCredentials({ spotify: CLIENT_ID, youtube: YT_CLIENT_ID }),
+      sessions: makeSessions({ spotify: makeSession('spotify') }),
+      queue: makeQueue(['spotify', 'youtube']),
+    });
+  });
+
+  it('a linha de serviço é `role="status"`', () => {
+    // É ela que muda quando o serviço corrente troca **sem transição de etapa**
+    // — o único momento em que algo muda na tela sem o foco se mover.
+    useAppStore.getState().goToStep('service');
+    const { container } = render(<Shell>{null}</Shell>);
+
+    const viva = container.querySelector('p[role="status"]');
+    expect(viva, 'a linha de serviço não é região viva').not.toBeNull();
+    expect(viva?.textContent).toContain(t.providers.spotify.name);
+  });
+
+  it('a saudação **não** é região viva', () => {
+    // Uma saudação anunciada a cada troca de etapa é ruído, não informação — e
+    // concorreria com o anúncio do próprio título, que já recebe foco.
+    useAppStore.getState().goToStep('destinations');
+    const { container } = render(<Shell>{null}</Shell>);
+
+    const viva = [...container.querySelectorAll('[role="status"]')].filter((node) =>
+      node.textContent?.includes(t.header.destinationsComplement),
+    );
+    expect(viva).toEqual([]);
   });
 });

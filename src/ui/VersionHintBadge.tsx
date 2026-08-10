@@ -40,6 +40,12 @@ export function VersionHintBadge({ hints }: VersionHintBadgeProps) {
 
       O `status-badge` é o utilitário que carrega essa anatomia base; o que muda
       por estado é só a tinta.
+
+      **Reconferido na 008** (FR-008, T021a): o selo aparece exclusivamente
+      dentro da linha de correspondência e do painel de alternativas, e os dois
+      correspondem a cartões que o arquivo desenha (`g3IhDr`, `bC8Yk`). O
+      substrato atrás dele **não** mudou com a saída da moldura do `Wizard`, e
+      por isso nada aqui precisou ser redesenhado.
     */
     <span className="status-badge border-state-uncertain-edge bg-state-uncertain-tint text-state-uncertain">
       <span className="sr-only">

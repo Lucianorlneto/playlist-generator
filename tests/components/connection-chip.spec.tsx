@@ -316,3 +316,76 @@ describe('nome de conta longo', () => {
     expect(screen.getByText(nomeLongo)).toBeInTheDocument();
   });
 });
+
+/**
+ * 008/FR-002 — a cor de marca do símbolo não depende do estado do chip.
+ *
+ * O que este bloco protege é uma regressão barata de cometer e cara de perceber:
+ * uma variante de hover ou de foco escrita no chip inteiro tingiria o glifo
+ * junto, e o Spotify passaria a sair âmbar quando o ponteiro passasse por cima —
+ * na tela de alguém, nunca em revisão de código.
+ *
+ * A **saturação** continua sendo pista de estado (esmaecido em `disconnected`,
+ * neutro em `no-credential`), como `contracts/shell.md` §3 declara. O que não
+ * pode mudar é a **matiz** enquanto há identidade a mostrar.
+ */
+describe('008/FR-002 · o símbolo do provedor mantém a cor da marca', () => {
+  function glifoDoProvedor(container: HTMLElement): Element | null {
+    return container.querySelector('.icon-glyph');
+  }
+
+  function classesDe(node: Element | null): string {
+    // `react-icons` renderiza `<svg>`, cujo `className` é um `SVGAnimatedString`.
+    return node?.getAttribute('class') ?? '';
+  }
+
+  it.each([
+    ['spotify', 'text-brand-spotify'] as const,
+    ['youtube', 'text-brand-youtube'] as const,
+  ])('conectado: o glifo do %s sai em %s', (provider, tinta) => {
+    semear({ conectados: [provider] });
+    const { container } = render(<ConnectionChip provider={provider} />);
+    expect(classesDe(glifoDoProvedor(container))).toContain(tinta);
+  });
+
+  it.each([
+    ['spotify', 'text-brand-spotify'] as const,
+    ['youtube', 'text-brand-youtube'] as const,
+  ])('desconectado: o glifo do %s conserva %s, só esmaecido', (provider, tinta) => {
+    semear({ conectados: [] });
+    const { container } = render(<ConnectionChip provider={provider} />);
+    const classes = classesDe(glifoDoProvedor(container));
+
+    expect(classes).toContain(tinta);
+    // A pista de estado é a saturação, e ela é declarada — não é a matiz que muda.
+    expect(classes).toContain('opacity-60');
+  });
+
+  it('nenhuma variante de foco ou de hover sobrepõe a tinta do glifo', () => {
+    // O caso real: `hover:text-accent-text` escrito no chip inteiro herdaria
+    // para o glifo por `currentColor`. Nenhuma variante de cor pode alcançá-lo.
+    semear({ conectados: ['spotify'] });
+    const { container } = render(<ConnectionChip provider="spotify" />);
+
+    const comVariante = [...container.querySelectorAll('[class]')].filter((node) =>
+      /\b(?:hover|focus|focus-visible|active|group-hover):(?:text|fill|stroke)-/u.test(
+        node.getAttribute('class') ?? '',
+      ),
+    );
+    expect(
+      comVariante.map((n) => n.getAttribute('class')),
+      'variante de cor no chip: ela herdaria para o glifo por currentColor (008/FR-002)',
+    ).toEqual([]);
+  });
+
+  it('sem credencial o glifo é neutro, e a divergência é registrada (FR-008)', () => {
+    // O arquivo de design **não desenha este estado**. A tinta neutra é decisão
+    // da 007, mantida por 008/FR-008 e registrada no inventário de forma.
+    semear({ comCredencial: [], conectados: [] });
+    const { container } = render(<ConnectionChip provider="spotify" />);
+    const classes = classesDe(glifoDoProvedor(container));
+
+    expect(classes).toContain('text-ink-muted');
+    expect(classes).not.toContain('text-brand-spotify');
+  });
+});

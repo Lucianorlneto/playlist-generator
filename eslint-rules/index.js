@@ -181,10 +181,16 @@ const RAW_VISUAL_PATTERNS = [
    * autoriza. `bg-brand-spotify` não é — preenchimento sólido significa
    * acionável neste sistema (FR-024), e um chip pintado de verde Spotify diz
    * "clique aqui" em vez de "este é o Spotify".
+   *
+   * **O prefixo `tint` está excluído** (008/FR-004). `bg-brand-tint-spotify` é
+   * outro utilitário, com outro token, e o `(?!tint-)` é o que o separa —
+   * `[a-z]+` não atravessa hífen, então sem esta exclusão o substrato de
+   * identidade casaria com `bg-brand-tint` e seria recusado aqui em vez de na
+   * regra própria, que é a que sabe **onde** ele é permitido.
    */
   {
     messageId: 'brandAsFill',
-    pattern: new RegExp(`\\b${VARIANTS}bg-brand-[a-z]+\\b`, 'u'),
+    pattern: new RegExp(`\\b${VARIANTS}bg-brand-(?!tint-)[a-z]+\\b`, 'u'),
   },
   {
     messageId: 'removedUtility',
@@ -202,6 +208,23 @@ const RAW_VISUAL_PATTERNS = [
   },
 ];
 
+/**
+ * O **único** arquivo autorizado a usar o substrato de identidade por provedor
+ * (008/FR-004).
+ *
+ * A permissão é de arquivo e não de padrão, de propósito: o design desenha o
+ * substrato tingido no distintivo do cartão de destino e em nenhum outro lugar,
+ * e uma allowlist de arquivo torna "autorizar um segundo ponto" uma edição desta
+ * regra — que é exatamente a revisão que se quer forçar. Um limiar de opacidade
+ * seria alegável por qualquer tela nova sem passar por ninguém.
+ *
+ * Caminho relativo à raiz, com barra normalizada: o `filename` que o ESLint
+ * entrega é absoluto e usa o separador do sistema.
+ */
+const BRAND_TINT_HOST = 'src/features/destinations/DestinationSelector.tsx';
+
+const BRAND_TINT_PATTERN = new RegExp(`\\b${VARIANTS}bg-brand-tint-[a-z]+\\b`, 'u');
+
 const noRawVisualValues = {
   meta: {
     type: 'problem',
@@ -211,6 +234,8 @@ const noRawVisualValues = {
     },
     schema: [],
     messages: {
+      brandTintOutsideCard:
+        'O substrato de identidade "{{utility}}" fora de src/features/destinations/DestinationSelector.tsx. Ele é a **exceção nomeada** de 008/FR-004 e existe para o distintivo do cartão de destino — em qualquer outro lugar a cor de marca continua sendo acento identificador, nunca preenchimento. Autorizar um segundo ponto custa editar esta regra de lint, e é essa revisão que se quer forçar.',
       arbitrary:
         'Valor visual arbitrário em "{{utility}}". Cor, espaçamento e raio vêm da camada de tokens — use um degrau da escala ou declare um token em src/styles/ (FR-045, SC-004).',
       palette:
@@ -224,6 +249,9 @@ const noRawVisualValues = {
     },
   },
   create(context) {
+    const filename = (context.filename ?? context.getFilename()).replaceAll('\\', '/');
+    const isBrandTintHost = filename.endsWith(BRAND_TINT_HOST);
+
     /**
      * A varredura é sobre **todo literal de string do arquivo**, não só sobre
      * `className`. As variantes de `Button` e de `StatusBadge` vivem em mapas de
@@ -232,6 +260,20 @@ const noRawVisualValues = {
      * arquivos onde a cor é decidida.
      */
     function inspect(node, value) {
+      // O substrato de identidade é verificado **antes** dos padrões gerais, e
+      // fora deles, porque é o único cuja legalidade depende do arquivo.
+      if (!isBrandTintHost) {
+        const tint = BRAND_TINT_PATTERN.exec(value);
+        if (tint !== null) {
+          context.report({
+            node,
+            messageId: 'brandTintOutsideCard',
+            data: { utility: tint[0] },
+          });
+          return;
+        }
+      }
+
       for (const { messageId, pattern } of RAW_VISUAL_PATTERNS) {
         const match = pattern.exec(value);
         if (match === null) continue;

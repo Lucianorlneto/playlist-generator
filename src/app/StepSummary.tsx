@@ -1,6 +1,7 @@
 import { composeRail } from '@/domain/rail';
 import { format, t } from '@/i18n/pt-BR';
-import { useAppStore } from '@/store';
+
+import { useRailSnapshot } from './railSnapshot';
 
 /**
  * A trilha colapsada, em largura estreita (FR-037, FR-052).
@@ -30,17 +31,7 @@ import { useAppStore } from '@/store';
  * condicional teria duas cópias (FR-013).
  */
 export function StepSummary() {
-  const current = useAppStore((state) => state.step);
-  const queue = useAppStore((state) => state.queue);
-  const lines = useAppStore((state) => state.lines);
-  const credentials = useAppStore((state) => state.credentials);
-
-  const rail = composeRail({
-    current,
-    destinations: queue.order,
-    lineCount: lines.length,
-    credentialsReady: Object.values(credentials).some((c) => c !== null),
-  });
+  const rail = composeRail(useRailSnapshot());
 
   const atual = rail.find((step) => step.state === 'current');
   if (atual === undefined) return null;

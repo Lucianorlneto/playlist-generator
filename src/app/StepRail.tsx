@@ -1,9 +1,9 @@
 import { composeRail, type RailStep, type RailStepState } from '@/domain/rail';
 import { format, t } from '@/i18n/pt-BR';
-import { useAppStore } from '@/store';
 import { Icon } from '@/ui/Icon';
 import { cx } from '@/ui/cx';
 
+import { useRailSnapshot } from './railSnapshot';
 import { ResetFlow } from './ResetFlow';
 
 /**
@@ -132,22 +132,25 @@ function Degrau({ step, ultimo, total }: { step: RailStep; ultimo: boolean; tota
 }
 
 export function StepRail() {
-  const current = useAppStore((state) => state.step);
-  const queue = useAppStore((state) => state.queue);
-  const lines = useAppStore((state) => state.lines);
-  const credentials = useAppStore((state) => state.credentials);
-
-  const rail = composeRail({
-    current,
-    destinations: queue.order,
-    lineCount: lines.length,
-    credentialsReady: Object.values(credentials).some((c) => c !== null),
-  });
+  const rail = composeRail(useRailSnapshot());
 
   return (
     <nav
       aria-label={t.rail.title}
-      className="border-rule bg-surface-zone zone-rail flex flex-col justify-between border-r p-4"
+      /*
+        `overflow-y-auto` porque a trilha é fixa na janela desde que a casca
+        parou de rolar: numa janela baixa — telefone deitado, zoom de texto a
+        200% — os cinco degraus mais o rodapé passam da altura disponível, e sem
+        isto o excedente ficaria inalcançável em vez de rolar.
+
+        `justify-between` continua empurrando o rodapé para baixo enquanto sobra
+        espaço, que é o caso comum.
+
+        `relative` ancora aqui os `sr-only` de cada degrau — que são
+        `position: absolute` e, sem um ancestral posicionado, se ancorariam no
+        documento e inflariam o `scrollHeight` dele com altura invisível.
+      */
+      className="border-rule bg-surface-zone zone-rail relative flex flex-col justify-between overflow-y-auto border-r p-4"
     >
       <div className="flex flex-col gap-4">
         <h2 className="text-ink-muted text-data font-semibold tracking-wide uppercase">

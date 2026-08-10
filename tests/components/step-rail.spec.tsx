@@ -24,9 +24,19 @@ const CLIENT_ID = 'a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6';
 
 type Etapa = 'credential' | 'destinations' | 'input' | 'service' | 'summary';
 
+/**
+ * Semeia a store para a trilha.
+ *
+ * **`destinations` entrou na 008** (FR-028): a trilha passou a ler a seleção
+ * viva em vez de `queue.order`, porque a fila só é construída ao sair da etapa
+ * Entrada e a regra nova precisa derivar com a etapa Destinos corrente. Os dois
+ * são semeados juntos aqui porque no fluxo real eles coincidem depois da trava —
+ * semear só um produziria um estado que a aplicação nunca alcança.
+ */
 function semear(step: Etapa, destinos: ('spotify' | 'youtube')[]) {
   useAppStore.setState({
     step,
+    destinations: { selected: destinos, locked: false },
     queue: makeQueue(destinos),
     lines: [makeLine(), makeLine()],
     credentials: makeCredentials({ spotify: CLIENT_ID }),
@@ -181,6 +191,7 @@ describe('FR-015 e FR-065 · a ação de recomeçar vive no rodapé da trilha', 
     useAppStore.setState({
       step: 'input',
       rawText: 'Amor - Fulano',
+      destinations: { selected: ['spotify'], locked: false },
       queue: makeQueue(['spotify']),
       credentials: makeCredentials({ spotify: CLIENT_ID }),
     });
@@ -194,6 +205,7 @@ describe('FR-015 e FR-065 · a ação de recomeçar vive no rodapé da trilha', 
       step: 'credential',
       rawText: '',
       lines: [],
+      destinations: { selected: [], locked: false },
       queue: makeQueue([]),
       credentials: makeCredentials({}),
     });

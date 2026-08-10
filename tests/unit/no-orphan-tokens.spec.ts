@@ -259,6 +259,8 @@ describe('T012 · a lista de proibidos não pode envelhecer em silêncio', () =>
       'accent-ink',
       'accent-text',
       'accent-tint',
+      'brand-tint-spotify',
+      'brand-tint-youtube',
       'state-confident',
       'state-uncertain',
       'state-missing',
@@ -281,6 +283,53 @@ describe('T012 · a lista de proibidos não pode envelhecer em silêncio', () =>
     expect(ausentes, `Destinos de migração não declarados em index.css: ${ausentes.join(', ')}`).toEqual(
       [],
     );
+  });
+});
+
+/**
+ * O terceiro trinco da exceção nomeada de 008/FR-004.
+ *
+ * Os outros dois são o **nome próprio** do token — não há limiar de opacidade a
+ * alegar, chegar à exceção exige nomeá-la — e a **allowlist de arquivo** na regra
+ * `tp/no-raw-visual-values`. Este cobre o caso que os dois primeiros não
+ * alcançam: alguém desativa a regra de lint com um comentário de supressão e o
+ * substrato de identidade passa a preencher uma segunda superfície.
+ *
+ * A redundância é deliberada, e é a mesma disciplina da tabela de hosts do
+ * Princípio II: a fechadura que importa é a que continua fechada depois de
+ * alguém tentar abri-la.
+ */
+describe('008/FR-004 · o substrato de identidade tem um único ponto de uso', () => {
+  const AUTORIZADO = 'src/features/destinations/DestinationSelector.tsx';
+
+  it.each(['bg-brand-tint-spotify', 'bg-brand-tint-youtube'])(
+    '%s aparece em exatamente um arquivo de src/, e é o cartão de destino',
+    (utilitario) => {
+      const padrao = new RegExp(`\\b(?:[a-z-]+:)*${utilitario}\\b`, 'u');
+      const arquivos = files
+        .filter((file) => !file.path.endsWith('styles/index.css'))
+        .filter((file) => padrao.test(file.text))
+        .map((file) => file.path.replaceAll('\\', '/'))
+        .sort();
+
+      expect(
+        arquivos,
+        `\`${utilitario}\` é a exceção nomeada de 008/FR-004 e existe para o distintivo do ` +
+          `cartão de destino. Encontrado em: ${arquivos.join(', ') || '(nenhum arquivo)'}. ` +
+          'Autorizar outro ponto custa editar `eslint-rules/index.js` **e** este teste — ' +
+          'que é a revisão que se quer forçar.',
+      ).toEqual([AUTORIZADO]);
+    },
+  );
+
+  it('`bg-brand-spotify` e `bg-brand-youtube` continuam sem nenhum ponto de uso', () => {
+    // O prefixo `tint` abriu **uma** porta, e só ela. Preenchimento com a cor de
+    // marca cheia continua significando "acionável" neste sistema (007/FR-024).
+    const offences = scan(
+      /\b(?:[a-z-]+:)*bg-brand-(?!tint-)[a-z]+\b/gu,
+      'a exceção de 008/FR-004 é `bg-brand-tint-*`, e vale só no cartão de destino',
+    );
+    expect(offences, `\n${report(offences)}`).toEqual([]);
   });
 });
 

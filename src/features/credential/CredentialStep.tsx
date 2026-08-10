@@ -1,9 +1,7 @@
 import { PROVIDER_ORDER } from '@/domain/providers';
-import { validateAtLeastOneCredential } from '@/domain/validation';
 import { AuthError } from '@/features/connect/AuthError';
 import { t } from '@/i18n/pt-BR';
 import { useAppStore } from '@/store';
-import { Button } from '@/ui/Button';
 import { StepHeading } from '@/ui/StepHeading';
 
 import { CredentialForm } from './CredentialForm';
@@ -22,11 +20,7 @@ import { RedirectUriHint } from './RedirectUriHint';
  */
 export function CredentialStep() {
   const stepToken = useAppStore((state) => state.stepToken);
-  const credentials = useAppStore((state) => state.credentials);
   const authError = useAppStore((state) => state.authError);
-  const goToStep = useAppStore((state) => state.goToStep);
-
-  const validation = validateAtLeastOneCredential(credentials);
 
   return (
     <section className="flex flex-col gap-6">
@@ -80,25 +74,17 @@ export function CredentialStep() {
       })}
 
       {/*
-        A ação de avançar fica **aqui**, e não numa barra de rodapé: FR-016 fecha
-        a lista de etapas com faixa em Destinos e Entrada, e a Configuração não
-        está nela. O motivo é que esta etapa não tem uma decisão única a
-        confirmar — ela tem um cartão por serviço, cada um com a sua.
+        **Não há ação de avançar aqui.** Ela vive na faixa fixa do rodapé, junto
+        com a contagem de serviços configurados e o motivo do bloqueio
+        (`CredentialActionBar`, nó `fVjnY`).
+
+        A 007 punha o botão ao pé desta lista, argumentando que a etapa não tem
+        uma decisão única a confirmar — tem um cartão por serviço, cada um com a
+        sua. A parte correta do argumento sobrevive: **salvar e remover
+        permanecem nos cartões**, porque são sobre aquele Client ID. O avanço não
+        era um deles, e ao pé de uma página de dois mil pixels ele só existia
+        depois de rolar tudo.
       */}
-      <div className="flex flex-col gap-1">
-        <div>
-          <Button
-            variant="primary"
-            disabled={!validation.ok}
-            onClick={() => {
-              goToStep('destinations');
-            }}
-          >
-            {t.common.next}
-          </Button>
-        </div>
-        {!validation.ok && <p className="field-message">{t.credential.noneSaved}</p>}
-      </div>
     </section>
   );
 }

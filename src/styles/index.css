@@ -72,6 +72,9 @@
   --color-accent-ink: var(--accent-ink);
   --color-accent-text: var(--accent-text);
   --color-accent-tint: var(--accent-tint);
+  /* Tinta quente do texto sobre o âmbar tingido. Ver `tokens.css`: o cinza frio
+     de `--ink-muted` sobre esse substrato lê como texto no lugar errado. */
+  --color-accent-tint-ink: var(--accent-tint-ink);
 
   --color-state-confident: var(--state-confident);
   --color-state-uncertain: var(--state-uncertain);
@@ -88,6 +91,18 @@
    */
   --color-brand-spotify: var(--brand-spotify);
   --color-brand-youtube: var(--brand-youtube);
+
+  /**
+   * O substrato de identidade por provedor (008/FR-003, 008/FR-004).
+   *
+   * **A única exceção à proibição de preenchimento com cor de marca**, e ela é
+   * nomeada em vez de numérica: não há `bg-brand-spotify/10` a escrever nem
+   * limiar de opacidade a alegar — chegar à exceção exige nomeá-la. O uso é
+   * autorizado em **um único arquivo**, `DestinationSelector.tsx`, e a regra de
+   * lint `tp/no-raw-visual-values` recusa em todos os outros.
+   */
+  --color-brand-tint-spotify: var(--brand-tint-spotify);
+  --color-brand-tint-youtube: var(--brand-tint-youtube);
 
   --color-state-confident-tint: var(--state-confident-tint);
   --color-state-uncertain-tint: var(--state-uncertain-tint);
@@ -340,31 +355,81 @@
  * isso** — é o item de maior risco da conferência manual de FR-073.
  */
 
+/**
+ * **A opacidade do arquivo já está no arquivo.**
+ *
+ * `Ambient Backdrop.png` foi exportado do design **com os 22% do nó `eEqZf`
+ * aplicados no canal alfa** — medido, não suposto: todo pixel do PNG tem
+ * `alpha = 56/255`. Declarar `opacity: 0.22` aqui contava a mesma atenuação duas
+ * vezes e entregava 4,8% de textura, e é por isso que o tema escuro parecia não
+ * ter fundo nenhum. O valor de referência do escuro é, portanto, **1**.
+ *
+ * Nada nisso falha: o PNG carrega, tem o tamanho certo e a regra de tema certa.
+ * Só o resultado é quase invisível. `e2e/decor-loading.spec.ts` mede o pixel
+ * composto para que a regressão apareça.
+ *
+ * O esmaecimento é feito **por cima**, por `ambient-backdrop-veil`, e não por
+ * máscara. Os dois mecanismos parecem equivalentes e não são: máscara apaga a
+ * textura de forma linear, enquanto o véu deposita `--bg` em três paradas — é o
+ * que dá o topo colorido e a queda rápida que o design desenha.
+ */
 @utility ambient-backdrop {
-  opacity: 0.5;
-  /* Esmaecimento para `--bg` na borda inferior: a textura entrega o topo e
-     devolve o substrato onde o conteúdo fica mais denso. */
-  mask-image: linear-gradient(to bottom, rgb(0 0 0 / 100%), transparent 85%);
+  opacity: 1;
 }
 
 :root .ambient-backdrop {
-  /* Opacidade **menor** no claro, e `multiply` para que a textura escure o papel
-     em vez de depositar cinza sobre ele. `normal` a 50% deixaria um véu
-     acinzentado sobre o off-white — o efeito exato que o design não quer. */
-  opacity: 0.12;
-  mix-blend-mode: multiply;
+  /**
+   * **`multiply` saiu do tema claro**, e o motivo é o mesmo achado do alfa.
+   *
+   * A regra existia para "escurecer o papel em vez de depositar cinza sobre
+   * ele", e fazia sentido enquanto se supunha uma textura escura. A textura é o
+   * oposto: neon rosa, branco e verde-água. `multiply` de branco sobre off-white
+   * é **a identidade** — no tema Papel a decoração simplesmente não existia, o
+   * que é a metade de FR-049 que proíbe deixar a arte sumir num dos substratos.
+   *
+   * Em `normal` a mesma arte tinge o off-white de rosa e verde, que é o que o
+   * escuro também recebe. **A opacidade é a mesma dos dois lados** — os 22% do
+   * alfa —, e ainda assim o efeito é mais discreto aqui: arte clara sobre papel
+   * claro tem menos para onde deslocar a cor. Atenuar por cima disso devolveria
+   * a invisibilidade que a troca de blend acabou de corrigir.
+   */
+  opacity: 1;
+  mix-blend-mode: normal;
 }
 
 [data-theme='dark'] .ambient-backdrop {
-  opacity: 0.5;
+  opacity: 1;
   mix-blend-mode: normal;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme]) .ambient-backdrop {
-    opacity: 0.5;
+    opacity: 1;
     mix-blend-mode: normal;
   }
+}
+
+/**
+ * O esmaecimento do fundo ambiente (nós `AB230` e `bjJw1`).
+ *
+ * **Camada irmã da textura, nunca filha**: no arquivo os dois são retângulos
+ * lado a lado, e a diferença importa — dentro do elemento que carrega
+ * `opacity: 0.22` o véu também ficaria 78% transparente e não esmaeceria coisa
+ * nenhuma.
+ *
+ * As três paradas são as do arquivo: 40% de `--bg` no topo, 80% a 35% da altura
+ * e opaco a 80%. É por isso que a textura aparece **colorida em cima** e some
+ * antes de alcançar a metade inferior, onde o conteúdo fica mais denso.
+ */
+@utility ambient-backdrop-veil {
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--bg) 40%, transparent) 0%,
+    color-mix(in srgb, var(--bg) 80%, transparent) 35%,
+    var(--bg) 80%
+  );
 }
 
 /**
@@ -418,6 +483,43 @@
 }
 
 /**
+ * A faixa que hospeda os onze adesivos (nó `wv9Cp`, `Stickers Decor`).
+ *
+ * **A razão de aspecto é o que preserva a composição.** O arquivo espalha os
+ * adesivos numa superfície de 680 × 210 e `Stickers.tsx` os posiciona em fração
+ * dessa grade; sem a razão declarada aqui, a faixa teria altura de conteúdo —
+ * zero, porque todos os filhos são absolutos — e as onze peças se empilhariam
+ * numa linha. Ela vive no CSS, e não em `aspect-[680/210]` no componente, porque
+ * é uma medida de layout do sistema e não um degrau de escala.
+ *
+ * A opacidade é declarada **por tema**, pela mesma razão do fundo ambiente: 55%
+ * é o valor do arquivo, medido contra o quase-preto, onde a arte entrega entre
+ * 6,3:1 e 12,6:1 de contraste e sobra margem de sobra para atenuar. Sobre o
+ * papel a mesma arte já parte de 1,4:1 a 2,8:1 (a tabela de `sticker`, T074), e
+ * aplicar 55% ali apagaria justamente o que FR-049 existe para não deixar sumir.
+ */
+@utility stickers-band {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 680 / 210;
+  opacity: 0.55;
+}
+
+:root .stickers-band {
+  opacity: 0.8;
+}
+
+[data-theme='dark'] .stickers-band {
+  opacity: 0.55;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .stickers-band {
+    opacity: 0.55;
+  }
+}
+
+/**
  * Variante para a arte que **some** sobre o papel.
  *
  * Halo mais largo e escurecimento próprio. Aplicada por adesivo, e não a todos,
@@ -466,7 +568,7 @@
      a foto virava um retângulo pálido, que é a versão clara do mesmo problema
      que FR-049 existe para impedir no escuro. 14% dá o assentamento sem apagar
      o assunto. */
-  background-image: linear-gradient(to top, var(--surface-zone) 6%, rgb(255 255 255 / 14%) 100%);
+  background-image: linear-gradient(to top, var(--surface-zone) 1%, rgb(255 255 255 / 10%) 50%);
 }
 
 [data-theme='dark'] .mood-photo-veil {
@@ -674,6 +776,30 @@
   progress::-moz-progress-bar {
     background-color: var(--accent);
     border-radius: var(--radius-pill);
+  }
+
+  /**
+   * O documento não rola — quem rola é a área de conteúdo da casca.
+   *
+   * A casca já ocupa a janela (`h-dvh` com `overflow-hidden`) e entrega a
+   * rolagem ao seu contêiner de conteúdo, o que basta para a roda do mouse e
+   * para a barra de rolagem. **Não basta para a rolagem programática**: sem esta
+   * regra o documento continua tecnicamente rolável, e um `window.scrollTo`, um
+   * `scrollIntoView` ou o salto de âncora do link "Ir para o conteúdo"
+   * deslocariam a página inteira — levando a barra superior e a trilha para fora
+   * da tela, com o conteúdo já rolado por dentro.
+   *
+   * O defeito é traiçoeiro porque **não aparece no gesto comum**: rolar com a
+   * roda funciona, e só o caminho de teclado ou de âncora o revela. Foi medido:
+   * `window.scrollTo(0, 5000)` levava a barra superior a `y = -832`.
+   *
+   * `height: 100%` acompanha o `overflow` porque um dos dois sozinho não fecha o
+   * caso: sem altura definida o elemento cresce com o conteúdo antes de clipá-lo.
+   */
+  html,
+  body {
+    height: 100%;
+    overflow: hidden;
   }
 
   body {

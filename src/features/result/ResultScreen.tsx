@@ -4,11 +4,14 @@ import { totalBatches } from '@/domain/batching';
 import type { ProviderId } from '@/domain/providers';
 import { linesFor } from '@/domain/run/lines';
 import { nameOf, textFor } from '@/features/credential/providerText';
+import { QueueIndicator } from '@/features/queue/QueueIndicator';
 import { ListReduction } from '@/features/input/ListReduction';
 import { SkipButton } from '@/features/service/SkipButton';
 import { format, t } from '@/i18n/pt-BR';
 import { useAppStore } from '@/store';
 import { Button } from '@/ui/Button';
+import { cx } from '@/ui/cx';
+import { Icon } from '@/ui/Icon';
 import { StepHeading } from '@/ui/StepHeading';
 
 import { committedItemCount } from './creationRunner';
@@ -18,6 +21,47 @@ import { RetryRemaining } from './RetryRemaining';
 
 export interface ResultScreenProps {
   provider: ProviderId;
+}
+
+/**
+ * Mapas explícitos de literais, nunca concatenação: o scanner do Tailwind lê o
+ * código como texto e não resolve expressão (`tp/no-dynamic-classname`).
+ *
+ * `text-*` tinge o glifo, que herda `currentColor`. **Nunca `bg-*`** — o
+ * substrato tingido de 008/FR-004 é exceção nomeada do cartão de destino e não
+ * alcança este cabeçalho (008/contracts/destinations.md §4).
+ */
+const PROVIDER_ICON = {
+  spotify: 'provider-spotify',
+  youtube: 'provider-youtube',
+} as const;
+
+const BRAND_INK = {
+  spotify: 'text-brand-spotify',
+  youtube: 'text-brand-youtube',
+} as const;
+
+/**
+ * **O cabeçalho do cartão de fase** (008/FR-001; nós `EvlNu` em `C13Hj` e
+ * `FWym9` em `SjphR`).
+ *
+ * Um componente local, e não duas cópias, porque a criação em andamento e o
+ * resultado concluído são a mesma superfície do arquivo de design em dois
+ * momentos — e o cabeçalho é literalmente o mesmo nó.
+ */
+function CardHeader({ provider }: { readonly provider: ProviderId }) {
+  return (
+    <header className="flex items-center gap-2">
+      {/* Decorativo: o nome do serviço está escrito no título logo abaixo. */}
+      <Icon role={PROVIDER_ICON[provider]} className={cx('text-section', BRAND_INK[provider])} />
+      {/*
+        A repetição **visual** da posição na fila (008/FR-013), `aria-hidden`:
+        ela existe para quem está lendo o cartão sem ter voltado o olho ao topo
+        da tela, e a linha de contexto é quem a anuncia.
+      */}
+      <QueueIndicator />
+    </header>
+  );
 }
 
 /**
@@ -60,7 +104,14 @@ export function ResultScreen({ provider }: ResultScreenProps) {
 
   if (result === null) {
     return (
-      <section className="flex flex-col gap-4">
+      /*
+        **O cartão de fase** (008/FR-006, 008/T021; nó `qBqxK — Service Result ·
+        Loading`, instanciado em `SjphR`). Mesma superfície do resultado
+        concluído: para o arquivo, criar e ter criado são dois momentos do mesmo
+        cartão.
+      */
+      <section className="app-card flex flex-col gap-4">
+        <CardHeader provider={provider} />
         <StepHeading
           title={format(t.playlistConfig.creating, { service })}
           focusToken={stepToken}
@@ -137,7 +188,17 @@ export function ResultScreen({ provider }: ResultScreenProps) {
   const account = sessions[provider]?.user.displayName ?? '';
 
   return (
-    <section className="flex flex-col gap-4">
+    /*
+      **O cartão de fase** (008/FR-006, 008/T021; nó `yTOJb — Success Card` em
+      `C13Hj`).
+
+      `--surface` com contorno `--rule`, e o título "Playlist criada no
+      {serviço}" é filho dele — a linha de contexto é que fica fora, no cabeçalho
+      da etapa. É também o que devolve o degrau às caixas internas (`Info Box`,
+      `hHyQ6`), que o arquivo desenha em `--bg` sobre este `--surface`.
+    */
+    <section className="app-card flex flex-col gap-4">
+      <CardHeader provider={provider} />
       <StepHeading title={format(t.result.heading, { service })} focusToken={stepToken} />
 
       <dl className="grid gap-2 text-body sm:grid-cols-2">

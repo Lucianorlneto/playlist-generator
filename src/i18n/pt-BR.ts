@@ -38,8 +38,18 @@ export interface ActionableMessage {
 
 const messages = {
   app: {
+    /**
+     * O nome do produto **permanece em pt-BR** (008/FR-026).
+     *
+     * O arquivo de design diz "Playlist Importer". Adotá-lo seria trocar o nome
+     * do produto — decisão de produto, não de fidelidade visual — e contrariaria
+     * o princípio de idioma da constituição, que exige interface em português.
+     * A divergência é deliberada e está registrada no inventário como
+     * `mantido-diferente`.
+     */
     title: 'Importador de Playlist por Texto',
-    subtitle: 'Transforme uma lista de músicas em playlists nos serviços que você escolher.',
+    /** A assinatura do arquivo de design, adotada literalmente (008/FR-026). */
+    subtitle: 'Texto → Spotify · YouTube',
     skipToContent: 'Ir para o conteúdo',
   },
 
@@ -70,18 +80,33 @@ const messages = {
   },
 
   /**
-   * A saudação do cabeçalho de conteúdo (FR-036).
+   * A linha de contexto do cabeçalho (008/FR-009 a FR-012).
    *
-   * Personalizada quando há conta conectada; impessoal quando não há. **Nunca um
-   * nome inventado e nunca um espaço vazio** — as duas formas são frases
-   * completas, e a degradação não deixa buraco no layout.
+   * **Substitui `greeting`**, que a 007 exibia igual nas cinco etapas. O arquivo
+   * de design não repete a saudação em todas as telas: ela existe em Destinos e
+   * Entrada, some em Configuração e Resumo, e vira contexto de serviço nas seis
+   * fases do ciclo. A regra que escolhe entre as três formas é do domínio, não
+   * daqui — `src/domain/header/`.
    *
-   * O identificador vem da sessão que a aplicação já possui. Nada novo é
-   * coletado nem persistido para isto existir.
+   * O identificador vem da sessão que a aplicação já possui, e é recortado no
+   * **primeiro nome**. Nada novo é coletado nem persistido para isto existir.
+   *
+   * **Nunca um nome inventado e nunca um espaço vazio** (FR-011): sem conta
+   * conectada a linha exibe só o complemento, que é uma frase completa. As duas
+   * alternativas que a 007 já descartara continuam descartadas; o que mudou é a
+   * forma da degradação — de "Olá" sozinho para o complemento sozinho.
    */
-  greeting: {
-    personal: 'Olá, {name}',
-    impersonal: 'Olá',
+  header: {
+    /** O nome, em `--accent-text`. O complemento vem ao lado, em `--ink-muted`. */
+    greeting: 'Oi, {name}',
+    destinationsComplement: '· vamos levar suas músicas pra casa',
+    inputComplement: '· hora de colar sua lista',
+    /**
+     * A forma de conclusão do ciclo. O sufixo é resolvido de `queue.phase`, que
+     * já nomeia cada desfecho com honestidade — "Pulado" e "Falhou" não viram
+     * "Concluído" (FR-029 aplicado à linha de contexto).
+     */
+    serviceSuffix: '{service} · {suffix}',
   },
 
   /**
@@ -104,16 +129,26 @@ const messages = {
     /** Anunciado só a leitor de tela, com o ordinal e o total do domínio. */
     position: 'Etapa {n} de {total}',
 
+    /**
+     * As linhas de apoio **adotadas do arquivo de design** (008/FR-027).
+     *
+     * Cinco das seis mudaram, e a mudança é de vocabulário, não de sentido: o
+     * arquivo é mais curto e mais direto em cada uma delas. "Escolha onde criar
+     * as playlists" é a única que o arquivo não desenha na forma neutra — ele
+     * mostra "Spotify e YouTube" ali, que é a forma **derivada**, exibida numa
+     * tela em que a escolha ainda não aconteceu (FR-029).
+     */
     neutral: {
-      credential: 'Informe o Client ID de cada serviço',
+      credential: 'Suas credenciais',
       destinations: 'Escolha onde criar as playlists',
-      input: 'Cole a sua lista de músicas',
-      service: 'Acompanhe a criação em cada serviço',
-      summary: 'Veja o resultado de cada destino',
+      input: 'Cole a lista de músicas',
+      service: 'Criação e resultado',
+      summary: 'O que aconteceu em cada serviço',
     },
 
     derived: {
-      credential: 'Credenciais salvas neste dispositivo',
+      /** Adotado do arquivo (008/FR-027): mais curto, e diz a mesma coisa. */
+      credential: 'Preferências salvas',
       /** Recebe os destinos reais já unidos por `listAnd`. */
       destinations: '{list}',
       inputOne: '{count} linha colada',
@@ -174,9 +209,10 @@ const messages = {
   /**
    * Barra de ações do rodapé do conteúdo (FR-016 a FR-019).
    *
-   * Existe **apenas** em Destinos e Entrada. As demais etapas mantêm as ações
-   * dentro do cartão que as explica (FR-061), e "Pular o {serviço}" continua
-   * adjacente ao cartão da fase (FR-062).
+   * Existe em Configuração, Destinos e Entrada — as três etapas em que há uma
+   * decisão única a confirmar antes de seguir. As demais mantêm as ações dentro
+   * do cartão que as explica (FR-061), e "Pular o {serviço}" continua adjacente
+   * ao cartão da fase (FR-062).
    */
   actionBar: {
     label: 'Ações da etapa',
@@ -302,6 +338,15 @@ const messages = {
     saved: 'Credencial de {service} salva neste dispositivo.',
     emptyError: 'Informe o Client ID antes de salvar.',
     noneSaved: 'Cadastre ao menos um Client ID para continuar.',
+    /**
+     * O estado da etapa na barra de ações (nó `N7OSfN`).
+     *
+     * Conta **serviços configurados**, não credenciais salvas, porque é o que a
+     * etapa pergunta: nenhum serviço é obrigatório isoladamente, e o que
+     * autoriza o avanço é existir ao menos um.
+     */
+    configuredCountOne: '1 serviço configurado',
+    configuredCountOther: '{count} serviços configurados',
     reveal: 'Revelar credencial de {service}',
     hide: 'Ocultar credencial de {service}',
     maskedLabel: 'Credencial de {service} salva, exibida de forma mascarada',
@@ -338,10 +383,36 @@ const messages = {
     lockedNotice:
       'A seleção foi travada quando a primeira criação começou. Para mudá-la, descarte o rascunho.',
     noneSelected: 'Selecione ao menos um destino para continuar.',
-    orderNotice:
-      'Quando você escolhe os dois, executamos um serviço de cada vez, sempre nesta ordem: {first}, depois {second}.',
     selectedCountOne: '1 destino selecionado',
     selectedCountOther: '{count} destinos selecionados',
+
+    /**
+     * O estado da conta, sob o rótulo do cartão (008/FR-021, FR-021a).
+     *
+     * Os três ocupam a **mesma faixa** e têm a mesma altura: o cartão não pula
+     * quando a sessão é obtida. `pendingAuth` diz **quando** a autorização
+     * acontece, em vez de deixar o usuário supondo que ela já deveria ter
+     * acontecido.
+     */
+    accountConnected: 'Conectado como {account}',
+    accountPendingAuth: 'A autorização acontece ao executar o {service}',
+
+    /**
+     * O painel lateral "Ordem de execução" (008/FR-014 a FR-019).
+     *
+     * A explicação da ordem passa a existir **uma única vez**, aqui. Antes ela
+     * era um parágrafo solto no corpo da etapa **e** a decoração muda do painel;
+     * mover é o que FR-019 pede, e o resultado é uma frase a menos na tela.
+     */
+    panelTitle: 'Ordem de execução',
+    /** A nota de posição de cada item. Some com um destino só (`solo`). */
+    panelFirst: '1º · será criada primeiro',
+    panelAfter: '{position}º · depois do {previous}',
+    /** No lugar da fila, com seleção vazia (FR-015a). O painel nunca some. */
+    panelEmpty: 'Escolha um destino para ver a ordem de execução.',
+    panelHint:
+      'Executamos um serviço por vez. Se um falhar, o outro continua e você vê o resultado de cada um.',
+    panelCaption: 'A ordem que você colou é a ordem que toca. Nada de embaralhar sem você pedir.',
   },
 
   // -------------------------------------------------------------------------

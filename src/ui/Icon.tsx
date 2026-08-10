@@ -10,7 +10,10 @@ import { cx } from './cx';
  *
  * 1. **Cor vem do contexto.** `currentColor`, sempre. Um ícone que fixa a
  *    própria cor sobrevive à troca de tema com a cor errada, e a falha é
- *    invisível em revisão de código — só aparece na tela de alguém.
+ *    invisível em revisão de código — só aparece na tela de alguém. Na prática
+ *    isso significa que a cor chega por `className` (`text-brand-spotify`,
+ *    `text-accent-text`, `text-ink-muted`), e **este componente não a fixa nem a
+ *    repassa por propriedade** — ver o comentário na chamada do glifo.
  * 2. **Tamanho acompanha o tipo do contexto.** `1em`, nunca uma medida avulsa.
  *    O ícone ao lado de um rótulo `text-meta` encolhe junto com ele; o de um
  *    título `text-step` cresce junto. É o que impede a escala finita de
@@ -83,9 +86,30 @@ export function Icon({ role, label, className }: IconProps) {
   return (
     <Glyph
       className={cx(BASE, className)}
-      // `currentColor` é o padrão de `react-icons`, mas declarar é o que torna a
-      // regra verificável em vez de herdada por sorte da biblioteca (SC-017).
-      color="currentColor"
+      /*
+        **Nenhuma cor é passada aqui, e a ausência é a decisão.**
+
+        Havia um `color="currentColor"` nesta chamada, escrito para "tornar a
+        regra verificável em vez de herdada por sorte da biblioteca". Ele fazia o
+        contrário: `react-icons` não repassa `color` como atributo, ele o emite
+        como **estilo em linha** (`style="color: currentColor"`), e estilo em
+        linha vence classe utilitária. `currentColor` na própria propriedade
+        `color` significa "o valor herdado", de modo que todo glifo pintava com a
+        cor do **pai** e qualquer `text-*` que o chamador passasse era descartado
+        em silêncio.
+
+        O efeito media-se na tela: os três lugares em que o arquivo de design
+        tinge o glifo do provedor — o chip de conexão (`gVoPE`), o distintivo do
+        cartão de destino (`WDCUM`) e o marcador da fila (`Lsvko`) — pediam
+        `text-brand-spotify` e `text-brand-youtube` desde a 007 e renderizavam em
+        `--ink`. Classe escrita, CSS emitido, e nada na tela: o modo de falha que
+        este projeto inteiro vigia.
+
+        Sem `color`, o `fill="currentColor"` que a biblioteca já põe no `<svg>`
+        resolve contra a classe do chamador, que é de onde a cor deve vir — da
+        camada de tokens, nunca de um literal passado por propriedade.
+        `tests/unit/icon-color.spec.ts` recusa a volta do estilo em linha.
+      */
       {...(decorative
         ? { 'aria-hidden': true, focusable: false }
         : { role: 'img', 'aria-label': label })}

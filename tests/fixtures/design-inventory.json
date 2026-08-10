@@ -1,0 +1,1627 @@
+[
+  {
+    "tela": "Components / Playlist Importer",
+    "no": "G2IsFJ",
+    "design": "Playlist Importer",
+    "desfecho": "mantido-diferente",
+    "motivo": "É o nome do produto, não um rótulo de interface. A constituição exige a interface em pt-BR, e trocar o nome do produto é decisão de produto, não de fidelidade visual. Permanece 'Importador de Playlist por Texto' (FR-026, decisão registrada na spec).",
+    "chave": "app.title"
+  },
+  {
+    "tela": "Components / Playlist Importer",
+    "no": "G2IsFJ",
+    "design": "Texto → Spotify · YouTube",
+    "desfecho": "adotado",
+    "chave": "app.subtitle"
+  },
+  {
+    "tela": "Components / Playlist Importer",
+    "no": "a5X67L",
+    "design": "Continuar",
+    "desfecho": "adotado",
+    "chave": "common.next"
+  },
+  {
+    "tela": "Components / Playlist Importer",
+    "no": "GGbYB",
+    "design": "Voltar",
+    "desfecho": "adotado",
+    "chave": "common.back"
+  },
+  {
+    "tela": "Components / Playlist Importer",
+    "no": "ThHZF",
+    "design": "Reconectar",
+    "desfecho": "adotado",
+    "chave": "connectionChip.reconnect"
+  },
+  {
+    "tela": "Components / Playlist Importer",
+    "no": "vNYHu/ThHZF",
+    "design": "Conectar",
+    "desfecho": "adotado",
+    "chave": "connectionChip.connect"
+  },
+  {
+    "tela": "Components / Playlist Importer",
+    "no": "vNYHu/MW4CE",
+    "design": "Não conectado",
+    "desfecho": "mantido-diferente",
+    "motivo": "A aplicação distingue três estados de chip e o arquivo desenha dois. 'Desconectado' é o rótulo já usado desde a feature 004 para o estado de credencial sem sessão, e reusá-lo é o que FR-033 exige — texto novo para a mesma ideia produziria duas frases divergentes para o mesmo estado. O terceiro estado, 'Sem credencial', o arquivo não desenha (FR-008).",
+    "chave": "connectionChip.disconnected"
+  },
+  {
+    "tela": "Components / Playlist Importer",
+    "no": "RlBSR",
+    "design": "Criar no Spotify",
+    "desfecho": "adotado",
+    "chave": "destinations.selectLabel",
+    "amostra": {
+      "service": "Spotify"
+    }
+  },
+  {
+    "tela": "Components / Playlist Importer",
+    "no": "v5csuU",
+    "design": "Conectado como Luciano Rodrigues",
+    "desfecho": "adotado",
+    "chave": "destinations.accountConnected",
+    "amostra": {
+      "account": "Luciano Rodrigues"
+    }
+  },
+  {
+    "tela": "Importador · Configuração",
+    "no": "s7xJec",
+    "design": "ETAPAS",
+    "desfecho": "mantido-diferente",
+    "motivo": "O caixa alta é apresentação, não conteúdo: `tracking-wide uppercase` no componente da trilha produz o mesmo efeito visual sem congelar o texto em maiúsculas no dicionário — o que quebraria leitores de tela que soletram siglas. A chave é `rail.title`, com o valor 'Etapas'.",
+    "chave": "rail.title"
+  },
+  {
+    "tela": "Importador · Configuração",
+    "no": "MDZGi",
+    "design": "Configuração",
+    "desfecho": "adotado",
+    "chave": "steps.credential"
+  },
+  {
+    "tela": "Importador · Configuração",
+    "no": "TKS06",
+    "design": "Suas credenciais",
+    "desfecho": "adotado",
+    "chave": "rail.neutral.credential"
+  },
+  {
+    "tela": "Importador · Configuração",
+    "no": "skUeZ",
+    "design": "Destinos",
+    "desfecho": "adotado",
+    "chave": "steps.destinations"
+  },
+  {
+    "tela": "Importador · Configuração",
+    "no": "CD9SL",
+    "design": "Spotify e YouTube",
+    "desfecho": "mantido-diferente",
+    "motivo": "O arquivo mostra a forma **derivada** da etapa Destinos numa tela em que a escolha ainda não aconteceu. FR-029 proíbe a trilha afirmar uma escolha que o usuário não fez, e a regra vence o desenho: nesta tela a linha é `rail.neutral.destinations`. A forma derivada existe e é adotada — ela aparece a partir do momento em que há destino escolhido.",
+    "chave": "rail.neutral.destinations"
+  },
+  {
+    "tela": "Importador · Configuração",
+    "no": "tXJyK",
+    "design": "Entrada",
+    "desfecho": "adotado",
+    "chave": "steps.input"
+  },
+  {
+    "tela": "Importador · Configuração",
+    "no": "fbrp5",
+    "design": "Cole a lista de músicas",
+    "desfecho": "adotado",
+    "chave": "rail.neutral.input"
+  },
+  {
+    "tela": "Importador · Configuração",
+    "no": "NlyRM",
+    "design": "Serviço",
+    "desfecho": "adotado",
+    "chave": "steps.service"
+  },
+  {
+    "tela": "Importador · Configuração",
+    "no": "Q7goD",
+    "design": "Criação e resultado",
+    "desfecho": "adotado",
+    "chave": "rail.neutral.service"
+  },
+  {
+    "tela": "Importador · Configuração",
+    "no": "r9U2DT",
+    "design": "Recomeçar do início",
+    "desfecho": "adotado",
+    "chave": "rail.restart"
+  },
+  {
+    "tela": "Importador · Configuração",
+    "no": "auaD2",
+    "design": "Informe suas credenciais",
+    "desfecho": "adotado",
+    "chave": "credential.heading"
+  },
+  {
+    "tela": "Importador · Configuração",
+    "no": "xkOgw",
+    "design": "Cadastre o Client ID de cada serviço que você quer usar. Nenhum deles é obrigatório isoladamente — basta um para continuar. Nenhum Client Secret é solicitado, aceito ou armazenado.",
+    "desfecho": "adotado",
+    "chave": "credential.intro"
+  },
+  {
+    "tela": "Importador · Configuração",
+    "no": "IENyq",
+    "design": "Credencial do Spotify",
+    "desfecho": "adotado",
+    "chave": "providers.spotify.credentialHeading"
+  },
+  {
+    "tela": "Importador · Configuração",
+    "no": "PdpnC",
+    "design": "Credencial do YouTube",
+    "desfecho": "adotado",
+    "chave": "providers.youtube.credentialHeading"
+  },
+  {
+    "tela": "Importador · Configuração",
+    "no": "L4NJyr",
+    "design": "Apaga o Client ID de Spotify deste dispositivo. Não afeta o outro serviço nem o rascunho de trabalho.",
+    "desfecho": "adotado",
+    "chave": "credential.removeHint",
+    "amostra": {
+      "service": "Spotify"
+    }
+  },
+  {
+    "tela": "Importador · Configuração",
+    "no": "NSO6b",
+    "design": "Permissões solicitadas: criar playlists privadas e públicas e ler a lista das suas playlists (para checar nome repetido).",
+    "desfecho": "adotado",
+    "chave": "providers.spotify.scopesNotice"
+  },
+  {
+    "tela": "Importador · Configuração",
+    "no": "E7eQu",
+    "design": "Permissão solicitada: gerenciar sua conta do YouTube — é o menor escopo que permite listar e criar playlists.",
+    "desfecho": "adotado",
+    "chave": "providers.youtube.scopesNotice"
+  },
+  {
+    "tela": "Importador · Configuração",
+    "no": "JldfU",
+    "design": "O YouTube não oferece uma permissão apenas para playlists. A permissão concedida cobre mais do que este app faz — ele lista suas playlists, cria uma nova e adiciona vídeos a ela, e nada além disso. Você pode revogar o acesso a qualquer momento na sua Conta Google.",
+    "desfecho": "adotado",
+    "chave": "providers.youtube.setupNotices[0]"
+  },
+  {
+    "tela": "Importador · Configuração",
+    "no": "Nw2NJ",
+    "design": "A autorização do YouTube vale cerca de uma hora e não pode ser renovada em silêncio por um app sem servidor. Quando ela vencer, pediremos para autorizar de novo — seu trabalho é preservado integralmente.",
+    "desfecho": "adotado",
+    "chave": "providers.youtube.setupNotices[1]"
+  },
+  {
+    "tela": "Importador · Configuração",
+    "no": "iLqLx",
+    "design": "Como obter o Client ID do Spotify",
+    "desfecho": "adotado",
+    "chave": "providers.spotify.howToHeading"
+  },
+  {
+    "tela": "Importador · Configuração",
+    "no": "V0mWm",
+    "design": "Como obter o Client ID do YouTube",
+    "desfecho": "adotado",
+    "chave": "providers.youtube.howToHeading"
+  },
+  {
+    "tela": "Importador · Configuração",
+    "no": "zojNC/MzUZu",
+    "design": "Acesse o Spotify Developer Dashboard e entre com sua conta.",
+    "desfecho": "adotado",
+    "chave": "providers.spotify.howToSteps[0]"
+  },
+  {
+    "tela": "Importador · Configuração",
+    "no": "xTJm8/MzUZu",
+    "design": "Crie um app (qualquer nome e descrição servem).",
+    "desfecho": "adotado",
+    "chave": "providers.spotify.howToSteps[1]"
+  },
+  {
+    "tela": "Importador · Configuração",
+    "no": "uLh5t/MzUZu",
+    "design": "Copie o Client ID exibido na página do app.",
+    "desfecho": "adotado",
+    "chave": "providers.spotify.howToSteps[2]"
+  },
+  {
+    "tela": "Importador · Configuração",
+    "no": "D3YWWR/MzUZu",
+    "design": "Em Settings, cadastre o Redirect URI exato mostrado abaixo.",
+    "desfecho": "adotado",
+    "chave": "providers.spotify.howToSteps[3]"
+  },
+  {
+    "tela": "Importador · Configuração",
+    "no": "r5WQY/MzUZu",
+    "design": "Se o app estiver em modo de desenvolvimento, adicione sua conta em Users and Access.",
+    "desfecho": "adotado",
+    "chave": "providers.spotify.howToSteps[4]"
+  },
+  {
+    "tela": "Importador · Configuração",
+    "no": "EputB/MzUZu",
+    "design": "Acesse o Google Cloud Console e crie (ou escolha) um projeto.",
+    "desfecho": "adotado",
+    "chave": "providers.youtube.howToSteps[0]"
+  },
+  {
+    "tela": "Importador · Configuração",
+    "no": "QLcli/MzUZu",
+    "design": "Ative a YouTube Data API v3 na biblioteca de APIs do projeto.",
+    "desfecho": "adotado",
+    "chave": "providers.youtube.howToSteps[1]"
+  },
+  {
+    "tela": "Importador · Configuração",
+    "no": "S4koA/MzUZu",
+    "design": "Em Credenciais, crie um ID do cliente OAuth do tipo \"Aplicativo da Web\".",
+    "desfecho": "adotado",
+    "chave": "providers.youtube.howToSteps[2]"
+  },
+  {
+    "tela": "Importador · Configuração",
+    "no": "uc0e4/MzUZu",
+    "design": "Cadastre os dois endereços mostrados abaixo, cada um no seu campo: a origem em \"Origens JavaScript autorizadas\" e o Redirect URI em \"URIs de redirecionamento autorizados\". São parecidos mas diferentes — só o Redirect URI termina em barra.",
+    "desfecho": "adotado",
+    "chave": "providers.youtube.howToSteps[3]"
+  },
+  {
+    "tela": "Importador · Configuração",
+    "no": "BeZHx/MzUZu",
+    "design": "Em \"Público-alvo\", adicione como usuário de teste a conta do YouTube onde as playlists serão criadas. Ela precisa estar na lista mesmo que seja a dona do projeto, e se for diferente da conta que criou o projeto é ela que deve entrar — sem isso a autorização é bloqueada com \"access_denied\".",
+    "desfecho": "adotado",
+    "chave": "providers.youtube.howToSteps[4]"
+  },
+  {
+    "tela": "Importador · Configuração",
+    "no": "HjGqB",
+    "design": "Abrir o Spotify Developer Dashboard",
+    "desfecho": "adotado",
+    "chave": "providers.spotify.consoleLinkLabel"
+  },
+  {
+    "tela": "Importador · Configuração",
+    "no": "HWQ6N",
+    "design": "Abrir o Google Cloud Console",
+    "desfecho": "adotado",
+    "chave": "providers.youtube.consoleLinkLabel"
+  },
+  {
+    "tela": "Importador · Configuração",
+    "no": "zOnkx",
+    "design": "Redirect URI a cadastrar",
+    "desfecho": "adotado",
+    "chave": "credential.redirectUriHeading"
+  },
+  {
+    "tela": "Importador · Configuração",
+    "no": "wgpke",
+    "design": "Cadastre exatamente este endereço, com a barra final. A correspondência é exata, incluindo maiúsculas e minúsculas. Faltando a barra, a autorização é recusada com \"redirect_uri_mismatch\".",
+    "desfecho": "adotado",
+    "chave": "credential.redirectUriHint"
+  },
+  {
+    "tela": "Importador · Configuração",
+    "no": "RSlOp",
+    "design": "As plataformas não aceitam http://localhost. Em desenvolvimento use o endereço IPv4 literal 127.0.0.1, como mostrado acima.",
+    "desfecho": "adotado",
+    "chave": "credential.redirectUriLocalhostWarning"
+  },
+  {
+    "tela": "Importador · Configuração",
+    "no": "doWzw",
+    "design": "Origem JavaScript autorizada",
+    "desfecho": "adotado",
+    "chave": "credential.javascriptOriginHeading"
+  },
+  {
+    "tela": "Importador · Configuração",
+    "no": "wTJKp",
+    "design": "Valor diferente do Redirect URI: este vai sem a barra final, em \"Origens JavaScript autorizadas\". Sem ele a autorização é recusada antes mesmo da tela de consentimento.",
+    "desfecho": "adotado",
+    "chave": "credential.javascriptOriginHint"
+  },
+  {
+    "tela": "Importador · Destinos",
+    "no": "CHYss",
+    "design": "Preferências salvas",
+    "desfecho": "adotado",
+    "chave": "rail.derived.credential"
+  },
+  {
+    "tela": "Importador · Destinos",
+    "no": "z60mT",
+    "design": "Oi, Luciano",
+    "desfecho": "adotado",
+    "chave": "header.greeting",
+    "amostra": {
+      "name": "Luciano"
+    }
+  },
+  {
+    "tela": "Importador · Destinos",
+    "no": "y0ju8J",
+    "design": "· vamos levar suas músicas pra casa",
+    "desfecho": "adotado",
+    "chave": "header.destinationsComplement"
+  },
+  {
+    "tela": "Importador · Destinos",
+    "no": "inrE1",
+    "design": "Para onde vai a playlist?",
+    "desfecho": "adotado",
+    "chave": "destinations.heading"
+  },
+  {
+    "tela": "Importador · Destinos",
+    "no": "x40AP",
+    "design": "Escolha um ou mais destinos. O texto, o nome e a visibilidade são informados uma vez só e valem para todos.",
+    "desfecho": "adotado",
+    "chave": "destinations.intro"
+  },
+  {
+    "tela": "Importador · Destinos",
+    "no": "xx0U1",
+    "design": "Serviços de destino",
+    "desfecho": "adotado",
+    "chave": "destinations.groupLabel"
+  },
+  {
+    "tela": "Importador · Destinos",
+    "no": "vsx3g",
+    "design": "Ordem de execução",
+    "desfecho": "adotado",
+    "chave": "destinations.panelTitle"
+  },
+  {
+    "tela": "Importador · Destinos",
+    "no": "W2S9Lo",
+    "design": "1º · será criada primeiro",
+    "desfecho": "adotado",
+    "chave": "destinations.panelFirst"
+  },
+  {
+    "tela": "Importador · Destinos",
+    "no": "KuSPu",
+    "design": "2º · depois do Spotify",
+    "desfecho": "adotado",
+    "chave": "destinations.panelAfter",
+    "amostra": {
+      "position": 2,
+      "previous": "Spotify"
+    }
+  },
+  {
+    "tela": "Importador · Destinos",
+    "no": "qS2CG",
+    "design": "Executamos um serviço por vez. Se um falhar, o outro continua e você vê o resultado de cada um.",
+    "desfecho": "adotado",
+    "chave": "destinations.panelHint"
+  },
+  {
+    "tela": "Importador · Destinos",
+    "no": "d5S1gP",
+    "design": "A ordem que você colou é a ordem que toca. Nada de embaralhar sem você pedir.",
+    "desfecho": "adotado",
+    "chave": "destinations.panelCaption"
+  },
+  {
+    "tela": "Importador · Destinos",
+    "no": "mPcTd",
+    "design": "2 destinos selecionados",
+    "desfecho": "adotado",
+    "chave": "destinations.selectedCountOther",
+    "plural": 2,
+    "amostra": {
+      "count": 2
+    }
+  },
+  {
+    "tela": "Importador · Entrada",
+    "no": "pA8Er",
+    "design": "· hora de colar sua lista",
+    "desfecho": "adotado",
+    "chave": "header.inputComplement"
+  },
+  {
+    "tela": "Importador · Entrada",
+    "no": "fczJk",
+    "design": "Cole sua lista",
+    "desfecho": "adotado",
+    "chave": "input.heading"
+  },
+  {
+    "tela": "Importador · Entrada",
+    "no": "sYv9H",
+    "design": "Uma música por linha. Escrever o artista ajuda, mas não é obrigatório.",
+    "desfecho": "adotado",
+    "chave": "input.intro"
+  },
+  {
+    "tela": "Importador · Entrada",
+    "no": "xMayi",
+    "design": "Lista de músicas",
+    "desfecho": "adotado",
+    "chave": "input.textareaLabel"
+  },
+  {
+    "tela": "Importador · Entrada",
+    "no": "rG4eA",
+    "design": "O separador é opcional. Separar com hífen (-), travessão (– —) ou a palavra \"by\" diz ao app onde termina o título e aumenta o acerto automático; sem ele, a linha inteira é pesquisada.",
+    "desfecho": "adotado",
+    "chave": "input.separatorsHint"
+  },
+  {
+    "tela": "Importador · Entrada",
+    "no": "hTpw9",
+    "design": "0 linhas · cole ou digite pelo menos uma para continuar",
+    "desfecho": "mantido-diferente",
+    "motivo": "O arquivo funde contagem e impedimento numa frase só. A aplicação os mantém separados porque eles vivem em lugares diferentes da barra de ações — a contagem no estado da etapa (`input.lineCountOther`), o impedimento no motivo de bloqueio (`input.emptyHint`) —, e o segundo tem prefixo 'Para avançar:' que só faz sentido isolado. Fundi-los produziria a contagem sem o prefixo ou o prefixo sobre a contagem."
+  },
+  {
+    "tela": "Importador · Entrada",
+    "no": "P6NdFO/a5X67L",
+    "design": "Começar",
+    "desfecho": "adotado",
+    "chave": "input.start"
+  },
+  {
+    "tela": "Importador · Serviço",
+    "no": "SusdI",
+    "design": "Spotify — 1 de 2",
+    "desfecho": "adotado",
+    "chave": "queue.position",
+    "amostra": {
+      "service": "Spotify",
+      "current": 1,
+      "total": 2
+    }
+  },
+  {
+    "tela": "Importador · Serviço",
+    "no": "j08XAY",
+    "design": "Confira as correspondências no Spotify",
+    "desfecho": "adotado",
+    "chave": "review.heading",
+    "amostra": {
+      "service": "Spotify"
+    }
+  },
+  {
+    "tela": "Importador · Serviço",
+    "no": "rdeDW",
+    "design": "Nada é criado na sua conta até você confirmar. Itens confiantes já vêm marcados; incertos precisam da sua confirmação.",
+    "desfecho": "adotado",
+    "chave": "review.intro"
+  },
+  {
+    "tela": "Importador · Serviço",
+    "no": "zwMYG",
+    "design": "Busca concluída: 4 de 4 linhas.",
+    "desfecho": "adotado",
+    "chave": "review.progressDone",
+    "amostra": {
+      "done": 4,
+      "total": 4
+    }
+  },
+  {
+    "tela": "Importador · Serviço",
+    "no": "o6CiY",
+    "design": "2 confiantes · 1 incerta · 1 não encontrada",
+    "desfecho": "mantido-diferente",
+    "motivo": "O arquivo compõe os três contadores numa linha só, com separadores. A aplicação os mantém em três chaves — `review.summaryConfident`, `summaryUncertain`, `summaryNotFound` — porque cada um pode ser zero e some, e uma frase única deixaria separadores órfãos. Os textos de cada contador são os mesmos."
+  },
+  {
+    "tela": "Importador · Serviço",
+    "no": "fvgRv",
+    "design": "2 de 4 faixas selecionadas",
+    "desfecho": "adotado",
+    "chave": "review.selectedCount",
+    "amostra": {
+      "selected": 2,
+      "total": 4
+    }
+  },
+  {
+    "tela": "Importador · Serviço",
+    "no": "cdGsg",
+    "design": "Corrigir o texto aqui corrige a linha para os serviços seguintes. A faixa escolhida, não — cada serviço tem a sua.",
+    "desfecho": "adotado",
+    "chave": "review.editLinePropagates"
+  },
+  {
+    "tela": "Importador · Serviço",
+    "no": "gXsjM",
+    "design": "Por que pede atenção:",
+    "desfecho": "mantido-diferente",
+    "motivo": "O arquivo põe dois-pontos no fim do rótulo. A aplicação o guarda sem pontuação (`review.attentionReason.label`) porque o mesmo rótulo é usado como nome acessível de região, onde os dois-pontos são lidos em voz alta. A pontuação é apresentação e vive no componente."
+  },
+  {
+    "tela": "Importador · Serviço",
+    "no": "cFJHk",
+    "design": "Sua linha não diz o artista, e mais de uma gravação combina igualmente bem. Escolha entre as candidatas ou acrescente o artista à linha.",
+    "desfecho": "adotado",
+    "chave": "review.attentionReason.noArtistAmbiguous"
+  },
+  {
+    "tela": "Importador · Serviço",
+    "no": "pNevd",
+    "design": "Confirme visualmente antes de incluir.",
+    "desfecho": "adotado",
+    "chave": "review.statusHint.uncertain"
+  },
+  {
+    "tela": "Importador · Serviço",
+    "no": "U0PAwq",
+    "design": "Nenhuma candidata suficientemente parecida. Edite a linha e busque de novo.",
+    "desfecho": "adotado",
+    "chave": "review.attentionReason.notFound"
+  },
+  {
+    "tela": "Importador · Serviço",
+    "no": "I68uW",
+    "design": "Correspondência forte. Já marcada para entrar na playlist.",
+    "desfecho": "adotado",
+    "chave": "review.statusHint.confident"
+  },
+  {
+    "tela": "Importador · Serviço",
+    "no": "Q5Pwy",
+    "design": "Nenhuma faixa escolhida",
+    "desfecho": "adotado",
+    "chave": "review.noSelection"
+  },
+  {
+    "tela": "Importador · Serviço",
+    "no": "LNNaE/bFTBf",
+    "design": "Ver alternativas",
+    "desfecho": "adotado",
+    "chave": "review.alternatives"
+  },
+  {
+    "tela": "Importador · Serviço",
+    "no": "LNNaE/EAkEy",
+    "design": "Editar linha",
+    "desfecho": "adotado",
+    "chave": "review.editLine"
+  },
+  {
+    "tela": "Importador · Serviço",
+    "no": "LNNaE/f3VXh",
+    "design": "Abrir no Spotify",
+    "desfecho": "adotado",
+    "chave": "review.openExternal",
+    "amostra": {
+      "service": "Spotify"
+    }
+  },
+  {
+    "tela": "Importador · Serviço",
+    "no": "PmhAc",
+    "design": "Outras candidatas para \"nao sei viver sem ter voce\"",
+    "desfecho": "adotado",
+    "chave": "review.alternativesHeading",
+    "amostra": {
+      "line": "nao sei viver sem ter voce"
+    }
+  },
+  {
+    "tela": "Importador · Serviço",
+    "no": "IUUmo",
+    "design": "Faixa escolhida",
+    "desfecho": "adotado",
+    "chave": "review.chosenCandidate"
+  },
+  {
+    "tela": "Importador · Serviço",
+    "no": "n318Fb",
+    "design": "Escolher esta faixa",
+    "desfecho": "adotado",
+    "chave": "review.chooseCandidate"
+  },
+  {
+    "tela": "Importador · Serviço",
+    "no": "DQ9Ro",
+    "design": "Descartar este item",
+    "desfecho": "adotado",
+    "chave": "review.discardItem"
+  },
+  {
+    "tela": "Importador · Serviço",
+    "no": "G2UHN",
+    "design": "Texto da linha",
+    "desfecho": "adotado",
+    "chave": "review.editLineLabel"
+  },
+  {
+    "tela": "Importador · Serviço",
+    "no": "Z8wSO",
+    "design": "Pressione Enter ou saia do campo para buscar de novo apenas esta linha.",
+    "desfecho": "adotado",
+    "chave": "review.editLineHint"
+  },
+  {
+    "tela": "Importador · Serviço",
+    "no": "nSY6r",
+    "design": "Buscar esta linha de novo",
+    "desfecho": "adotado",
+    "chave": "review.reSearch"
+  },
+  {
+    "tela": "Importador · Serviço",
+    "no": "zA4Be",
+    "design": "Cancelar",
+    "desfecho": "adotado",
+    "chave": "common.cancel"
+  },
+  {
+    "tela": "Importador · Serviço",
+    "no": "H835l9",
+    "design": "Dados da playlist",
+    "desfecho": "adotado",
+    "chave": "playlistConfig.heading"
+  },
+  {
+    "tela": "Importador · Serviço",
+    "no": "Rcdmp/khP4Y",
+    "design": "Nome da playlist",
+    "desfecho": "adotado",
+    "chave": "playlistConfig.nameLabel"
+  },
+  {
+    "tela": "Importador · Serviço",
+    "no": "Rcdmp/TZlTg",
+    "design": "Ex.: Clássicos do rock",
+    "desfecho": "adotado",
+    "chave": "playlistConfig.namePlaceholder"
+  },
+  {
+    "tela": "Importador · Serviço",
+    "no": "tOGfJ",
+    "design": "A checagem vale só para este serviço — o nome usado em outro destino não interfere.",
+    "desfecho": "adotado",
+    "chave": "playlistConfig.nameDuplicateScope"
+  },
+  {
+    "tela": "Importador · Serviço",
+    "no": "nYLP0/khP4Y",
+    "design": "Descrição",
+    "desfecho": "adotado",
+    "chave": "playlistConfig.descriptionLabel"
+  },
+  {
+    "tela": "Importador · Serviço",
+    "no": "nYLP0/TZlTg",
+    "design": "Opcional",
+    "desfecho": "adotado",
+    "chave": "playlistConfig.descriptionPlaceholder"
+  },
+  {
+    "tela": "Importador · Serviço",
+    "no": "ZXv3Q",
+    "design": "Visibilidade",
+    "desfecho": "adotado",
+    "chave": "playlistConfig.visibilityLabel"
+  },
+  {
+    "tela": "Importador · Serviço",
+    "no": "qhy71",
+    "design": "Privada",
+    "desfecho": "adotado",
+    "chave": "playlistConfig.visibilityPrivate"
+  },
+  {
+    "tela": "Importador · Serviço",
+    "no": "LjErT",
+    "design": "Playlists privadas ficam visíveis apenas para você.",
+    "desfecho": "adotado",
+    "chave": "playlistConfig.visibilityHint"
+  },
+  {
+    "tela": "Importador · Serviço",
+    "no": "qcyED",
+    "design": "Criar playlist no Spotify",
+    "desfecho": "adotado",
+    "chave": "playlistConfig.create",
+    "amostra": {
+      "service": "Spotify"
+    }
+  },
+  {
+    "tela": "Importador · Serviço",
+    "no": "CZrNY",
+    "design": "Pular o Spotify",
+    "desfecho": "adotado",
+    "chave": "queue.skipService",
+    "amostra": {
+      "service": "Spotify"
+    }
+  },
+  {
+    "tela": "Importador · Serviço · Reconectar",
+    "no": "NGhDO/MW4CE",
+    "design": "Desconectado",
+    "desfecho": "adotado",
+    "chave": "connectionChip.disconnected"
+  },
+  {
+    "tela": "Importador · Serviço · Reconectar",
+    "no": "QnbVG",
+    "design": "Conectar sua conta do YouTube",
+    "desfecho": "adotado",
+    "chave": "connect.heading",
+    "amostra": {
+      "service": "YouTube"
+    }
+  },
+  {
+    "tela": "Importador · Serviço · Reconectar",
+    "no": "iJ4JF",
+    "design": "Você será levado ao YouTube para autorizar. Nada é criado na sua conta nesta etapa.",
+    "desfecho": "adotado",
+    "chave": "connect.intro",
+    "amostra": {
+      "service": "YouTube"
+    }
+  },
+  {
+    "tela": "Importador · Serviço · Reconectar",
+    "no": "F0SXx",
+    "design": "Conectar ao YouTube",
+    "desfecho": "adotado",
+    "chave": "connect.connect",
+    "amostra": {
+      "service": "YouTube"
+    }
+  },
+  {
+    "tela": "Importador · Serviço · Orçamento",
+    "no": "iA1Jl",
+    "design": "YouTube · Conferindo o orçamento",
+    "desfecho": "adotado",
+    "chave": "header.serviceSuffix",
+    "amostra": {
+      "service": "YouTube",
+      "suffix": "Conferindo o orçamento"
+    }
+  },
+  {
+    "tela": "Importador · Serviço · Orçamento",
+    "no": "v8712s",
+    "design": "Orçamento diário do YouTube",
+    "desfecho": "adotado",
+    "chave": "quota.heading",
+    "amostra": {
+      "service": "YouTube"
+    }
+  },
+  {
+    "tela": "Importador · Serviço · Orçamento",
+    "no": "eJv4x",
+    "design": "O YouTube limita quanto um app pode consumir por dia. Antes de qualquer busca, mostramos o que esta lista deve custar.",
+    "desfecho": "adotado",
+    "chave": "quota.intro",
+    "amostra": {
+      "service": "YouTube"
+    }
+  },
+  {
+    "tela": "Importador · Serviço · Orçamento",
+    "no": "CXfYh/G7Sr2",
+    "design": "Consumo previsto",
+    "desfecho": "adotado",
+    "chave": "quota.estimateLabel"
+  },
+  {
+    "tela": "Importador · Serviço · Orçamento",
+    "no": "Ce8ua/G7Sr2",
+    "design": "Saldo estimado de hoje",
+    "desfecho": "adotado",
+    "chave": "quota.availableLabel"
+  },
+  {
+    "tela": "Importador · Serviço · Orçamento",
+    "no": "roTjS/G7Sr2",
+    "design": "Reserva para segunda tentativa",
+    "desfecho": "adotado",
+    "chave": "quota.retryReserveLabel"
+  },
+  {
+    "tela": "Importador · Serviço · Orçamento",
+    "no": "CXfYh/ofSIG",
+    "design": "223 unidades",
+    "desfecho": "mantido-diferente",
+    "motivo": "Não é um texto: é um número seguido da unidade, composto pelo componente a partir do valor calculado. A unidade está no dicionário (`quota.unit`), e o número vem do domínio — congelar '223' num template seria guardar dado de exemplo como texto de interface."
+  },
+  {
+    "tela": "Importador · Serviço · Orçamento",
+    "no": "fp7Zd",
+    "design": "Nenhuma das 1 linhas deve precisar de segunda tentativa.",
+    "desfecho": "mantido-diferente",
+    "motivo": "O mockup tem erro de concordância — 'das 1 linhas' — porque foi escrito com dados de exemplo fixos. Adotar o vocabulário sem adotar o erro é a leitura correta de fidelidade ao design: a aplicação diz 'Nenhuma das {total} linhas deve precisar de segunda busca.' A troca de 'busca' por 'tentativa' também não é adotada, porque 'segunda busca' é o termo que o resto da tela usa e trocá-lo em um lugar só produziria dois nomes para a mesma coisa."
+  },
+  {
+    "tela": "Importador · Serviço · Orçamento",
+    "no": "hDjF6",
+    "design": "Isso é cerca de 2% do orçamento diário.",
+    "desfecho": "adotado",
+    "chave": "quota.fractionLabel",
+    "amostra": {
+      "percent": 2
+    }
+  },
+  {
+    "tela": "Importador · Serviço · Orçamento",
+    "no": "ckcvI",
+    "design": "Continuar e buscar",
+    "desfecho": "adotado",
+    "chave": "quota.proceed"
+  },
+  {
+    "tela": "Importador · Serviço · Orçamento",
+    "no": "ySSnJ",
+    "design": "Pular o YouTube",
+    "desfecho": "adotado",
+    "chave": "quota.skipDestination",
+    "amostra": {
+      "service": "YouTube"
+    }
+  },
+  {
+    "tela": "Importador · Serviço · Orçamento",
+    "no": "TB9jj",
+    "design": "O orçamento é renovado à meia-noite no fuso do provedor.",
+    "desfecho": "adotado",
+    "chave": "quota.resetNotice"
+  },
+  {
+    "tela": "Importador · Serviço · YouTube",
+    "no": "K2pXt",
+    "design": "Confira as correspondências no YouTube",
+    "desfecho": "adotado",
+    "chave": "review.heading",
+    "amostra": {
+      "service": "YouTube"
+    }
+  },
+  {
+    "tela": "Importador · Serviço · YouTube",
+    "no": "yabwh",
+    "design": "Criar playlist no YouTube",
+    "desfecho": "adotado",
+    "chave": "playlistConfig.create",
+    "amostra": {
+      "service": "YouTube"
+    }
+  },
+  {
+    "tela": "Importador · Serviço · YouTube",
+    "no": "LbxFt/f3VXh",
+    "design": "Abrir no YouTube",
+    "desfecho": "adotado",
+    "chave": "review.openExternal",
+    "amostra": {
+      "service": "YouTube"
+    }
+  },
+  {
+    "tela": "Importador · Serviço · Spotify (Carregando)",
+    "no": "W28iHE",
+    "design": "Spotify · Concluído",
+    "desfecho": "adotado",
+    "chave": "header.serviceSuffix",
+    "amostra": {
+      "service": "Spotify",
+      "suffix": "Concluído"
+    }
+  },
+  {
+    "tela": "Importador · Serviço · Spotify (Carregando)",
+    "no": "yjjDB/gT44B",
+    "design": "Criando playlist no Spotify…",
+    "desfecho": "adotado",
+    "chave": "playlistConfig.creating",
+    "amostra": {
+      "service": "Spotify"
+    }
+  },
+  {
+    "tela": "Importador · Serviço · Spotify (Carregando)",
+    "no": "yjjDB/FeEHR",
+    "design": "Isso pode levar alguns segundos.",
+    "desfecho": "mantido-diferente",
+    "motivo": "O arquivo desenha três frases de espera — 'Isso pode levar alguns segundos.', 'Estamos enviando sua lista…' e 'Aguardando confirmação…'. A aplicação exibe **progresso real** no lugar delas: '{current} de {total} itens' (`result.creationProgress`), que diz mais e não envelhece. Substituir informação por tranquilização genérica seria uma regressão."
+  },
+  {
+    "tela": "Importador · Serviço · Spotify Concluído",
+    "no": "I8wme",
+    "design": "Playlist criada no Spotify",
+    "desfecho": "adotado",
+    "chave": "result.heading",
+    "amostra": {
+      "service": "Spotify"
+    }
+  },
+  {
+    "tela": "Importador · Serviço · Spotify Concluído",
+    "no": "UbmQs/G7Sr2",
+    "design": "Nome",
+    "desfecho": "adotado",
+    "chave": "result.playlistName"
+  },
+  {
+    "tela": "Importador · Serviço · Spotify Concluído",
+    "no": "XGV9S/G7Sr2",
+    "design": "Itens adicionados",
+    "desfecho": "adotado",
+    "chave": "result.added"
+  },
+  {
+    "tela": "Importador · Serviço · Spotify Concluído",
+    "no": "ftpsM/G7Sr2",
+    "design": "Itens ignorados",
+    "desfecho": "adotado",
+    "chave": "result.skipped"
+  },
+  {
+    "tela": "Importador · Serviço · Spotify Concluído",
+    "no": "Cqkr9/G7Sr2",
+    "design": "Caminho da playlist",
+    "desfecho": "adotado",
+    "chave": "result.effectivePath"
+  },
+  {
+    "tela": "Importador · Serviço · Spotify Concluído",
+    "no": "UcXkt",
+    "design": "Somamos aqui as descartadas, as duplicatas e as não incluídas.",
+    "desfecho": "adotado",
+    "chave": "result.skippedHint"
+  },
+  {
+    "tela": "Importador · Serviço · Spotify Concluído",
+    "no": "I3cMpc",
+    "design": "Criada na conta Luciano Rodrigues.",
+    "desfecho": "adotado",
+    "chave": "result.accountNotice",
+    "amostra": {
+      "account": "Luciano Rodrigues"
+    }
+  },
+  {
+    "tela": "Importador · Serviço · Spotify Concluído",
+    "no": "XDOKl",
+    "design": "Abrir no Spotify",
+    "desfecho": "adotado",
+    "chave": "providers.spotify.openPlaylist"
+  },
+  {
+    "tela": "Importador · Serviço · Spotify Concluído",
+    "no": "t0CPa/JjdUF",
+    "design": "Sobre pastas",
+    "desfecho": "adotado",
+    "chave": "result.folderNoticeHeading"
+  },
+  {
+    "tela": "Importador · Serviço · Spotify Concluído",
+    "no": "t0CPa/tx6jC",
+    "design": "A plataforma do Spotify não permite que aplicativos de terceiros criem ou escolham pastas de playlist. Sua playlist foi criada na raiz da biblioteca — para movê-la para uma pasta, arraste-a no aplicativo do Spotify.",
+    "desfecho": "adotado",
+    "chave": "providers.spotify.folderNotice"
+  },
+  {
+    "tela": "Importador · Serviço · Spotify Concluído",
+    "no": "V0Mb3",
+    "design": "Continuar para o YouTube",
+    "desfecho": "adotado",
+    "chave": "result.continueNext",
+    "amostra": {
+      "service": "YouTube"
+    }
+  },
+  {
+    "tela": "Importador · Serviço · Spotify Concluído",
+    "no": "idpQO",
+    "design": "Ajustar a lista antes de continuar",
+    "desfecho": "adotado",
+    "chave": "result.adjustList"
+  },
+  {
+    "tela": "Importador · Serviço · YouTube Concluído",
+    "no": "T3I8mP",
+    "design": "Playlist criada no YouTube",
+    "desfecho": "adotado",
+    "chave": "result.heading",
+    "amostra": {
+      "service": "YouTube"
+    }
+  },
+  {
+    "tela": "Importador · Serviço · YouTube Concluído",
+    "no": "F55SI",
+    "design": "Abrir no YouTube",
+    "desfecho": "adotado",
+    "chave": "providers.youtube.openPlaylist"
+  },
+  {
+    "tela": "Importador · Serviço · YouTube Concluído",
+    "no": "N1Yzb",
+    "design": "O YouTube não expõe pastas de playlist a aplicativos de terceiros. Sua playlist foi criada na sua lista de playlists — este app não cria nem escolhe pastas.",
+    "desfecho": "adotado",
+    "chave": "providers.youtube.folderNotice"
+  },
+  {
+    "tela": "Importador · Serviço · YouTube Concluído",
+    "no": "Q4A8zj",
+    "design": "A playlist criada é uma playlist do YouTube, não do YouTube Music. Ela pode aparecer no YouTube Music, mas quem a gerencia é o YouTube — este app não cria playlists do YouTube Music.",
+    "desfecho": "adotado",
+    "chave": "providers.youtube.resultNotices[0]"
+  },
+  {
+    "tela": "Importador · Serviço · YouTube Concluído",
+    "no": "Z0A8S/ofSIG",
+    "design": "Você / Playlists / teste 12",
+    "desfecho": "mantido-diferente",
+    "motivo": "É o caminho efetivo, composto em tempo de execução a partir da raiz da biblioteca do provedor e do nome real da playlist. A raiz está no dicionário (`providers.youtube.libraryRoot`); o resto é dado."
+  },
+  {
+    "tela": "Importador · Resumo",
+    "no": "UGKxo",
+    "design": "O que aconteceu em cada serviço",
+    "desfecho": "adotado",
+    "chave": "rail.neutral.summary"
+  },
+  {
+    "tela": "Importador · Resumo",
+    "no": "rhIpE",
+    "design": "Resumo",
+    "desfecho": "adotado",
+    "chave": "steps.summary"
+  },
+  {
+    "tela": "Importador · Resumo",
+    "no": "k7Qba",
+    "design": "Resumo",
+    "desfecho": "adotado",
+    "chave": "summary.heading"
+  },
+  {
+    "tela": "Importador · Resumo",
+    "no": "PbcmQ",
+    "design": "O que aconteceu em cada serviço.",
+    "desfecho": "adotado",
+    "chave": "summary.intro"
+  },
+  {
+    "tela": "Importador · Resumo",
+    "no": "J6x0i7/yQkrt",
+    "design": "Concluído",
+    "desfecho": "adotado",
+    "chave": "summary.outcome.completed"
+  },
+  {
+    "tela": "Importador · Resumo",
+    "no": "J6x0i7/yt9jq",
+    "design": "A playlist foi criada e todos os itens confirmados entraram.",
+    "desfecho": "adotado",
+    "chave": "summary.outcomeHint.completed"
+  },
+  {
+    "tela": "Importador · Resumo",
+    "no": "J6x0i7/t6Ce3",
+    "design": "Conta:",
+    "desfecho": "mantido-diferente",
+    "motivo": "O arquivo põe dois-pontos no fim do rótulo. A aplicação o guarda sem pontuação (`summary.accountLabel`) porque ele é o `<dt>` de uma lista de definição, onde a relação com o valor é estrutural e o leitor de tela já a anuncia. A pontuação é apresentação."
+  },
+  {
+    "tela": "Importador · Resumo",
+    "no": "J6x0i7/A1yp5m",
+    "design": "1 linha enviada · Itens adicionados: 1 · Itens ignorados: 0",
+    "desfecho": "mantido-diferente",
+    "motivo": "O arquivo funde três dados numa linha com separadores. A aplicação os mantém separados — `summary.linesUsedOne`, `result.added`, `result.skipped` — porque os três vêm de fontes diferentes e o resumo os apresenta como lista de definição, não como frase corrida. Os textos de cada um são os mesmos."
+  },
+  {
+    "tela": "Importador · Resumo",
+    "no": "J6x0i7/RGxfU",
+    "design": "Abrir no Spotify",
+    "desfecho": "adotado",
+    "chave": "providers.spotify.openPlaylist"
+  },
+  {
+    "tela": "Importador · Resumo",
+    "no": "b828It/GGbYB",
+    "design": "Começar uma nova playlist",
+    "desfecho": "adotado",
+    "chave": "summary.startOver"
+  },
+  {
+    "tela": "Components / Serviço",
+    "no": "cxVIM",
+    "design": "Confiante",
+    "desfecho": "adotado",
+    "chave": "review.status.confident"
+  },
+  {
+    "tela": "Components / Serviço",
+    "no": "WesqF/cxVIM",
+    "design": "Incerta",
+    "desfecho": "adotado",
+    "chave": "review.status.uncertain"
+  },
+  {
+    "tela": "Components / Serviço",
+    "no": "tZGQ5/cxVIM",
+    "design": "Não encontrada",
+    "desfecho": "adotado",
+    "chave": "review.status.notFound"
+  },
+  {
+    "tela": "Components / Serviço",
+    "no": "eSD6r",
+    "design": "Recuperamos um trabalho em andamento",
+    "desfecho": "adotado",
+    "chave": "draft.recoveredHeading"
+  },
+  {
+    "tela": "Components / Serviço",
+    "no": "QrTyG",
+    "design": "Salvo em 08/08/2026, 10:13. Você pode continuar de onde parou ou começar do zero.",
+    "desfecho": "adotado",
+    "chave": "draft.recoveredBody",
+    "amostra": {
+      "when": "08/08/2026, 10:13"
+    }
+  },
+  {
+    "tela": "Components / Serviço",
+    "no": "mGRDa",
+    "design": "Continuar de onde parei",
+    "desfecho": "adotado",
+    "chave": "draft.continue"
+  },
+  {
+    "tela": "Components / Serviço",
+    "no": "BtrJj",
+    "design": "Descartar rascunho",
+    "desfecho": "adotado",
+    "chave": "draft.discard"
+  },
+  {
+    "tela": "Components / Serviço",
+    "no": "khP4Y",
+    "design": "Campo",
+    "desfecho": "mantido-diferente",
+    "motivo": "Texto de exemplo do componente reutilizável, não da interface: cada instância o substitui pelo rótulo real. As instâncias reais estão inventariadas nas telas em que aparecem."
+  },
+  {
+    "tela": "Components / Configuração",
+    "no": "QHC64",
+    "design": "Revelar credencial",
+    "desfecho": "mantido-diferente",
+    "motivo": "Rótulo genérico do componente reutilizável. A aplicação nomeia o serviço — 'Revelar credencial de {service}' — porque os dois botões convivem na mesma tela, e dois controles com o mesmo nome acessível deixam quem usa leitor de tela sem como escolher entre eles. A instância real do arquivo já traz o serviço, e está inventariada na tela de Configuração."
+  },
+  {
+    "tela": "Importador · Configuração",
+    "no": "g1E2Et/QHC64",
+    "design": "Revelar credencial de Spotify",
+    "desfecho": "adotado",
+    "chave": "credential.reveal",
+    "amostra": {
+      "service": "Spotify"
+    }
+  },
+  {
+    "tela": "Importador · Configuração",
+    "no": "S6kHzM/RNycI",
+    "design": "Remover credencial de Spotify",
+    "desfecho": "adotado",
+    "chave": "credential.remove",
+    "amostra": {
+      "service": "Spotify"
+    }
+  },
+  {
+    "tela": "Components / Configuração",
+    "no": "RNycI",
+    "design": "Remover credencial",
+    "desfecho": "adotado",
+    "chave": "credential.removeHeading"
+  },
+  {
+    "tela": "Components / Configuração",
+    "no": "ja3dp",
+    "design": "Copiar",
+    "desfecho": "adotado",
+    "chave": "common.copy"
+  },
+  {
+    "tela": "Importador · Configuração",
+    "no": "Sim0L",
+    "design": "Ir para o conteúdo",
+    "desfecho": "mantido-diferente",
+    "chave": "app.skipToContent",
+    "motivo": "Link de salto para o conteúdo. O arquivo de design não o desenha porque ele é visível apenas ao foco de teclado, e um mockup estático não tem estado de foco. Permanece por FR-008 e por acessibilidade."
+  },
+  {
+    "tela": "Importador · Destinos",
+    "no": "dydxN",
+    "design": "Spotify e YouTube",
+    "desfecho": "adotado",
+    "chave": "rail.derived.destinations",
+    "amostra": {
+      "list": "Spotify e YouTube"
+    }
+  },
+  {
+    "tela": "Importador · Configuração",
+    "no": "Sim0L",
+    "design": "Etapa 1 de 5",
+    "desfecho": "mantido-diferente",
+    "chave": "rail.position",
+    "motivo": "Anunciado apenas a leitor de tela (`sr-only`). O arquivo desenha o numeral dentro do disco de cada degrau, que é a forma visual da mesma informação; a forma falada não tem correspondente num mockup estático."
+  },
+  {
+    "tela": "Importador · Destinos",
+    "no": "uy2ns",
+    "design": "3 linhas coladas",
+    "desfecho": "mantido-diferente",
+    "chave": "rail.derived.inputOther",
+    "motivo": "A forma derivada da etapa Entrada. O arquivo mostra a etapa Entrada sempre na forma neutra — em nenhuma das quatorze telas há lista colada com a trilha exibindo a contagem. O texto segue o padrão das demais linhas derivadas."
+  },
+  {
+    "tela": "Importador · Destinos",
+    "no": "uy2ns",
+    "design": "1 linha colada",
+    "desfecho": "mantido-diferente",
+    "chave": "rail.derived.inputOne",
+    "motivo": "Forma singular da linha derivada da etapa Entrada. O arquivo mostra essa etapa sempre na forma neutra, em todas as quatorze telas — não há nenhuma em que a trilha exiba a contagem de linhas coladas."
+  },
+  {
+    "tela": "Importador · Serviço · Spotify Concluído",
+    "no": "C13Hj",
+    "design": "2 serviços concluídos",
+    "desfecho": "mantido-diferente",
+    "chave": "rail.derived.serviceOther",
+    "motivo": "A forma derivada da etapa Serviço. O arquivo mostra a etapa Serviço sempre na forma neutra, inclusive nas telas de conclusão — a contagem de serviços encerrados é informação que a 008 acrescentou junto com a regra única de derivação (FR-028, research §R7)."
+  },
+  {
+    "tela": "Importador · Serviço · Spotify Concluído",
+    "no": "C13Hj",
+    "design": "1 serviço concluído",
+    "desfecho": "mantido-diferente",
+    "chave": "rail.derived.serviceOne",
+    "motivo": "Forma singular da linha derivada da etapa Serviço. O arquivo mostra essa etapa sempre na forma neutra, inclusive nas telas de conclusão — a contagem de serviços encerrados é informação que a 008 acrescentou junto com a regra única de derivação (FR-028)."
+  },
+  {
+    "tela": "Importador · Configuração",
+    "no": "Sim0L",
+    "design": "Etapas do fluxo",
+    "desfecho": "mantido-diferente",
+    "chave": "steps.progressLabel",
+    "motivo": "Nome acessível de região, nunca desenhado. O arquivo rotula a zona com 'ETAPAS', que é `rail.title`; este é o nome que a tecnologia assistiva lê e por isso é mais explícito."
+  },
+  {
+    "tela": "Importador · Configuração",
+    "no": "Sim0L",
+    "design": "Etapa atual",
+    "desfecho": "mantido-diferente",
+    "chave": "steps.current",
+    "motivo": "Rótulo de estado para leitor de tela. O arquivo distingue a etapa atual por forma — disco tingido com contorno —, que não tem texto correspondente."
+  },
+  {
+    "tela": "Importador · Configuração",
+    "no": "Sim0L",
+    "design": "Etapa concluída",
+    "desfecho": "mantido-diferente",
+    "chave": "steps.completed",
+    "motivo": "Rótulo de estado para leitor de tela. O arquivo distingue a etapa concluída pelo disco preenchido com o ícone de confirmação — forma, não texto."
+  },
+  {
+    "tela": "Importador · Configuração",
+    "no": "Sim0L",
+    "design": "de",
+    "desfecho": "mantido-diferente",
+    "chave": "steps.of",
+    "motivo": "Preposição de composição, não frase. Não aparece isolada em tela nenhuma."
+  },
+  {
+    "tela": "Importador · Destinos",
+    "no": "K7h3k",
+    "design": "Conectado",
+    "desfecho": "mantido-diferente",
+    "chave": "connectionChip.connected",
+    "motivo": "O chip do arquivo mostra o **nome da conta** no estado conectado, não o rótulo do estado. A aplicação usa este texto no nome acessível do chip, onde o nome da conta sozinho não diria se a sessão está viva (FR-008 da 007: os estados são distinguíveis por rótulo, não só por cor)."
+  },
+  {
+    "tela": "Importador · Destinos",
+    "no": "K7h3k",
+    "design": "Sem credencial",
+    "desfecho": "mantido-diferente",
+    "chave": "connectionChip.noCredential",
+    "motivo": "O terceiro estado do chip, que o arquivo não desenha — ele mostra apenas conectado e desconectado. O estado existe desde a 007 e não é um beco sem saída: oferece a ação de configurar."
+  },
+  {
+    "tela": "Importador · Destinos",
+    "no": "K7h3k",
+    "design": "Configurar",
+    "desfecho": "mantido-diferente",
+    "chave": "connectionChip.configure",
+    "motivo": "Ação do estado sem credencial, que o arquivo não desenha (ver acima)."
+  },
+  {
+    "tela": "Importador · Destinos",
+    "no": "K7h3k",
+    "design": "Sair",
+    "desfecho": "mantido-diferente",
+    "chave": "connectionChip.disconnect",
+    "motivo": "O arquivo não desenha a ação de encerrar sessão. Ela permanece por FR-008 e pela decisão da 007: retirá-la deixaria quem quer trocar de conta sem caminho, porque reconectar leva ao consentimento do provedor, que devolve a sessão já existente."
+  },
+  {
+    "tela": "Importador · Destinos",
+    "no": "K7h3k",
+    "design": "Reconectar a conta do Spotify",
+    "desfecho": "mantido-diferente",
+    "chave": "connectionChip.reconnectFor",
+    "amostra": {
+      "service": "Spotify"
+    },
+    "motivo": "Nome **acessível** da ação, mais longo que o rótulo visível 'Reconectar' que o arquivo desenha. Nomeia o serviço porque dois botões com o mesmo nome acessível lado a lado deixam quem navega por lista de controles sem como escolher entre eles."
+  },
+  {
+    "tela": "Importador · Destinos",
+    "no": "K7h3k",
+    "design": "Conectar a conta do Spotify",
+    "desfecho": "mantido-diferente",
+    "chave": "connectionChip.connectFor",
+    "amostra": {
+      "service": "Spotify"
+    },
+    "motivo": "Nome **acessível** da ação no estado desconectado, mais longo que o rótulo visível \"Conectar\" que o arquivo desenha. Nomeia o serviço pelo mesmo motivo do rótulo de reconexão: dois botões com o mesmo nome acessível lado a lado deixam quem navega por lista de controles sem como escolher entre eles."
+  },
+  {
+    "tela": "Importador · Destinos",
+    "no": "K7h3k",
+    "design": "Configurar a credencial do Spotify",
+    "desfecho": "mantido-diferente",
+    "chave": "connectionChip.configureFor",
+    "amostra": {
+      "service": "Spotify"
+    },
+    "motivo": "Nome **acessível** da ação no estado sem credencial, que o arquivo não desenha — ele mostra apenas conectado e desconectado. Nomeia o serviço pelo mesmo motivo dos outros dois nomes acessíveis do chip."
+  },
+  {
+    "tela": "Importador · Destinos",
+    "no": "K7h3k",
+    "design": "Spotify: Conectado",
+    "desfecho": "mantido-diferente",
+    "chave": "connectionChip.label",
+    "amostra": {
+      "service": "Spotify",
+      "state": "Conectado"
+    },
+    "motivo": "Nome acessível do chip inteiro, com o estado resolvido. Não é desenhado: é o que um leitor de tela ouve ao encontrar o chip, em vez de 'Spotify' e um ponto colorido que ele não pode ver."
+  },
+  {
+    "tela": "Importador · Destinos",
+    "no": "uy2ns",
+    "design": "Sem Client ID de YouTube cadastrado.",
+    "desfecho": "mantido-diferente",
+    "chave": "destinations.unavailableReason",
+    "amostra": {
+      "service": "YouTube"
+    },
+    "motivo": "O arquivo desenha os dois cartões de destino com credencial cadastrada. O estado bloqueado não aparece em tela nenhuma, e o motivo escrito é exigência de FR-009 da 002: um controle apagado sem explicação não diz o que fazer."
+  },
+  {
+    "tela": "Importador · Destinos",
+    "no": "uy2ns",
+    "design": "Cadastrar Client ID de YouTube",
+    "desfecho": "mantido-diferente",
+    "chave": "destinations.unavailableAction",
+    "amostra": {
+      "service": "YouTube"
+    },
+    "motivo": "O atalho que acompanha o motivo acima, pelo mesmo motivo."
+  },
+  {
+    "tela": "Importador · Destinos",
+    "no": "uy2ns",
+    "design": "A seleção foi travada quando a primeira criação começou. Para mudá-la, descarte o rascunho.",
+    "desfecho": "mantido-diferente",
+    "chave": "destinations.lockedNotice",
+    "motivo": "Estado de seleção travada (FR-012 da 002), que o arquivo não desenha — nele os cartões estão sempre editáveis."
+  },
+  {
+    "tela": "Importador · Destinos",
+    "no": "uy2ns",
+    "design": "Selecione ao menos um destino para continuar.",
+    "desfecho": "mantido-diferente",
+    "chave": "destinations.noneSelected",
+    "motivo": "Motivo de bloqueio do avanço. O arquivo desenha a barra de ações sempre com dois destinos escolhidos, e portanto sem impedimento."
+  },
+  {
+    "tela": "Importador · Destinos",
+    "no": "mPcTd",
+    "design": "1 destino selecionado",
+    "desfecho": "adotado",
+    "chave": "destinations.selectedCountOne",
+    "plural": 1,
+    "amostra": {
+      "count": 1
+    }
+  },
+  {
+    "tela": "Importador · Destinos",
+    "no": "uy2ns",
+    "design": "A autorização acontece ao executar o YouTube",
+    "desfecho": "mantido-diferente",
+    "chave": "destinations.accountPendingAuth",
+    "amostra": {
+      "service": "YouTube"
+    },
+    "motivo": "O arquivo desenha os dois cartões com sessão ativa, e portanto só a linha 'Conectado como {conta}'. O estado de credencial sem sessão precisa de texto próprio (FR-021): sem ele o cartão fica mudo, e o usuário supõe que a autorização já deveria ter acontecido."
+  },
+  {
+    "tela": "Importador · Destinos",
+    "no": "uy2ns",
+    "design": "Escolha um destino para ver a ordem de execução.",
+    "desfecho": "mantido-diferente",
+    "chave": "destinations.panelEmpty",
+    "motivo": "O convite da fila vazia (FR-015a). O arquivo desenha o painel sempre com os dois destinos escolhidos, e portanto nunca com a fila vazia — mas o painel não pode sumir nem colapsar, e o vazio precisa dizer o que fazer."
+  },
+  {
+    "tela": "Importador · Serviço · Orçamento",
+    "no": "iA1Jl",
+    "design": "Conferindo o orçamento",
+    "desfecho": "adotado",
+    "chave": "queue.phase.estimate"
+  },
+  {
+    "tela": "Importador · Resumo",
+    "no": "J6x0i7/yQkrt",
+    "design": "Concluído",
+    "desfecho": "adotado",
+    "chave": "queue.phase.done"
+  },
+  {
+    "tela": "Importador · Serviço",
+    "no": "dIPW6",
+    "design": "Serviço em andamento",
+    "desfecho": "mantido-diferente",
+    "chave": "queue.label",
+    "motivo": "Rótulo acessível da posição na fila. Deixou de ser usado como `aria-label` na 008 — a posição passou a ser texto real na linha de contexto —, e permanece no dicionário porque nomeia a região em outros pontos do fluxo."
+  },
+  {
+    "tela": "Importador · Serviço",
+    "no": "dIPW6",
+    "design": "Conectando",
+    "desfecho": "mantido-diferente",
+    "chave": "queue.phase.connect",
+    "motivo": "Rótulo de fase do ciclo. O arquivo nomeia apenas duas fases no slot de contexto — 'Conferindo o orçamento' e 'Concluído' —; nas demais ele mostra a posição na fila. Os rótulos existem porque a fase precisa de nome em outros pontos (resumo, retomada, diálogos)."
+  },
+  {
+    "tela": "Importador · Serviço",
+    "no": "dIPW6",
+    "design": "Buscando",
+    "desfecho": "mantido-diferente",
+    "chave": "queue.phase.search",
+    "motivo": "Rótulo de fase do ciclo. O arquivo nomeia apenas duas fases no slot de contexto — 'Conferindo o orçamento' e 'Concluído' —; nas demais ele mostra a posição na fila. Os rótulos existem porque a fase precisa de nome em outros pontos (resumo, retomada, diálogos)."
+  },
+  {
+    "tela": "Importador · Serviço",
+    "no": "dIPW6",
+    "design": "Revisando",
+    "desfecho": "mantido-diferente",
+    "chave": "queue.phase.review",
+    "motivo": "Rótulo de fase do ciclo. O arquivo nomeia apenas duas fases no slot de contexto — 'Conferindo o orçamento' e 'Concluído' —; nas demais ele mostra a posição na fila. Os rótulos existem porque a fase precisa de nome em outros pontos (resumo, retomada, diálogos)."
+  },
+  {
+    "tela": "Importador · Serviço",
+    "no": "dIPW6",
+    "design": "Criando",
+    "desfecho": "mantido-diferente",
+    "chave": "queue.phase.creating",
+    "motivo": "Rótulo de fase do ciclo. O arquivo nomeia apenas duas fases no slot de contexto — 'Conferindo o orçamento' e 'Concluído' —; nas demais ele mostra a posição na fila. Os rótulos existem porque a fase precisa de nome em outros pontos (resumo, retomada, diálogos)."
+  },
+  {
+    "tela": "Importador · Serviço",
+    "no": "dIPW6",
+    "design": "Aguardando reconexão",
+    "desfecho": "mantido-diferente",
+    "chave": "queue.phase.awaiting_reauth",
+    "motivo": "Rótulo de fase do ciclo. O arquivo nomeia apenas duas fases no slot de contexto — 'Conferindo o orçamento' e 'Concluído' —; nas demais ele mostra a posição na fila. Os rótulos existem porque a fase precisa de nome em outros pontos (resumo, retomada, diálogos)."
+  },
+  {
+    "tela": "Importador · Serviço",
+    "no": "dIPW6",
+    "design": "Pulado",
+    "desfecho": "mantido-diferente",
+    "chave": "queue.phase.skipped",
+    "motivo": "Rótulo de fase do ciclo. O arquivo nomeia apenas duas fases no slot de contexto — 'Conferindo o orçamento' e 'Concluído' —; nas demais ele mostra a posição na fila. Os rótulos existem porque a fase precisa de nome em outros pontos (resumo, retomada, diálogos)."
+  },
+  {
+    "tela": "Importador · Serviço",
+    "no": "dIPW6",
+    "design": "Falhou",
+    "desfecho": "mantido-diferente",
+    "chave": "queue.phase.failed",
+    "motivo": "Rótulo de fase do ciclo. O arquivo nomeia apenas duas fases no slot de contexto — 'Conferindo o orçamento' e 'Concluído' —; nas demais ele mostra a posição na fila. Os rótulos existem porque a fase precisa de nome em outros pontos (resumo, retomada, diálogos)."
+  },
+  {
+    "tela": "Importador · Serviço",
+    "no": "dIPW6",
+    "design": "Aguardando",
+    "desfecho": "mantido-diferente",
+    "chave": "queue.phase.pending",
+    "motivo": "Rótulo de fase do ciclo. O arquivo nomeia apenas duas fases no slot de contexto — 'Conferindo o orçamento' e 'Concluído' —; nas demais ele mostra a posição na fila. Os rótulos existem porque a fase precisa de nome em outros pontos (resumo, retomada, diálogos)."
+  },
+  {
+    "tela": "Importador · Serviço",
+    "no": "CZrNY",
+    "design": "Pular o Spotify? O que já foi criado nos outros serviços continua intacto e será relatado.",
+    "desfecho": "mantido-diferente",
+    "chave": "queue.skipConfirm",
+    "amostra": {
+      "service": "Spotify"
+    },
+    "motivo": "Confirmação de pulo. O arquivo desenha o botão, não o diálogo — ele não desenha modal algum (FR-008)."
+  },
+  {
+    "tela": "Importador · Serviço",
+    "no": "CZrNY",
+    "design": "Encerrar este serviço",
+    "desfecho": "mantido-diferente",
+    "chave": "queue.endService",
+    "motivo": "Ação de confirmação do diálogo de pulo. O arquivo desenha o botão que abre o diálogo, e não o diálogo — ele não desenha modal algum em nenhuma das quatorze telas (FR-008)."
+  },
+  {
+    "tela": "Importador · Serviço",
+    "no": "CZrNY",
+    "design": "O Spotify foi pulado. Nada foi criado na sua conta desse serviço.",
+    "desfecho": "mantido-diferente",
+    "chave": "queue.skipped",
+    "amostra": {
+      "service": "Spotify"
+    },
+    "motivo": "Relato do serviço pulado. O arquivo desenha as telas de conclusão bem-sucedida, e nenhuma de serviço pulado."
+  },
+  {
+    "tela": "Importador · Serviço",
+    "no": "CZrNY",
+    "design": "Pular o Spotify encerra o fluxo",
+    "desfecho": "mantido-diferente",
+    "chave": "queue.skipEndsFlowTitle",
+    "amostra": {
+      "service": "Spotify"
+    },
+    "motivo": "Título do diálogo do único caminho em que pular descarta trabalho (006/FR-005). O arquivo não desenha modal algum."
+  },
+  {
+    "tela": "Importador · Serviço",
+    "no": "CZrNY",
+    "design": "Este é o último serviço e nenhum outro foi concluído. Pular descarta a lista colada e a configuração da playlist.",
+    "desfecho": "mantido-diferente",
+    "chave": "queue.skipEndsFlowBody",
+    "motivo": "Corpo do diálogo que confirma o pulo do último serviço quando nenhum outro foi concluído (006/FR-005). O arquivo não desenha modal algum, e este é o único caminho em que pular descarta trabalho."
+  }
+]

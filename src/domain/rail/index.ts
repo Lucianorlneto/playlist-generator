@@ -51,35 +51,59 @@ export interface RailStep {
 /** O instantâneo do estado de que a composição depende — e nada além dele. */
 export interface RailSnapshot {
   readonly current: WizardStep;
-  /** `store.queue.order`: os destinos escolhidos, na ordem fixa do produto. */
+  /**
+   * Os destinos escolhidos, na ordem fixa do produto.
+   *
+   * **A fonte mudou na 008**: era `store.queue.order`, e passou a ser
+   * `store.destinations.selected`. A `ExecutionQueue` só é construída ao sair da
+   * etapa Entrada, e a regra nova de FR-028 precisa derivar **com a etapa
+   * Destinos corrente** — instante em que `queue.order` ainda está vazia
+   * (`data-model.md` §3, mudança 3).
+   *
+   * Não é uma segunda fonte de ordem: `destinations.selected` já é mantido
+   * ordenado por `orderSelection`, pela mesma `PROVIDER_ORDER` de que
+   * `buildQueue` deriva. Depois de `lockSelection`, os dois coincidem.
+   */
   readonly destinations: readonly ProviderId[];
   /** Linhas analisadas da entrada. */
   readonly lineCount: number;
   /** Há credencial cadastrada. */
   readonly credentialsReady: boolean;
+  /**
+   * Execuções **encerradas** — com desfecho, qualquer que seja ele.
+   *
+   * Existe porque a regra nova, sem ele, produziria uma afirmação falsa: com a
+   * guarda de estado removida, derivar a etapa Serviço de `destinations.length`
+   * faria a trilha dizer "2 serviços concluídos" no instante em que o segundo
+   * destino é marcado — muito antes de qualquer serviço concluir. O valor
+   * decidido da etapa Serviço não é quantos destinos existem, é **quantos
+   * serviços terminaram** (008/research §R7).
+   */
+  readonly servicesFinished: number;
 }
 
 /**
- * A regra única que decide entre `derived` e `neutral`.
+ * A regra única que decide entre `derived` e `neutral` (008/FR-028).
  *
- * **Enquanto a etapa não está concluída, a linha descreve o que fazer; depois de
- * concluída, descreve o que foi decidido.** Uma frase, e ela satisfaz as quatro
- * regras que `data-model.md` §3 lista separadamente:
+ * **Deriva quando há valor decidido; fica neutra quando não há.** Uma frase, e
+ * ela vale igualmente para degrau concluído, corrente **e à frente** — o estado
+ * do degrau deixou de ser lido.
  *
- * - *derivada só quando há valor* — `done` implica que a decisão aconteceu;
- * - *degrau pendente nunca deriva* — `pending` não é `done`;
- * - *nunca afirmar o que não aconteceu* (FR-066) — é a mesma coisa dita de
- *   outro ângulo, e é o que separa esta implementação do mockup: o arquivo de
- *   design mostra "Spotify e YouTube" sob Destinos já na tela de Configuração;
- * - *a etapa atual pode diferir da concluída* (FR-067) — `current` recebe a
- *   linha neutra, `done` recebe a derivada.
+ * ## O que a feature 008 revogou, e por que isso não afrouxa nada
  *
- * A exceção é a ausência de valor: um degrau `done` sem dado real volta a
- * `neutral` em vez de afirmar um vazio.
+ * A 007 tinha uma guarda a mais: `if (state !== 'done') return neutral`. Eram
+ * duas regras onde uma basta, e a segunda produzia um efeito que o arquivo de
+ * design contradiz — na etapa Destinos corrente, com os dois serviços já
+ * marcados, a linha continuava dizendo "Escolha onde criar as playlists" em vez
+ * de nomear o que foi escolhido.
+ *
+ * **FR-066 continua literal**: a proibição de afirmar uma escolha que o usuário
+ * não fez não dependia da guarda de estado, e sim da ausência de valor. Um
+ * degrau sem dado real volta a `neutral` em vez de afirmar um vazio, e é isso —
+ * não o `state` — que impede a trilha de reproduzir o "Spotify e YouTube" que o
+ * mockup mostra sob Destinos já na tela de Configuração.
  */
-function supportFor(step: WizardStep, state: RailStepState, snapshot: RailSnapshot): SupportLine {
-  if (state !== 'done') return { kind: 'neutral' };
-
+function supportFor(step: WizardStep, snapshot: RailSnapshot): SupportLine {
   switch (step) {
     case 'credential':
       return snapshot.credentialsReady
@@ -105,13 +129,18 @@ function supportFor(step: WizardStep, state: RailStepState, snapshot: RailSnapsh
 
     case 'service': {
       // A fase corrente do ciclo **não** entra aqui: seis fases por serviço são
-      // informação de apoio da própria tela, não da trilha (FR-014). O que a
-      // trilha declara sobre esta etapa é quantos serviços ela abrangeu.
-      const total = snapshot.destinations.length;
-      return total > 0
+      // informação de apoio da própria tela, não da trilha (FR-014).
+      //
+      // O valor decidido é a contagem de execuções **encerradas**, e não a de
+      // destinos escolhidos. Com a guarda de estado removida (008/FR-028), a
+      // segunda faria a trilha dizer "2 serviços concluídos" já na etapa
+      // Destinos, no instante em que o segundo destino é marcado — que é
+      // exatamente o que FR-029 proíbe. A correção é do valor, não da regra.
+      const encerrados = snapshot.servicesFinished;
+      return encerrados > 0
         ? {
             kind: 'derived',
-            value: plural(total, t.rail.derived.serviceOne, t.rail.derived.serviceOther),
+            value: plural(encerrados, t.rail.derived.serviceOne, t.rail.derived.serviceOther),
           }
         : { kind: 'neutral' };
     }
@@ -162,7 +191,8 @@ export function composeRail(snapshot: RailSnapshot): RailStep[] {
       step,
       ordinal: index + 1,
       state,
-      support: supportFor(step, state, snapshot),
+      // `state` **não** entra: a regra deriva do valor, não do degrau (FR-028).
+      support: supportFor(step, snapshot),
     };
   });
 }

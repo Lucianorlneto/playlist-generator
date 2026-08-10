@@ -34,6 +34,14 @@ export function RateLimitWaiting({ onCancel, label }: RateLimitWaitingProps) {
       contorno na cor do estado. A tinta é a de "incerta" e não a de erro: uma
       pausa por limite de taxa é o serviço pedindo calma, não uma falha, e pintá-la
       de vermelho ensinaria o usuário a temer o normal.
+
+      **Reconferido na 008** (FR-008, T021a). Com a saída da moldura do `Wizard`,
+      este aviso passou a repousar sobre `--bg` quando aparece na revisão — a
+      única das duas posições que não tem cartão de fase em volta. O substrato
+      tingido continua se destacando porque ele é derivado de `--surface`, e o
+      **contorno na cor do estado** é o que garante a separação sem depender
+      disso: ele sobrevive inclusive ao modo de cores forçadas, que descarta
+      preenchimento e preserva contorno.
     */
     <div
       role="status"

@@ -143,6 +143,7 @@ export function ConnectionChip({ provider, navigate }: ConnectionChipProps) {
           'text-section',
           state === 'no-credential' ? 'text-ink-muted' : BRAND_INK[provider],
           state === 'disconnected' ? 'opacity-60' : null,
+          'bg-blue'
         )}
       />
 

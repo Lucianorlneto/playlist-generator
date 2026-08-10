@@ -5,10 +5,10 @@ import { Icon } from '@/ui/Icon';
 /**
  * A faixa de ações no rodapé do conteúdo (FR-016 a FR-019).
  *
- * **Existe apenas em Destinos e Entrada, e a lista é fechada** — quem decide é o
- * `Shell`, num único ponto do código. As demais etapas mantêm as ações dentro do
- * cartão que as explica (FR-061), e "Pular o {serviço}" continua adjacente ao
- * cartão da fase (FR-062). Redesenhar sim; realocar não.
+ * **Existe em Configuração, Destinos e Entrada, e a lista é fechada** — quem
+ * decide é o `Shell`, num único ponto do código. As duas etapas restantes mantêm
+ * as ações dentro do cartão que as explica (FR-061), e "Pular o {serviço}"
+ * continua adjacente ao cartão da fase (FR-062). Redesenhar sim; realocar não.
  *
  * ## O motivo do bloqueio é dito por escrito
  *
@@ -78,11 +78,24 @@ export function ActionBar({
 }: ActionBarProps) {
   const blocked = blockedReason !== null && blockedReason !== undefined;
 
+  /*
+    `--surface-zone`, o mesmo substrato da barra superior e da trilha (nó
+    `XgqFh`, `#12171F`). Não é uniformidade por gosto: as três são zonas fixas da
+    casca, e o degrau de luminosidade que as separa do conteúdo é o que faz
+    "isto emoldura, aquilo é o trabalho" ser legível sem filete.
+
+    A goteira lateral acompanha a da área de conteúdo — 48 px no arquivo — para o
+    estado à esquerda nascer alinhado com o título da etapa e o botão primário
+    com a borda direita do painel lateral.
+
+    `shrink-0` porque a faixa é irmã do contêiner que rola: sem ela, um conteúdo
+    alto a espremeria em vez de rolar por dentro.
+  */
   return (
     <div
       role="group"
       aria-label={t.actionBar.label}
-      className="border-rule bg-bg flex flex-wrap items-center justify-between gap-4 border-t px-4 py-3"
+      className="border-rule bg-surface-zone flex shrink-0 flex-wrap items-center justify-between gap-4 border-t px-4 py-4 shell:px-12"
     >
       {/*
         O estado à esquerda. Quando há bloqueio, o motivo **substitui** o estado

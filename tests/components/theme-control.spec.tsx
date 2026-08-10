@@ -58,8 +58,19 @@ describe('FR-006 · três opções, não um interruptor', () => {
     expect(glifos).toHaveLength(3);
     for (const glifo of glifos) {
       expect(glifo.getAttribute('aria-hidden')).toBe('true');
-      // Herda a cor do contexto; nunca fixa a própria (SC-017).
-      expect(glifo.getAttribute('color')).toBe('currentColor');
+      /*
+        Herda a cor do contexto; nunca fixa a própria (SC-017).
+
+        **A asserção anterior exigia o defeito.** Ela pedia
+        `color="currentColor"` no `<svg>`, e `react-icons` emite essa propriedade
+        como **estilo em linha** — que vence classe utilitária e faz
+        `currentColor` resolver contra o pai. O efeito era o oposto do que a
+        regra quer: nenhum `text-*` passado pelo chamador chegava ao glifo. Aqui
+        e em `tests/unit/icon-color.spec.ts` o que se verifica agora é a
+        **ausência** de cor própria.
+      */
+      expect(glifo.getAttribute('color')).toBeNull();
+      expect((glifo as HTMLElement).style.color).toBe('');
     }
   });
 

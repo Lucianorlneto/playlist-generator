@@ -162,10 +162,25 @@ test.describe('FR-047 — operação por teclado', () => {
     await acionar(page, fmt(t.connect.connect, { service: SPOTIFY }));
     await expect(tituloRevisao(page, SPOTIFY)).toBeVisible();
 
-    // FR-018: a posição na fila é anunciada, não apenas desenhada.
-    await expect(page.getByLabel(t.queue.label)).toHaveText(
-      fmt(t.queue.position, { service: SPOTIFY, current: 1, total: 2 }),
-    );
+    /*
+      FR-018: a posição na fila é anunciada, não apenas desenhada.
+
+      **O portador mudou na 008, a garantia não** (008/FR-013, SC-009). Até aqui
+      quem anunciava era o `QueueIndicator`, por `role="status"` e `aria-label`,
+      no topo da etapa de serviço. A posição passou para a **linha de contexto do
+      cabeçalho**, que é texto real, aparece em todas as fases do ciclo e é a
+      região viva que anuncia a troca de serviço — o `QueueIndicator` virou a
+      repetição visual que o arquivo de design desenha dentro do cabeçalho dos
+      cartões de orçamento e de resultado.
+
+      A asserção continua sendo a mesma pergunta: **a posição é anunciada?** O
+      que ela deixou de assumir é *qual elemento* a anuncia, que era detalhe de
+      implementação da 002.
+    */
+    const posicao = fmt(t.queue.position, { service: SPOTIFY, current: 1, total: 2 });
+    // Filtrado pelo conteúdo: o aviso de rascunho recuperado também é
+    // `role="status"`, e nesta altura do fluxo ele está na tela.
+    await expect(page.getByRole('status').filter({ hasText: posicao })).toHaveCount(1);
 
     await page.getByLabel(t.playlistConfig.nameLabel).fill('Por Teclado');
     await acionar(page, fmt(t.playlistConfig.create, { service: SPOTIFY }));
@@ -491,5 +506,121 @@ test.describe('006 — pular e recomeçar sem mouse', () => {
     await acionar(page, t.common.discard);
 
     await expect(page.getByRole('heading', { name: t.destinations.heading })).toBeVisible();
+  });
+});
+
+/**
+ * 008/FR-025 e FR-033 — o cartão de destino trocou a apresentação do controle,
+ * e não o controle.
+ *
+ * A marca de verificação visível passou a ser um `<span aria-hidden>` estilizado
+ * por `peer-checked:`, e o `<input type="checkbox">` real ficou `sr-only`. É
+ * exatamente o tipo de troca que quebra teclado sem que nada falhe: `sr-only`
+ * esconde visualmente, mas um `display: none` ou um `hidden` posto por engano
+ * esconderia **semanticamente**, e o controle sairia da ordem de tabulação.
+ *
+ * Estes casos exigem navegador de verdade: o anel de foco depende de
+ * `:focus-visible` e de `peer-focus-visible:`, que só existem com CSS aplicado —
+ * nenhum teste de componente os alcança.
+ */
+test.describe('008/FR-025 e FR-033 — teclado no cartão de destino', () => {
+  test('Tab alcança o controle de cada cartão, e Espaço alterna a seleção', async ({ page }) => {
+    await mockSpotify(page);
+    await mockYouTube(page);
+    await seedCredential(page, CLIENT_ID, 'spotify');
+    await seedCredential(page, YT_CLIENT_ID, 'youtube');
+    await page.goto('/');
+
+    await acionar(page, t.common.next);
+    await expect(page.getByRole('heading', { name: t.destinations.heading })).toBeVisible();
+
+    for (const service of [SPOTIFY, YOUTUBE]) {
+      const caixa = page.getByRole('checkbox', {
+        name: fmt(t.destinations.selectLabel, { service }),
+      });
+
+      // Alcançável por **tabulação**, não só por `focus()` programático: é a
+      // diferença entre "está na árvore" e "está na ordem de tabulação".
+      await focarPorTeclado(page, `#destino-${service === SPOTIFY ? 'spotify' : 'youtube'}`);
+      await expect(caixa).toBeFocused();
+
+      await page.keyboard.press('Space');
+      await expect(caixa).not.toBeChecked();
+      await page.keyboard.press('Space');
+      await expect(caixa).toBeChecked();
+    }
+  });
+
+  test('o foco é visível na marca de verificação, e não no controle escondido', async ({
+    page,
+  }) => {
+    await mockSpotify(page);
+    await seedCredential(page, CLIENT_ID, 'spotify');
+    await page.goto('/');
+
+    await acionar(page, t.common.next);
+    await expect(page.getByRole('heading', { name: t.destinations.heading })).toBeVisible();
+
+    await page.locator('#destino-spotify').focus();
+
+    /*
+      O anel vive na marca de verificação por `peer-focus-visible:`. Medir o
+      `outline-style` computado é o que separa "a classe está escrita" de "o
+      anel aparece na tela" — e o segundo é o que importa para quem navega por
+      teclado.
+    */
+    const marca = page.locator('[data-destino="spotify"] > span:last-child');
+    await expect(marca).toHaveCSS('outline-style', 'solid');
+    const largura = await marca.evaluate(
+      (node) => Number.parseFloat(getComputedStyle(node).outlineWidth),
+    );
+    expect(largura, 'o anel de foco não tem espessura').toBeGreaterThan(0);
+  });
+
+  test('o cartão inteiro é alvo de clique, do título ao vazio', async ({ page }) => {
+    /*
+      `sr-only` no controle não pode custar o alvo de clique. Até a fidelidade de
+      design da 008 o alvo era só o título — uma palavra e meia num cartão de
+      quase setecentos pixels —, e o resto da área não fazia nada.
+
+      Os dois cliques abaixo são por **coordenada**, e é a única forma honesta de
+      testar isto: o alvo é um `<label>` vazio em camada absoluta, de modo que o
+      elemento que o ponteiro atinge nunca é o texto, mesmo quando o dedo do
+      usuário pousa exatamente sobre ele. Um `locator.click()` no texto falharia
+      a verificação de acionabilidade do Playwright descrevendo como defeito
+      exatamente o que se quer.
+    */
+    await mockSpotify(page);
+    await seedCredential(page, CLIENT_ID, 'spotify');
+    await page.goto('/');
+
+    await acionar(page, t.common.next);
+    await expect(page.getByRole('heading', { name: t.destinations.heading })).toBeVisible();
+
+    const caixa = page.getByRole('checkbox', {
+      name: fmt(t.destinations.selectLabel, { service: SPOTIFY }),
+    });
+    await expect(caixa).toBeChecked();
+
+    /** Clica no centro de um retângulo, como um ponteiro de verdade. */
+    async function clicarNoCentro(alvo: ReturnType<typeof page.locator>): Promise<void> {
+      const caixaDelimitadora = await alvo.boundingBox();
+      expect(caixaDelimitadora, 'o alvo não tem área na tela').not.toBeNull();
+      await page.mouse.click(
+        caixaDelimitadora!.x + caixaDelimitadora!.width / 2,
+        caixaDelimitadora!.y + caixaDelimitadora!.height / 2,
+      );
+    }
+
+    // Sobre o título, que era o único alvo antes.
+    await clicarNoCentro(page.getByText(fmt(t.destinations.selectLabel, { service: SPOTIFY })));
+    await expect(caixa, 'clicar no título não alternou').not.toBeChecked();
+
+    // E sobre a faixa vazia entre o texto e a marca de verificação, que é a
+    // parte do cartão que não respondia a nada.
+    const cartao = page.locator('[data-destino="spotify"]');
+    const area = await cartao.boundingBox();
+    await page.mouse.click(area!.x + area!.width * 0.7, area!.y + area!.height / 2);
+    await expect(caixa, 'clicar na área vazia do cartão não alternou').toBeChecked();
   });
 });

@@ -20,18 +20,34 @@ import { cx } from './cx';
  * plenamente utilizável e sem buraco com imagens desabilitadas, e é por isso que
  * eles vivem numa camada absoluta em vez de ocupar células de layout.
  *
- * ## Posições declaradas, não aleatórias
+ * ## A composição é a do arquivo, não uma dispersão pelas bordas
  *
- * A tabela abaixo é a transcrição do arquivo de design. Sortear posições faria
- * cada carga produzir uma composição diferente — e "decoração" não é desculpa
- * para instabilidade visual entre visitas.
+ * A versão anterior pendurava os adesivos nas **margens** de uma faixa de 3rem
+ * (`-left-8`, `top-1/4`, `-right-6`), e o resultado era o que o arquivo não
+ * desenha: onze recortes espremidos e meio cortados nas duas beiradas da coluna.
+ * O nó `wv9Cp` (`Stickers Decor`) é uma **superfície de 680 × 210** com os onze
+ * espalhados por dentro dela, a 55% de opacidade e com recorte.
+ *
+ * A tabela abaixo é a transcrição literal desse nó — posição, largura e
+ * inclinação de cada grupo, na grade de 680 × 210 do arquivo. Sortear posições
+ * faria cada carga produzir uma composição diferente, e "decoração" não é
+ * desculpa para instabilidade visual entre visitas.
+ *
+ * ## Por que as medidas viram `style` e não classe utilitária
+ *
+ * Porque são **coordenadas**, não degraus de escala. `left-[6.18%]` seria valor
+ * arbitrário — exatamente o que `tp/no-raw-visual-values` recusa — e um degrau
+ * de espaçamento não descreve "42 de 680". A proporção precisa vir da própria
+ * grade do arquivo para a composição sobreviver ao redimensionamento da coluna,
+ * e é a razão de a faixa carregar a razão de aspecto de 680/210: com ela, tudo
+ * aqui escala junto e as distâncias relativas ficam as do desenho.
  *
  * ## Movimento suprimido
  *
  * FR-035: sob `prefers-reduced-motion` qualquer movimento é suprimido. A regra
- * global de `index.css` já zera transição e animação; aqui não há movimento
- * próprio a coordenar, e o `motion-safe:` da rotação é o que a torna opcional em
- * vez de imposta.
+ * global de `index.css` já zera transição e animação; a inclinação de cada
+ * adesivo é **geometria estática** — o desenho nasce torto —, e não movimento a
+ * suprimir.
  *
  * ## Tratamento por tema (FR-049)
  *
@@ -41,43 +57,56 @@ import { cx } from './cx';
  * sobre o substrato claro** em T074; nenhum foi deixado invisível.
  */
 
+/** A grade do nó `wv9Cp`. Toda medida abaixo é relativa a ela. */
+const GRID_WIDTH = 680;
+const GRID_HEIGHT = 210;
+
 interface Sticker {
   readonly src: string;
+  /** Canto superior esquerdo na grade do arquivo. */
+  readonly x: number;
+  readonly y: number;
+  /** Largura do grupo no arquivo, já sem a inclinação. */
+  readonly width: number;
   /**
-   * A classe **completa e literal** de posição, tamanho e inclinação.
+   * Inclinação em graus **no sentido do CSS** (positivo = horário).
    *
-   * Literal, e não montada por interpolação, por duas razões que se somam: o
-   * scanner do Tailwind lê o código como texto e não resolve expressão — uma
-   * classe montada em tempo de execução simplesmente não é emitida —, e
-   * `tp/no-dynamic-classname` recusa a construção justamente por isso.
-   *
-   * As posições verticais usam **frações** e não degraus de espaçamento: a
-   * escala finita da 007 vai até `12` (3rem), e distribuir onze adesivos ao
-   * longo de um painel alto com ela exigiria inventar degraus. Fração é medida
-   * relativa ao contêiner, não uma medida avulsa — não fura a escala, opera em
-   * outro eixo.
+   * O arquivo mede no sentido anti-horário, então o sinal está invertido em
+   * relação ao valor bruto de `rotation` de cada grupo.
    */
-  readonly className: string;
+  readonly tilt: number;
+  /**
+   * Classe extra de tratamento, quando a arte precisa de mais que o padrão.
+   *
+   * Literal e completa, nunca montada por interpolação: o scanner do Tailwind lê
+   * o código como texto e não resolve expressão (`tp/no-dynamic-classname`).
+   */
+  readonly treatment?: string;
 }
 
 const STICKERS: readonly Sticker[] = [
-  { src: vinyl1, className: 'top-0 -left-8 size-12 motion-safe:-rotate-6' },
+  { src: vinyl1, x: 42, y: 17, width: 55, tilt: 8 },
+  { src: cassette1, x: 211, y: 14, width: 57, tilt: -6 },
+  { src: headphones1, x: 384, y: 18, width: 52, tilt: 5 },
+  { src: boombox, x: 570, y: 22, width: 59, tilt: -8 },
+  { src: cassette2, x: 60, y: 92, width: 60, tilt: -5 },
+  { src: star1, x: 181, y: 86, width: 18, tilt: 0 },
+  { src: playButton, x: 304, y: 93, width: 52, tilt: 10 },
+  { src: star2, x: 491, y: 91, width: 18, tilt: -15 },
+  { src: headphones2, x: 592, y: 107, width: 35, tilt: -12 },
   /*
     `sticker-faint`: medido em 1,40:1 sobre o substrato claro (T074) — abaixo do
     limiar em que a silhueta ainda é perceptível. É o único dos onze que precisa
     da variante reforçada; os demais ficam entre 1,67 e 2,80.
   */
-  { src: vinyl2, className: 'sticker-faint top-0 -right-6 size-8 motion-safe:rotate-12' },
-  { src: cassette1, className: 'top-1/4 -left-6 size-12 motion-safe:rotate-6' },
-  { src: cassette2, className: 'top-1/4 -right-8 size-8 motion-safe:-rotate-12' },
-  { src: cassette3, className: 'top-1/2 -left-8 size-8 motion-safe:rotate-3' },
-  { src: headphones1, className: 'top-1/2 -right-6 size-12 motion-safe:-rotate-3' },
-  { src: headphones2, className: 'top-3/4 -left-6 size-8 motion-safe:rotate-6' },
-  { src: boombox, className: 'top-3/4 -right-8 size-12 motion-safe:-rotate-6' },
-  { src: star1, className: 'top-4 right-4 size-4 motion-safe:rotate-12' },
-  { src: star2, className: 'bottom-0 left-4 size-4 motion-safe:-rotate-12' },
-  { src: playButton, className: 'bottom-0 right-12 size-6 motion-safe:rotate-6' },
+  { src: vinyl2, x: 112, y: 142, width: 56, tilt: 6, treatment: 'sticker-faint' },
+  { src: cassette3, x: 400, y: 142, width: 59, tilt: -4 },
 ];
+
+/** Fração da grade, em porcentagem, com a precisão que o arquivo declara. */
+function percent(value: number, total: number): string {
+  return `${((value / total) * 100).toFixed(3)}%`;
+}
 
 export function Stickers() {
   return (
@@ -89,7 +118,17 @@ export function Stickers() {
           alt=""
           loading="lazy"
           decoding="async"
-          className={cx('sticker absolute', sticker.className)}
+          className={cx('sticker absolute', sticker.treatment)}
+          style={{
+            left: percent(sticker.x, GRID_WIDTH),
+            top: percent(sticker.y, GRID_HEIGHT),
+            width: percent(sticker.width, GRID_WIDTH),
+            // A inclinação gira em torno do centro; o arquivo gira em torno do
+            // canto. A diferença, nos ângulos usados aqui (4° a 15°), é de
+            // poucos pixels — e girar pelo canto deslocaria cada peça da
+            // posição que a tabela acima declara.
+            rotate: `${sticker.tilt}deg`,
+          }}
         />
       ))}
     </div>

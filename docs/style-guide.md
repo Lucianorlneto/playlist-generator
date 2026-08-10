@@ -60,7 +60,7 @@ Nomes **semânticos**, nunca descritivos. `--ink-muted` sobrevive a uma troca de
 `--cinza-claro` não. Componente consome nome, jamais valor — a regra de lint
 `tp/no-raw-visual-values` recusa o contrário.
 
-### Os 18 tokens
+### Os 19 tokens
 
 | Token | Papel | Papel (claro) | Noite (escuro) |
 | --- | --- | --- | --- |
@@ -76,6 +76,7 @@ Nomes **semânticos**, nunca descritivos. `--ink-muted` sobrevive a uma troca de
 | `--accent-deep` | Hover e ativo do preenchimento | `#dfa301` | `#dfa301` |
 | `--accent-ink` | Texto sobre preenchimento âmbar | `#141c26` | `#0d1117` |
 | `--accent-text` | Âmbar para texto, link, borda, foco | `#816001` | `#f5b301` |
+| `--accent-tint-ink` | Texto sobre `--accent-tint` | `#6f5b2a` | `#d9c79a` |
 | `--state-confident` | Correspondência confiante | `#1f766e` | `#4fd1c5` |
 | `--state-uncertain` | Correspondência incerta | `#7a5c00` | `#f0c04a` |
 | `--state-missing` | Não encontrada, erro | `#d31608` | `#f97066` |
@@ -104,9 +105,41 @@ aparecem na mesma tela, e o selo "incerta" não pode ser o mesmo hex do botão p
 é mais escuro. É o degrau de luminosidade que separa a zona do conteúdo, e ele só funciona
 afastando-se do substrato.
 
+**`--accent-tint-ink` existe porque tinta fria sobre substrato quente lê errado.** O aviso do painel
+de ordem de execução usava `--ink-muted`, que passava no contraste (4,78:1 e 4,43:1) e ainda assim
+parecia texto caído no lugar errado — o arquivo de design o escreve numa tinta da **família do
+substrato**. O valor do escuro é o do arquivo; o do claro conserva matiz e saturação (43°, 45%) e
+rebaixa a luminosidade para 30%, a mesma receita das variantes claras de `--brand-*`.
+
 **Cor de marca nunca é ação, estado ou texto.** É acento identificador: tinge o ícone do provedor
 e nada mais. A restrição tem base medida — `#ff3b30` sobre `--surface-raised` dá 4,29:1 e
-reprovaria como texto. `tp/no-raw-visual-values` recusa `bg-brand-*`.
+reprovaria como texto. `tp/no-raw-visual-values` recusa `bg-brand-spotify` e `bg-brand-youtube`
+em toda parte, sem exceção.
+
+### O substrato de identidade — a exceção nomeada (008/FR-003, FR-004)
+
+Há **um** lugar em que a cor de marca preenche uma superfície: o distintivo do cartão de destino,
+que o arquivo de design desenha com `#1DB9541F` no Spotify e `#FF3B301F` no YouTube. Os tokens são
+`--brand-tint-spotify` e `--brand-tint-youtube`, derivados por `color-mix` da cor da marca com
+`--surface`, a 12% no claro e 15% no escuro.
+
+**A exceção é nomeada, não numérica**, e a diferença importa: um limiar de opacidade ("preenchimento
+de marca é permitido abaixo de 20%") seria alegável por qualquer tela nova sem passar por revisão, e
+a regra deixaria de ser fechadura para virar argumento. A fechadura é tripla:
+
+1. **nome próprio** — `bg-brand-spotify` continua proibido; `bg-brand-tint-spotify` é outro
+   utilitário, com outro token. Não há como alcançar a exceção por acidente de opacidade;
+2. **allowlist de arquivo** em `eslint-rules/index.js` — o utilitário é aceito apenas em
+   `src/features/destinations/DestinationSelector.tsx`. Autorizar um segundo ponto custa editar a
+   regra, que é a revisão que se quer forçar;
+3. **teste de ponto único** em `tests/unit/no-orphan-tokens.spec.ts` — cobre o caso de alguém
+   desativar a regra de lint com um comentário de supressão.
+
+Os dois pares são **medidos** e entram na lista fechada: glifo verde sobre substrato esverdeado é o
+caso em que a intuição erra, porque o tingimento aproxima o fundo da própria cor do glifo.
+
+O marcador da fila do painel "Ordem de execução" e o cabeçalho dos cartões de fase tingem **só o
+glifo**, sobre substrato neutro — a exceção não os alcança.
 
 ### Fundos tingidos de estado
 
@@ -114,31 +147,57 @@ Continuam **derivados** por `color-mix` do token de estado com `--surface`, a 12
 no escuro. Não são tokens próprios — derivar impede que trocar uma cor de estado exija editar dois
 valores e esquecer um.
 
-O mesmo vale para `--accent-tint`, usado no disco da etapa atual da trilha.
+O mesmo vale para `--accent-tint`, usado no disco da etapa atual da trilha, no cartão de destino
+selecionado e no aviso do painel lateral.
 
 ---
 
 ## 3. Pares aprovados e contraste
 
-**Lista fechada de 27 combinações.** Combinação que não está em
+**Lista fechada de 31 combinações.** Combinação que não está em
 `src/domain/theme/approvedPairs.ts` é proibida em qualquer componente. É essa fechadura que torna
 a verificação exaustiva: sem ela o portão só cobriria os pares que alguém lembrou de escrever, e
 a omissão passaria como aprovação.
 
 Mínimos: `text` = 4,5:1 · `large-text` = 3:1 · `ui` (borda, ícone, anel de foco) = 3:1.
 
-A lista cresceu de 15 (feature 005) para 27. O crescimento **não vem de cores novas**: vem de
-substratos novos. Texto e ícone sobre `--surface-zone` — a barra superior e a trilha — são
-combinações que não existiam antes de a casca de três zonas existir.
+A lista cresceu de 15 (feature 005) para 27 na 007, e para 31 na 008. O crescimento **não vem de
+cores novas**: vem de substratos novos. Texto e ícone sobre `--surface-zone` — a barra superior e a
+trilha — são combinações que não existiam antes de a casca de três zonas existir; e o glifo da marca
+sobre o seu próprio substrato tingido.
+
+Os quatro pares da 008, medidos:
+
+| Par | Papel (12%) | Noite (15%) |
+| --- | --- | --- |
+| `--brand-spotify` sobre `--brand-tint-spotify` | 3,20:1 | 5,20:1 |
+| `--brand-youtube` sobre `--brand-tint-youtube` | 3,10:1 | 4,20:1 |
+| `--accent-tint-ink` sobre `--accent-tint` | 5,23:1 | 8,11:1 |
+| `--accent-text` sobre `--accent-tint` | 4,64:1 | 7,30:1 |
+
+**`--accent-tint` entrou na lista como substrato derivado, e a entrada corrige uma omissão.** Ele já
+era fundo de texto — o aviso do painel de ordem de execução — sem nunca ter sido medido, que é
+exatamente o buraco que uma lista fechada existe para não ter. A tinta daquele aviso passou de
+`--ink-muted` para `--accent-tint-ink`: o par antigo até passava (4,78:1 no claro, 4,43:1 no
+escuro), mas o cinza-azulado frio sobre âmbar tingido lia como texto caído ali por engano, e o
+arquivo de design escreve o aviso numa tinta **quente**, da família do substrato.
+
+A margem do tema Papel é estreita e vale ser dita: 3,10:1 passa por 0,10. Se um acerto futuro no
+substrato claro derrubar o número, o grau de liberdade é reduzir `--brand-tint-amount` daquele
+tema — **a cor da marca não é alterada nem removida**.
+
+Os substratos derivados são resolvidos pelo próprio teste, que reproduz a mistura em sRGB a partir
+dos hex de `tokens.css`. Nenhum valor é digitado duas vezes.
 
 Os pares deliberadamente **ausentes**, e por quê:
 
 - `--brand-*` como texto — proibido por decisão de sistema, com base medida;
 - `--accent` como texto sobre qualquer substrato claro — 1,73:1. Só preenchimento;
-- qualquer coisa sobre `--rule` — `--rule` é filete, não substrato.
+- qualquer coisa sobre `--rule` — `--rule` é filete, não substrato;
+- um derivado como **tinta** — uma mistura translúcida da própria cor do glifo não é tinta de nada.
 
-Todos os 27 passam nos dois temas. Um único valor foi ajustado na implementação: `--accent-text`
-no tema claro saiu de `#896401` para `#816001`, porque o primeiro dava 4,58:1 sobre
+Todos os 31 passam nos dois temas. Um único valor foi ajustado na implementação da 007:
+`--accent-text` no tema claro saiu de `#896401` para `#816001`, porque o primeiro dava 4,58:1 sobre
 `--surface-zone` — passava por 0,08, e qualquer acerto futuro no substrato da zona o derrubaria.
 
 ---
@@ -290,7 +349,7 @@ escrito no componente, que seria uma classe que não emite CSS nenhum.
 │  ① Configuração   │  │                  │  │   (opcional)   ││
 │  ② Destinos       │  └──────────────────┘  └────────────────┘│
 │  ③ Entrada        │                                          │
-│  ④ Serviço        ├─ Barra de ações (só Destinos e Entrada) ─┤
+│  ④ Serviço        ├─ Barra de ações (Config.·Destinos·Entrada)┤
 │  ⑤ Resumo         │  Estado em texto            Voltar  Ir → │
 │ ↺ Recomeçar       │                                          │
 └───────────────────┴──────────────────────────────────────────┘
@@ -308,6 +367,36 @@ sem `tabindex` positivo em lugar nenhum.
 | Trilha | "Onde eu estou, e o que já decidi?" | `--surface-zone` |
 | Área principal | "O que faço agora?" | `--bg` |
 | Barra de ações | "Posso avançar? Se não, por quê?" | `--bg` |
+
+### A casca não rola; quem rola é o conteúdo
+
+Uma zona que responde a pergunta de orientação **deixa de responder quando sai da tela**. A barra
+superior e a trilha permanecem à vista: a casca ocupa a janela (`h-dvh` com `overflow-hidden`) e
+entrega a rolagem ao contêiner da área principal.
+
+Três detalhes que sustentam isso, e cada um é fácil de perder numa refatoração de layout:
+
+- **`min-h-0` no contêiner de conteúdo.** Um item de flex tem `min-height: auto` e se recusa a
+  encolher abaixo do próprio conteúdo. Sem essa classe o contêiner cresce e devolve a rolagem ao
+  documento, levando as duas zonas junto;
+- **`relative` nas regiões roláveis.** `sr-only` é `position: absolute`, e sem um ancestral
+  posicionado esses elementos ancoram no **documento** — escapam do `overflow-hidden` da casca e
+  inflam o `scrollHeight` do `html` com altura invisível. Foram 832 px de fantasma, que só a
+  rolagem programática revelava: com a roda funcionava, e `scrollIntoView` ou o link "Ir para o
+  conteúdo" deslizavam a página inteira;
+- **`overflow: hidden` em `html, body`**, como segunda linha de defesa contra o mesmo caminho.
+
+`dvh` e não `vh`: em navegador de telefone a barra de endereço entra e sai, e `100vh` mede a janela
+**sem** ela — a diferença é uma faixa de conteúdo cortada embaixo, que só aparece no aparelho de
+alguém.
+
+A trilha rola por conta própria (`overflow-y-auto`) porque numa janela baixa — telefone deitado,
+zoom de texto a 200% — os cinco degraus mais o rodapé passam da altura disponível.
+
+O portão é `e2e/shell-scroll.spec.ts`, que exercita os três gestos (roda, API e âncora) e exige que
+todo contêiner rolável contenha algo focável — uma região que rola sem nada focável dentro é
+inalcançável por teclado, e é a regra `scrollable-region-focusable` do axe que os testes de
+acessibilidade deste projeto **não** pegam, porque sem layout nada é considerado rolável.
 
 ### A trilha decide nada
 
@@ -329,12 +418,31 @@ forma, e forma sobrevive a cores forçadas e a daltonismo.
 
 ### A linha de apoio nunca afirma o que não aconteceu
 
-Uma regra, e ela cobre quatro requisitos: **enquanto a etapa não está concluída, a linha descreve
-o que fazer; depois de concluída, descreve o que foi decidido.**
+Uma regra, e uma só (008/FR-028): **a linha deriva quando há valor decidido, e fica neutra quando
+não há.** Vale igualmente para degrau concluído, corrente e à frente — o estado do degrau não é
+lido.
 
-É o que separa esta implementação do mockup. O arquivo de design mostra "Spotify e YouTube" sob
-Destinos já na tela de Configuração — e reproduzir isso seria a trilha declarando uma escolha que
+A 007 tinha uma guarda a mais, `if (state !== 'done')`. Eram duas regras onde uma basta, e a segunda
+produzia um efeito que o arquivo de design contradiz: na etapa Destinos corrente, com os dois
+serviços já marcados, a linha continuava dizendo "Escolha onde criar as playlists" em vez de nomear
+o que foi escolhido.
+
+**Isto não afrouxa a proibição.** O que impede a trilha de afirmar uma escolha inexistente nunca foi
+o estado do degrau, e sim a **ausência de valor** — um degrau sem dado real volta a neutro em vez de
+afirmar um vazio. É o que separa esta implementação do mockup: o arquivo mostra "Spotify e YouTube"
+sob Destinos já na tela de Configuração, e reproduzir isso seria a trilha declarando uma escolha que
 o usuário ainda não fez.
+
+Uma consequência que a regra única expôs, e que precisou de correção de **valor**: a etapa Serviço
+derivava da contagem de destinos, o que era inofensivo enquanto só degrau concluído derivava. Sem a
+guarda, a trilha passaria a dizer "2 serviços concluídos" no instante em que o segundo destino fosse
+marcado. O valor decidido daquela etapa não é quantos destinos existem, é **quantos serviços
+terminaram** — e o `RailSnapshot` ganhou `servicesFinished` para dizer isso.
+
+A fonte dos destinos também mudou, pelo mesmo motivo: era `queue.order`, que só existe depois da
+etapa Entrada, e passou a ser `destinations.selected`, que existe enquanto a escolha está sendo
+feita. Não é uma segunda fonte de ordem — `destinations.selected` já é mantido ordenado por
+`orderSelection`, pela mesma `PROVIDER_ORDER` de que `buildQueue` deriva.
 
 ### Largura estreita
 
@@ -351,8 +459,14 @@ novo, sem parada de tabulação adicional.
 
 ### A barra de ações, e onde ela não existe
 
-**Apenas Destinos e Entrada. A lista é fechada**, e vive num único ponto —
-`ACTION_BAR_BY_STEP` em `src/app/Shell.tsx`.
+**Configuração, Destinos e Entrada. A lista é fechada**, e vive num único ponto —
+`ACTION_BAR_BY_STEP` em `src/app/Shell.tsx`. O critério é **ter uma decisão de etapa a
+confirmar**.
+
+Configuração entrou na 008, revertendo uma decisão da 007. O argumento de lá — "esta etapa tem um
+cartão por serviço, cada um com a sua ação" — continua valendo para **salvar e remover**, que são
+sobre aquele Client ID e permanecem nos cartões. Ele não valia para o avanço, que é decisão da
+etapa: ao pé de uma página de dois mil pixels, um botão só existe depois de rolar tudo.
 
 Configuração, ciclo de serviço e Resumo mantêm as ações **dentro do cartão que as explica**. Em
 particular, "Pular o {serviço}" permanece adjacente ao cartão de conexão, reautorização, orçamento
@@ -507,9 +621,11 @@ Abaixo do ponto de corte da casca sobra só o ícone; o rótulo vira `sr-only`, 
 | `VersionHintBadge` | `status-badge` com tinta `--state-uncertain` e ícone `uncertain` |
 | `RateLimitWaiting` | Cartão `--radius-card`, fundo `--state-uncertain-tint`, ícone `loading` girando |
 | `LiveRegion` | `aria-live` sempre presente, mesmo vazia |
-| `QueueIndicator` | `role="status"` com ícone `queue` e a posição por extenso |
+| `QueueIndicator` | Ícone `queue` e a posição por extenso, no cabeçalho dos cartões de fase. **Não é região viva** desde a 008 — quem anuncia é o `StepContextLine` |
 | `DraftRecoveryBanner` | `guide-edge` (barra âmbar de 3px), fundo `--surface` |
-| `Greeting` | `--text-meta`, degrada para "Olá" sem conta conectada |
+| `StepContextLine` | `--text-meta`; primeiro nome em `--accent-text`, complemento em `--ink-muted`. `role="status"` **só** na forma de serviço |
+| `ExecutionOrderPanel` | Painel `--surface` com contorno `--rule` e `--radius-panel`; texto antes da fotografia |
+| `DestinationSelector` | Cartão com distintivo tingido, linha de estado da conta e marca de verificação à direita |
 
 ### 7.12 Utilitários nomeados
 
@@ -518,7 +634,7 @@ componentes.
 
 | Utilitário | O que carrega |
 | --- | --- |
-| `app-card` | Cartão: raio, contorno, superfície, respiro, profundidade |
+| `app-card` | Cartão: raio, contorno, superfície, respiro, profundidade. **Não envolve o cabeçalho de etapa** — ver abaixo |
 | `focus-ring` | Anel de foco por `outline` |
 | `status-badge` | Anatomia base do selo de estado |
 | `field-message` | Mensagem de apoio de campo |
@@ -526,7 +642,17 @@ componentes.
 | `guide-edge` | Barra âmbar de 3px à esquerda |
 | `icon-glyph` | Tamanho em `1em`, proteção em flex, alinhamento óptico |
 | `zone-topbar` · `zone-rail` · `zone-side-panel` · `chip-measure` | As medidas das zonas |
-| `brand-mark` · `sticker` · `sticker-faint` · `ambient-backdrop` · `mood-photo-veil` | Tratamento de decoração por tema |
+
+**Onde `app-card` vale, e onde não** (008/FR-006). O arquivo de design não desenha cartão em volta
+do cabeçalho de etapa em **nenhuma** das quatorze telas: `Heading` é filho direto de
+`Primary Column`, sem preenchimento e sem contorno. Até a 007 o `Wizard` envolvia o conteúdo de toda
+etapa num `app-card`, e era essa a "div com borda e cor" em volta de "Para onde vai a playlist?".
+
+O utilitário permanece, e é usado onde o arquivo **desenha** cartão: linha de correspondência
+(`g3IhDr`), resultado por serviço (`x2kz71`), cartão de orçamento (`rxIZJ`) e cartão de resultado do
+ciclo (`yTOJb`). Nos dois últimos ele é declarado pela própria tela, e não herdado — é o que devolve
+o degrau de luminosidade às caixas internas, que o arquivo desenha em `--bg` sobre `--surface`.
+| `brand-mark` · `sticker` · `sticker-faint` · `stickers-band` · `ambient-backdrop` · `mood-photo-veil` | Tratamento de decoração por tema |
 
 ---
 
@@ -578,8 +704,47 @@ informação.**
 | Elemento | Recurso | Onde |
 | --- | --- | --- |
 | Fundo ambiente | `Ambient Backdrop.png` (617 KB) | Área principal, todas as etapas |
+
+**A opacidade do arquivo já está dentro do arquivo.** O PNG foi exportado do design com os 22% do nó
+`eEqZf` **aplicados no canal alfa** — medido, não suposto: todo pixel tem `alpha = 56/255`. O CSS
+declara `opacity: 1`; declarar 22% de novo conta a mesma atenuação duas vezes e entrega 4,8% de
+textura, que é indistinguível de não ter fundo nenhum.
+
+**A textura é ancorada na área principal, não na janela.** No arquivo ela é um retângulo dentro de
+`Main` — 1144 × 832 em Destinos, 1144 × 359 em Configuração. Presa à janela, a parada mais clara do
+degradê cai atrás da barra superior e o conteúdo começa já a meio caminho do esmaecimento.
+
+**Nada pode pintar `--bg` opaco acima dela.** Ela é `position: absolute` com `z-index: -10`, isto é,
+um contexto de empilhamento negativo — pintado **antes** dos fundos dos descendentes de bloco em
+fluxo. O substrato vive no `body`, cujo fundo se propaga para a tela do documento e é pintado antes
+dos contextos negativos. Uma casca que declarasse o próprio `bg-bg` apagaria a textura inteira sem
+nenhum sinal de erro.
+
+**O esmaecimento é um véu, não uma máscara** (`ambient-backdrop-veil`, nó `AB230`). Camada irmã da
+textura, nunca filha — dentro do elemento atenuado o véu também ficaria transparente. As três
+paradas são as do arquivo: 40% de `--bg` no topo, 80% a 35% da altura, opaco a 80%.
+
+Os três fatos acima são invisíveis a qualquer verificação estrutural: o PNG carrega, tem o tamanho
+certo, a classe certa e o tratamento por tema certo. `e2e/decor-loading.spec.ts` mede o **pixel
+composto** nos dois temas, que é a única forma de a regressão aparecer.
 | Fotografia de clima | `loja-de-discos-….jpg` (292 KB) | Painel lateral de Destinos |
-| Adesivos | 11 PNGs (23 KB no total) | Painel lateral de Destinos |
+| Adesivos | 11 PNGs (23 KB no total) | Coluna primária de Destinos, ao pé |
+
+**Os adesivos compõem, não margeiam.** O arquivo de design os espalha por uma superfície de
+680 × 210 (`Stickers Decor`, nó `wv9Cp`), com posição, largura e inclinação declaradas para cada um.
+`stickers-band` carrega essa razão de aspecto e `Stickers.tsx` posiciona os onze em **fração da
+grade** — é o que faz a composição sobreviver ao redimensionamento da coluna. Sem a razão de
+aspecto a faixa teria altura zero (todos os filhos são absolutos) e as onze peças se empilhariam
+numa linha; pendurá-los nas bordas com degraus de espaçamento, como até a 007, produz recortes
+cortados nas duas beiradas em vez do desenho.
+
+A faixa é travada em `--container-measure`: presa à razão de 680 × 210, ela cresce **em altura**
+junto com a coluna, e numa janela de 1920 px a decoração passava de 350 px e virava o assunto da
+tela.
+
+A opacidade é declarada por tema — 55% no escuro, que é o valor do arquivo, e 80% no claro, pelo
+mesmo motivo da tabela de contraste logo abaixo: 55% sobre o papel apagaria justamente a arte que
+já parte de 1,40:1.
 
 ### Peso sem teto, proteção comportamental
 
@@ -607,6 +772,13 @@ compostas contra um quase-preto, e a medição de T074 quantifica o que isso sig
 **Todas as doze artes perdem entre 4× e 9× de contraste no tema claro.** `Vinyl 2` cruza o limiar
 em que a silhueta deixa de ser perceptível e recebe variante própria (`sticker-faint`); as demais
 usam o tratamento genérico.
+
+**O fundo ambiente é a exceção que ilustra o risco pelo outro lado.** Ele levava `mix-blend-mode:
+multiply` no tema Papel, escrito para "escurecer o papel em vez de depositar cinza sobre ele" — regra
+correta para uma textura escura, e a textura é o oposto: neon rosa, branco e verde-água. `multiply`
+de branco sobre off-white é a **identidade**, e no tema claro a decoração simplesmente não existia.
+Em `normal` a mesma arte tinge o papel de rosa e verde. O efeito continua mais discreto que no
+escuro, e isso é aritmética: arte clara sobre papel claro tem menos para onde deslocar a cor.
 
 **Nenhum teste automatizado pega isto.** `src`, `alt` vazio, tamanho e carregamento diferido estão
 corretos nos doze casos. É o item de maior risco da conferência manual.

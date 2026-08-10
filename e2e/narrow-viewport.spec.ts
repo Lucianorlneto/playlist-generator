@@ -26,13 +26,46 @@ const LISTA = [
   'Imagine - John Lennon',
 ].join('\n');
 
+/**
+ * Nenhuma rolagem horizontal — **no documento e em cada contêiner rolável**.
+ *
+ * Medir só o `documentElement` bastava enquanto a página inteira rolava. Desde
+ * que a casca passou a ocupar a janela e a rolagem foi entregue ao contêiner da
+ * área principal, essa medição sozinha ficou **cega**: um conteúdo largo demais
+ * produziria barra horizontal dentro daquele contêiner, e o documento continuaria
+ * reportando `scrollWidth === clientWidth`. O teste passaria vazio, que é pior do
+ * que não existir.
+ *
+ * A varredura cobre todo elemento cujo `overflow-x` computado permite rolar,
+ * mais o documento.
+ */
 async function semRolagemHorizontal(page: Page): Promise<void> {
-  const overflow = await page.evaluate(() => {
+  const estouros = await page.evaluate(() => {
+    const alvos: { onde: string; scrollWidth: number; clientWidth: number }[] = [];
+
     const doc = document.documentElement;
-    return { scrollWidth: doc.scrollWidth, clientWidth: doc.clientWidth };
+    alvos.push({ onde: 'documento', scrollWidth: doc.scrollWidth, clientWidth: doc.clientWidth });
+
+    for (const node of document.querySelectorAll('*')) {
+      const overflowX = getComputedStyle(node).overflowX;
+      if (overflowX !== 'auto' && overflowX !== 'scroll') continue;
+      alvos.push({
+        onde: `${node.tagName.toLowerCase()}.${node.className.toString().split(' ')[0] ?? ''}`,
+        scrollWidth: node.scrollWidth,
+        clientWidth: node.clientWidth,
+      });
+    }
+
+    // Uma folga de 1 px absorve arredondamento de layout.
+    return alvos.filter((alvo) => alvo.scrollWidth > alvo.clientWidth + 1);
   });
-  // Uma folga de 1 px absorve arredondamento de layout.
-  expect(overflow.scrollWidth).toBeLessThanOrEqual(overflow.clientWidth + 1);
+
+  expect(
+    estouros,
+    `Rolagem horizontal em: ${estouros
+      .map((e) => `${e.onde} (${String(e.scrollWidth)} > ${String(e.clientWidth)})`)
+      .join(', ')}`,
+  ).toEqual([]);
 }
 
 test.describe('SC-016 — tela de 375 px', () => {
@@ -64,8 +97,19 @@ test.describe('SC-016 — tela de 375 px', () => {
     await expect(tituloRevisao(page, SPOTIFY)).toBeVisible();
     await semRolagemHorizontal(page);
 
-    // A fila é mais um elemento na largura: precisa caber junto do resto.
-    await expect(page.getByLabel(t.queue.label)).toBeVisible();
+    /*
+      A posição na fila é mais um elemento na largura: precisa caber junto do
+      resto.
+
+      **O portador mudou na 008, a garantia não** (008/FR-013, SC-009). Ela era
+      um `QueueIndicator` com `aria-label` no topo da etapa de serviço, e passou
+      a ser dita pela linha de contexto do cabeçalho. A asserção continua sendo
+      "a posição está visível nesta largura", e deixou de supor qual elemento a
+      carrega.
+    */
+    await expect(
+      page.getByText(fmt(t.queue.position, { service: SPOTIFY, current: 1, total: 2 })),
+    ).toBeVisible();
 
     await page.getByRole('button', { name: t.review.alternatives }).first().click();
     await semRolagemHorizontal(page);

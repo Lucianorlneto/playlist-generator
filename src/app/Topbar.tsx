@@ -52,7 +52,7 @@ export function Topbar({ narrow = false }: TopbarProps) {
       Crescer é a degradação certa — SC-007 proíbe rolagem horizontal, não
       proíbe a barra ficar mais alta.
     */
-    <header className="border-rule bg-surface-zone zone-topbar flex flex-wrap items-center gap-3 border-b px-4 py-2">
+    <header className="border-rule bg-surface-zone zone-topbar flex shrink-0 flex-wrap items-center gap-3 border-b px-4 py-2">
       {/*
         A marca. `Logo Mark.png` é **arte**, não ícone de biblioteca: não herda
         `currentColor` e recebe tratamento por tema, porque foi composta contra o

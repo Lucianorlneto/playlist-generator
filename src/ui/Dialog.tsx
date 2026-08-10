@@ -60,6 +60,11 @@ export interface DialogProps {
  * (`contracts/tokens.md` §4).
  *
  * A analogia está registrada no guia de estilo, como FR-064 exige.
+ *
+ * **Reconferido na 008** (FR-008, T021a): o diálogo repousa sobre o véu, não
+ * sobre a área principal, e por isso a saída da moldura do `Wizard` não alterou
+ * o substrato atrás dele. A analogia permanece a mesma e nada foi redesenhado —
+ * silêncio do design continua não sendo ordem de remoção.
  */
 const DIALOG_CLASSES =
   'bg-surface text-ink border-rule-strong m-auto w-full max-w-panel ' +
