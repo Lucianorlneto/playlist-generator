@@ -38,8 +38,18 @@ export interface ActionableMessage {
 
 const messages = {
   app: {
+    /**
+     * O nome do produto **permanece em pt-BR** (008/FR-026).
+     *
+     * O arquivo de design diz "Playlist Importer". Adotá-lo seria trocar o nome
+     * do produto — decisão de produto, não de fidelidade visual — e contrariaria
+     * o princípio de idioma da constituição, que exige interface em português.
+     * A divergência é deliberada e está registrada no inventário como
+     * `mantido-diferente`.
+     */
     title: 'Importador de Playlist por Texto',
-    subtitle: 'Transforme uma lista de músicas em playlists nos serviços que você escolher.',
+    /** A assinatura do arquivo de design, adotada literalmente (008/FR-026). */
+    subtitle: 'Texto → Spotify · YouTube',
     skipToContent: 'Ir para o conteúdo',
   },
 
@@ -69,7 +79,152 @@ const messages = {
     of: 'de',
   },
 
+  /**
+   * A linha de contexto do cabeçalho (008/FR-009 a FR-012).
+   *
+   * **Substitui `greeting`**, que a 007 exibia igual nas cinco etapas. O arquivo
+   * de design não repete a saudação em todas as telas: ela existe em Destinos e
+   * Entrada, some em Configuração e Resumo, e vira contexto de serviço nas seis
+   * fases do ciclo. A regra que escolhe entre as três formas é do domínio, não
+   * daqui — `src/domain/header/`.
+   *
+   * O identificador vem da sessão que a aplicação já possui, e é recortado no
+   * **primeiro nome**. Nada novo é coletado nem persistido para isto existir.
+   *
+   * **Nunca um nome inventado e nunca um espaço vazio** (FR-011): sem conta
+   * conectada a linha exibe só o complemento, que é uma frase completa. As duas
+   * alternativas que a 007 já descartara continuam descartadas; o que mudou é a
+   * forma da degradação — de "Olá" sozinho para o complemento sozinho.
+   */
+  header: {
+    /** O nome, em `--accent-text`. O complemento vem ao lado, em `--ink-muted`. */
+    greeting: 'Oi, {name}',
+    destinationsComplement: '· vamos levar suas músicas pra casa',
+    inputComplement: '· hora de colar sua lista',
+    /**
+     * A forma de conclusão do ciclo. O sufixo é resolvido de `queue.phase`, que
+     * já nomeia cada desfecho com honestidade — "Pulado" e "Falhou" não viram
+     * "Concluído" (FR-029 aplicado à linha de contexto).
+     */
+    serviceSuffix: '{service} · {suffix}',
+  },
+
+  /**
+   * A trilha vertical de etapas (FR-010 a FR-015).
+   *
+   * ## As duas famílias de linha de apoio
+   *
+   * `neutral` descreve **o que fazer** na etapa; `derived` descreve **o que foi
+   * decidido** nela. A regra que escolhe entre as duas é do domínio, não daqui:
+   * `src/domain/rail/` deriva apenas quando a etapa está concluída e existe
+   * valor real (FR-012, FR-066).
+   *
+   * É por isso que não há texto aqui para "Spotify e YouTube" sob Destinos na
+   * tela de Configuração, ainda que o arquivo de design o mostre: reproduzi-lo
+   * seria a trilha afirmando uma escolha que o usuário não fez.
+   */
+  rail: {
+    title: 'Etapas',
+    restart: 'Recomeçar do início',
+    /** Anunciado só a leitor de tela, com o ordinal e o total do domínio. */
+    position: 'Etapa {n} de {total}',
+
+    /**
+     * As linhas de apoio **adotadas do arquivo de design** (008/FR-027).
+     *
+     * Cinco das seis mudaram, e a mudança é de vocabulário, não de sentido: o
+     * arquivo é mais curto e mais direto em cada uma delas. "Escolha onde criar
+     * as playlists" é a única que o arquivo não desenha na forma neutra — ele
+     * mostra "Spotify e YouTube" ali, que é a forma **derivada**, exibida numa
+     * tela em que a escolha ainda não aconteceu (FR-029).
+     */
+    neutral: {
+      credential: 'Suas credenciais',
+      destinations: 'Escolha onde criar as playlists',
+      input: 'Cole a lista de músicas',
+      service: 'Criação e resultado',
+      summary: 'O que aconteceu em cada serviço',
+    },
+
+    derived: {
+      /** Adotado do arquivo (008/FR-027): mais curto, e diz a mesma coisa. */
+      credential: 'Preferências salvas',
+      /** Recebe os destinos reais já unidos por `listAnd`. */
+      destinations: '{list}',
+      inputOne: '{count} linha colada',
+      inputOther: '{count} linhas coladas',
+      serviceOne: '{count} serviço concluído',
+      serviceOther: '{count} serviços concluídos',
+    },
+  },
+
+  /**
+   * Chip de conexão da barra superior (FR-007 a FR-009).
+   *
+   * Os três estados são distinguíveis por **rótulo e forma**, não só por cor: o
+   * nome do estado e o rótulo da ação dizem o mesmo que o ponto colorido diz.
+   * `no-credential` nunca ganha identificador de conta — nem vazio, nem
+   * genérico (FR-009).
+   */
+  connectionChip: {
+    connected: 'Conectado',
+    disconnected: 'Desconectado',
+    noCredential: 'Sem credencial',
+
+    /**
+     * Rótulo **visível** da ação: curto, porque a barra superior é estreita e o
+     * serviço já está escrito ao lado.
+     */
+    reconnect: 'Reconectar',
+    connect: 'Conectar',
+    configure: 'Configurar',
+    /**
+     * Só existe no estado `connected`: não há o que encerrar quando não há
+     * sessão, e um "Desconectar" apagado ao lado de "Conectar" seria ruído.
+     * O nome acessível é `t.connect.disconnect`, da feature 002.
+     */
+    disconnect: 'Sair',
+
+    /**
+     * Nome **acessível** da ação.
+     *
+     * Nomeia o serviço, porque dois botões chamados "Reconectar" lado a lado são
+     * indistinguíveis para quem navega por lista de controles — e a barra
+     * superior tem exatamente isso, um chip por provedor.
+     *
+     * **Diz "a conta do" e não "ao"** para não colidir com o botão primário da
+     * etapa de conexão, que se chama "Conectar ao {service}". Os dois aparecem na
+     * mesma tela, e dois controles com o mesmo nome acessível deixam quem usa
+     * leitor de tela sem como escolher entre eles. A distinção também é honesta:
+     * o chip age sobre a **conta**, o botão da etapa conduz o fluxo.
+     */
+    reconnectFor: 'Reconectar a conta do {service}',
+    connectFor: 'Conectar a conta do {service}',
+    configureFor: 'Configurar a credencial do {service}',
+
+    /** Nome acessível do chip inteiro, com o estado já resolvido. */
+    label: '{service}: {state}',
+  },
+
+  /**
+   * Barra de ações do rodapé do conteúdo (FR-016 a FR-019).
+   *
+   * Existe em Configuração, Destinos e Entrada — as três etapas em que há uma
+   * decisão única a confirmar antes de seguir. As demais mantêm as ações dentro
+   * do cartão que as explica (FR-061), e "Pular o {serviço}" continua adjacente
+   * ao cartão da fase (FR-062).
+   */
+  actionBar: {
+    label: 'Ações da etapa',
+    advance: 'Avançar',
+    back: 'Voltar',
+    /** Prefixo do motivo, para que a frase leia como impedimento e não como erro. */
+    blockedPrefix: 'Para avançar:',
+  },
+
   common: {
+    /** Conjunção de lista, usada por `listAnd`. */
+    and: 'e',
     save: 'Salvar',
     cancel: 'Cancelar',
     back: 'Voltar',
@@ -183,6 +338,15 @@ const messages = {
     saved: 'Credencial de {service} salva neste dispositivo.',
     emptyError: 'Informe o Client ID antes de salvar.',
     noneSaved: 'Cadastre ao menos um Client ID para continuar.',
+    /**
+     * O estado da etapa na barra de ações (nó `N7OSfN`).
+     *
+     * Conta **serviços configurados**, não credenciais salvas, porque é o que a
+     * etapa pergunta: nenhum serviço é obrigatório isoladamente, e o que
+     * autoriza o avanço é existir ao menos um.
+     */
+    configuredCountOne: '1 serviço configurado',
+    configuredCountOther: '{count} serviços configurados',
     reveal: 'Revelar credencial de {service}',
     hide: 'Ocultar credencial de {service}',
     maskedLabel: 'Credencial de {service} salva, exibida de forma mascarada',
@@ -219,10 +383,36 @@ const messages = {
     lockedNotice:
       'A seleção foi travada quando a primeira criação começou. Para mudá-la, descarte o rascunho.',
     noneSelected: 'Selecione ao menos um destino para continuar.',
-    orderNotice:
-      'Quando você escolhe os dois, executamos um serviço de cada vez, sempre nesta ordem: {first}, depois {second}.',
     selectedCountOne: '1 destino selecionado',
     selectedCountOther: '{count} destinos selecionados',
+
+    /**
+     * O estado da conta, sob o rótulo do cartão (008/FR-021, FR-021a).
+     *
+     * Os três ocupam a **mesma faixa** e têm a mesma altura: o cartão não pula
+     * quando a sessão é obtida. `pendingAuth` diz **quando** a autorização
+     * acontece, em vez de deixar o usuário supondo que ela já deveria ter
+     * acontecido.
+     */
+    accountConnected: 'Conectado como {account}',
+    accountPendingAuth: 'A autorização acontece ao executar o {service}',
+
+    /**
+     * O painel lateral "Ordem de execução" (008/FR-014 a FR-019).
+     *
+     * A explicação da ordem passa a existir **uma única vez**, aqui. Antes ela
+     * era um parágrafo solto no corpo da etapa **e** a decoração muda do painel;
+     * mover é o que FR-019 pede, e o resultado é uma frase a menos na tela.
+     */
+    panelTitle: 'Ordem de execução',
+    /** A nota de posição de cada item. Some com um destino só (`solo`). */
+    panelFirst: '1º · será criada primeiro',
+    panelAfter: '{position}º · depois do {previous}',
+    /** No lugar da fila, com seleção vazia (FR-015a). O painel nunca some. */
+    panelEmpty: 'Escolha um destino para ver a ordem de execução.',
+    panelHint:
+      'Executamos um serviço por vez. Se um falhar, o outro continua e você vê o resultado de cada um.',
+    panelCaption: 'A ordem que você colou é a ordem que toca. Nada de embaralhar sem você pedir.',
   },
 
   // -------------------------------------------------------------------------
@@ -790,4 +980,19 @@ export function format(template: string, values: Record<string, string | number>
 /** Plural simples: pt-BR só precisa de "um" e "outros" nos textos deste app. */
 export function plural(count: number, one: string, other: string): string {
   return format(count === 1 ? one : other, { count });
+}
+
+/**
+ * Une nomes em linguagem natural: `a`, `a e b`, `a, b e c`.
+ *
+ * Vive aqui, junto do dicionário, porque a conjunção é texto de interface — e
+ * porque `Intl.ListFormat` resolveria isto sozinho mas traria consigo a escolha
+ * de locale em tempo de execução, que este projeto não tem (idioma único,
+ * declarado). A vírgula e o "e" são literais deste módulo, não dos chamadores.
+ */
+export function listAnd(items: readonly string[]): string {
+  if (items.length === 0) return '';
+  if (items.length === 1) return items[0] ?? '';
+  const inicio = items.slice(0, -1).join(', ');
+  return `${inicio} ${t.common.and} ${items[items.length - 1] ?? ''}`;
 }

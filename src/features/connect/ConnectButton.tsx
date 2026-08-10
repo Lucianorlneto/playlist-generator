@@ -1,12 +1,10 @@
 import type { ProviderId } from '@/domain/providers';
 import { nameOf, textFor } from '@/features/credential/providerText';
 import { format, t } from '@/i18n/pt-BR';
-import { toAppError } from '@/services/providers/errors';
-import { providerFor } from '@/services/providers/registry';
-import { computeRedirectUri } from '@/features/credential/redirectUri';
 import { useAppStore } from '@/store';
-import { flushDraftNow } from '@/store/draftPersistence';
 import { Button } from '@/ui/Button';
+
+import { useAuthorize } from './useAuthorize';
 
 export interface ConnectButtonProps {
   provider: ProviderId;
@@ -34,30 +32,15 @@ export interface ConnectButtonProps {
 export function ConnectButton({ provider, navigate, compact = false }: ConnectButtonProps) {
   const credential = useAppStore((state) => state.credentials[provider]);
   const connecting = useAppStore((state) => state.connecting === provider);
-  const setConnecting = useAppStore((state) => state.setConnecting);
-  const setAuthError = useAppStore((state) => state.setAuthError);
 
   const service = nameOf(provider);
   const text = textFor(provider);
 
-  async function connect(): Promise<void> {
-    if (credential === null) return;
-    setConnecting(provider);
-    try {
-      const url = await providerFor(provider).buildAuthorizeUrl(
-        credential.clientId,
-        computeRedirectUri(),
-      );
-      // A autorização é uma navegação de página inteira: o que estiver pendurado
-      // no debounce de 500 ms morre com o documento. Gravar aqui é o que faz o
-      // retorno cair no serviço e na etapa exatos em vez de recomeçar (FR-037).
-      flushDraftNow();
-      if (navigate === undefined) window.location.assign(url);
-      else navigate(url);
-    } catch (error) {
-      setAuthError(toAppError(error, provider));
-    }
-  }
+  // O corpo da autorização saiu daqui na feature 007, quando o chip da barra
+  // superior passou a ser o segundo lugar de onde se autoriza. Duas cópias
+  // divergiriam, e a primeira coisa que a cópia esqueceria seria gravar o
+  // rascunho antes de navegar — falha que só aparece na volta do provedor.
+  const connect = useAuthorize(provider, navigate);
 
   if (compact) {
     return (

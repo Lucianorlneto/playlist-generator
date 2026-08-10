@@ -32,7 +32,10 @@ function sourceFiles(directory: string): string[] {
       found.push(...sourceFiles(full));
       continue;
     }
-    if (/\.(tsx|css)$/u.test(entry)) found.push(full);
+    // `.ts` entrou na 007: o mapa de ícones é um `.ts`, e a fechadura em volta
+    // da biblioteca precisa alcançar serviços e slices do store — um `import`
+    // ali abre o mesmo buraco que um `import` numa tela.
+    if (/\.(tsx?|css)$/u.test(entry)) found.push(full);
   }
   return found;
 }
@@ -88,7 +91,14 @@ const COLOR_PREFIX =
   '(?:bg|text|border|ring|outline|fill|stroke|divide|decoration|placeholder|caret|from|via|to|shadow)';
 
 /** Degraus válidos da escala de espaçamento (contracts/tokens.md §4). */
-const SPACING_STEPS = new Set(['0', '1', '2', '3', '4', '6', '8', '12']);
+/**
+ * Os degraus da escala de espaçamento.
+ *
+ * `0.5` entrou na feature 007: o arquivo de design usa 2px 73 vezes como respiro
+ * entre título e linha de apoio, e colapsá-lo em 4px engordaria a trilha inteira
+ * (`contracts/tokens.md` §4).
+ */
+const SPACING_STEPS = new Set(['0', '0.5', '1', '2', '3', '4', '6', '8', '12']);
 
 const SPACING_PREFIX =
   '(?:p|px|py|pt|pb|pl|pr|ps|pe|m|mx|my|mt|mb|ml|mr|ms|me|gap|gap-x|gap-y|space-x|space-y|size|w|h|min-w|min-h|max-w|max-h|top|bottom|left|right|inset|inset-x|inset-y|translate-x|translate-y|basis)';
@@ -172,7 +182,7 @@ describe('T012 · nenhum utilitário derivado de token removido sobrevive em src
   it('FR-014 · nenhum degrau de tipografia fora dos seis declarados', () => {
     const offences = scan(
       new RegExp(`\\b(?:[a-z-]+:)*text-(?:${REMOVED_TEXT_SIZES.join('|')})\\b`, 'gu'),
-      'use `text-step`, `text-section`, `text-body`, `text-item`, `text-meta` ou `text-data`',
+      'use `text-page`, `text-step`, `text-section`, `text-body`, `text-meta` ou `text-data`',
     );
     expect(offences, `\n${report(offences)}`).toEqual([]);
   });
@@ -194,7 +204,7 @@ describe('T012 · nenhum utilitário derivado de token removido sobrevive em src
               file: file.path,
               line: index + 1,
               utility: match[0],
-              hint: 'degraus válidos: 0, 1, 2, 3, 4, 6, 8, 12',
+              hint: 'degraus válidos: 0, 0.5, 1, 2, 3, 4, 6, 8, 12',
             });
           }
           match = matcher.exec(text);
@@ -237,6 +247,7 @@ describe('T012 · a lista de proibidos não pode envelhecer em silêncio', () =>
   it('os tokens novos que a migração usa como destino estão de fato declarados', () => {
     const destinos = [
       'bg',
+      'surface-zone',
       'surface',
       'surface-raised',
       'rule',
@@ -247,9 +258,15 @@ describe('T012 · a lista de proibidos não pode envelhecer em silêncio', () =>
       'accent-deep',
       'accent-ink',
       'accent-text',
+      'accent-tint',
+      'brand-tint-spotify',
+      'brand-tint-youtube',
       'state-confident',
       'state-uncertain',
       'state-missing',
+      'state-live',
+      'brand-spotify',
+      'brand-youtube',
       'state-confident-tint',
       'state-uncertain-tint',
       'state-missing-tint',
@@ -266,5 +283,226 @@ describe('T012 · a lista de proibidos não pode envelhecer em silêncio', () =>
     expect(ausentes, `Destinos de migração não declarados em index.css: ${ausentes.join(', ')}`).toEqual(
       [],
     );
+  });
+});
+
+/**
+ * O terceiro trinco da exceção nomeada de 008/FR-004.
+ *
+ * Os outros dois são o **nome próprio** do token — não há limiar de opacidade a
+ * alegar, chegar à exceção exige nomeá-la — e a **allowlist de arquivo** na regra
+ * `tp/no-raw-visual-values`. Este cobre o caso que os dois primeiros não
+ * alcançam: alguém desativa a regra de lint com um comentário de supressão e o
+ * substrato de identidade passa a preencher uma segunda superfície.
+ *
+ * A redundância é deliberada, e é a mesma disciplina da tabela de hosts do
+ * Princípio II: a fechadura que importa é a que continua fechada depois de
+ * alguém tentar abri-la.
+ */
+describe('008/FR-004 · o substrato de identidade tem um único ponto de uso', () => {
+  const AUTORIZADO = 'src/features/destinations/DestinationSelector.tsx';
+
+  it.each(['bg-brand-tint-spotify', 'bg-brand-tint-youtube'])(
+    '%s aparece em exatamente um arquivo de src/, e é o cartão de destino',
+    (utilitario) => {
+      const padrao = new RegExp(`\\b(?:[a-z-]+:)*${utilitario}\\b`, 'u');
+      const arquivos = files
+        .filter((file) => !file.path.endsWith('styles/index.css'))
+        .filter((file) => padrao.test(file.text))
+        .map((file) => file.path.replaceAll('\\', '/'))
+        .sort();
+
+      expect(
+        arquivos,
+        `\`${utilitario}\` é a exceção nomeada de 008/FR-004 e existe para o distintivo do ` +
+          `cartão de destino. Encontrado em: ${arquivos.join(', ') || '(nenhum arquivo)'}. ` +
+          'Autorizar outro ponto custa editar `eslint-rules/index.js` **e** este teste — ' +
+          'que é a revisão que se quer forçar.',
+      ).toEqual([AUTORIZADO]);
+    },
+  );
+
+  it('`bg-brand-spotify` e `bg-brand-youtube` continuam sem nenhum ponto de uso', () => {
+    // O prefixo `tint` abriu **uma** porta, e só ela. Preenchimento com a cor de
+    // marca cheia continua significando "acionável" neste sistema (007/FR-024).
+    const offences = scan(
+      /\b(?:[a-z-]+:)*bg-brand-(?!tint-)[a-z]+\b/gu,
+      'a exceção de 008/FR-004 é `bg-brand-tint-*`, e vale só no cartão de destino',
+    );
+    expect(offences, `\n${report(offences)}`).toEqual([]);
+  });
+});
+
+/**
+ * A denylist da feature 007 — **o critério objetivo de "a migração terminou"**
+ * (`contracts/token-migration.md` §5).
+ *
+ * As seções acima cobrem a migração 004 → 005. Esta cobre a 005 → 007, e ela é
+ * a que declara esta feature encerrada. Enquanto qualquer um destes aparecer em
+ * `src/`, a migração está incompleta — e "incompleta" aqui significa uma tela
+ * sem estilo que ninguém viu, não um débito abstrato.
+ *
+ * A varredura ignora comentários. Este repositório documenta as decisões que
+ * toma, e explicar por que `text-item` saiu exige escrever `text-item` — um
+ * portão que não distingue uso de menção obriga quem escreve documentação a
+ * inventar rodeios, e é assim que a documentação morre.
+ */
+describe('007 · a migração 005 → 007 terminou', () => {
+  const TSX_E_CSS = files;
+
+  it('nenhum resquício da goteira sobrevive', () => {
+    // A goteira saiu inteira (FR-029): o utilitário, a variante e as duas
+    // medidas. A variante é a mais perigosa das quatro — uma variante
+    // inexistente faz o Tailwind descartar a **declaração inteira**, então
+    // `gutter:not-sr-only` não vira nada e o rótulo fica invisível em toda
+    // largura, não só abaixo do ponto de corte.
+    const offences = [
+      ...scan(/\bgutter-row\b/gu, 'a goteira saiu na 007 (FR-029)'),
+      ...scan(/\bgutter:[a-z-]/gu, 'a variante `gutter:` saiu com o breakpoint'),
+      ...scan(/--gutter\b/gu, 'medida removida; ver contracts/token-migration.md §4'),
+      ...scan(/--breakpoint-gutter\b/gu, 'renomeado para `--breakpoint-shell`'),
+    ];
+    expect(offences, `\n${report(offences)}`).toEqual([]);
+  });
+
+  it('o degrau `text-item` não sobrevive', () => {
+    // Fundido em `--text-body`. Um degrau removido não quebra nada: o
+    // utilitário deixa de emitir CSS e o texto herda o tamanho de cima.
+    const offences = [
+      ...scan(/\b(?:[a-z-]+:)*text-item\b/gu, 'use `text-body` (contracts/token-migration.md §4)'),
+      ...scan(/--text-item\b/gu, 'o degrau saiu da escala'),
+    ];
+    expect(offences, `\n${report(offences)}`).toEqual([]);
+  });
+
+  it('nenhuma importação dos componentes removidos', () => {
+    // `StepIndicator` virou `StepRail`; `SessionHeader` foi absorvido pelo
+    // `ConnectionChip`. Os arquivos não existem mais, então uma importação
+    // quebraria o build — mas a asserção cobre também o caso de alguém
+    // recriá-los por engano em vez de usar o sucessor.
+    const offences = [
+      ...scan(/@\/app\/StepIndicator/gu, 'substituído por `@/app/StepRail`'),
+      ...scan(/@\/features\/connect\/SessionHeader/gu, 'absorvido por `ConnectionChip`'),
+    ];
+    expect(offences, `\n${report(offences)}`).toEqual([]);
+  });
+
+  it('SC-011 · nenhum hex da paleta anterior fora de tokens.css', () => {
+    /*
+      A lista é a de `contracts/token-migration.md` §5. Cinco deles permanecem
+      **dentro** de `tokens.css`, porque o tema claro conserva o substrato da
+      005 (FR-032) — a proibição é fora dele, que é a regra que já vale para
+      todo hex.
+
+      `tokens.css` é excluído da varredura, e não os hex da lista: excluir os
+      valores deixaria passar um `#faf7f0` escrito à mão dentro de um
+      componente, que é exatamente o caso a pegar.
+    */
+    const PALETA_ANTERIOR = [
+      '#f4a900',
+      '#d99700',
+      '#c98600',
+      '#9a5b00',
+      '#1a2332',
+      '#223045',
+      '#0d1219',
+      '#faf7f0',
+      '#14706b',
+      '#4ec4b8',
+      '#b3261e',
+      '#ff8a7a',
+      '#e8eaed',
+      '#9aa8b8',
+      '#8f887a',
+      '#2c3a4d',
+    ];
+
+    const padrao = new RegExp(`(?:${PALETA_ANTERIOR.join('|')})\\b`, 'giu');
+    const offences: Offence[] = [];
+    for (const file of TSX_E_CSS) {
+      if (file.path.endsWith('styles/tokens.css')) continue;
+      file.text.split('\n').forEach((text, index) => {
+        const matcher = new RegExp(padrao.source, padrao.flags);
+        let match = matcher.exec(text);
+        while (match !== null) {
+          offences.push({
+            file: file.path,
+            line: index + 1,
+            utility: match[0],
+            hint: 'hex da paleta anterior fora de tokens.css (SC-011)',
+          });
+          match = matcher.exec(text);
+        }
+      });
+    }
+    expect(offences, `\n${report(offences)}`).toEqual([]);
+  });
+
+  it('SC-016 · nenhuma importação de ícone fora do mapa', () => {
+    /*
+      Coberto três vezes: por `tp/no-icon-library-import` no editor, por
+      `tests/unit/icon-roles.spec.ts` em CI, e aqui. A redundância é deliberada
+      — o custo de perder a fechadura é uma varredura por todo o `src/` no dia
+      em que um ícone precisar mudar.
+
+      Este caso alcança também os `.css`, que o ESLint não lê.
+    */
+    const offences: Offence[] = [];
+    for (const file of TSX_E_CSS) {
+      if (file.path.endsWith('ui/icons.ts')) continue;
+      file.text.split('\n').forEach((text, index) => {
+        if (!/from\s+'react-icons/u.test(text)) return;
+        offences.push({
+          file: file.path,
+          line: index + 1,
+          utility: text.trim(),
+          hint: 'peça um papel a `src/ui/icons.ts`; nunca importe da biblioteca (FR-059)',
+        });
+      });
+    }
+    expect(offences, `\n${report(offences)}`).toEqual([]);
+  });
+
+  it('FR-060 · nenhum PNG de ícone de interface sobrevive em src/assets/', () => {
+    /*
+      Os nove PNGs que eram ícone de interface foram **removidos do repositório**
+      em 2026-08-09. Remover o perigo vence guardá-lo, e é por isso que esta
+      asserção olha o disco em vez de manter uma denylist de nomes.
+
+      O que permanece em `src/assets/imgs/` é arte: os onze adesivos, a
+      fotografia de clima, o fundo ambiente e a marca — que é exceção declarada
+      (`contracts/icons.md` §1).
+    */
+    const ARTE_PERMITIDA = new Set([
+      'Ambient Backdrop.png',
+      'Logo Mark.png',
+      'Boombox.png',
+      'Cassette 1.png',
+      'Cassette 2.png',
+      'Cassette 3.png',
+      'Headphones 1.png',
+      'Headphones 2.png',
+      'Play Button.png',
+      'Star 1.png',
+      'Star 2.png',
+      'Vinyl 1.png',
+      'Vinyl 2.png',
+    ]);
+
+    const imgs = readdirSync(join(SRC, 'assets/imgs'));
+    const inesperados = imgs
+      .filter((nome) => /\.png$/iu.test(nome))
+      .filter((nome) => !ARTE_PERMITIDA.has(nome));
+
+    expect(
+      inesperados,
+      `PNG inesperado em src/assets/imgs/. Ícone de interface vem de \`src/ui/icons.ts\`, ` +
+        `nunca de arte solta (FR-060): ${inesperados.join(', ')}`,
+    ).toEqual([]);
+  });
+
+  it('a pasta src/assets/icons/ continua não existindo', () => {
+    const existe = readdirSync(join(process.cwd(), 'src/assets')).includes('icons');
+    expect(existe, 'src/assets/icons/ foi recriada; os ícones vêm do mapa (FR-060)').toBe(false);
   });
 });

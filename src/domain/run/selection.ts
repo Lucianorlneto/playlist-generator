@@ -79,3 +79,47 @@ export function reconcileSelection(
 export function lockSelection(selection: DestinationSelection): DestinationSelection {
   return selection.locked ? selection : { ...selection, locked: true };
 }
+
+/**
+ * Um destino na fila **exibida** do painel "Ordem de execução" (008/FR-015).
+ *
+ * Existe para que o painel desenhe uma lista pronta em vez de recalcular ordem e
+ * posição a cada renderização — e, principalmente, para que a regra "a fila
+ * nunca lista um destino não selecionado" seja verificável sem DOM.
+ */
+export interface QueuedDestination {
+  readonly provider: ProviderId;
+  /** 1-based, contígua, na ordem fixa do produto. */
+  readonly position: number;
+  /** `true` quando a fila tem um só destino: a nota de ordem relativa some. */
+  readonly solo: boolean;
+}
+
+/**
+ * A fila exibida, projetada sobre `PROVIDER_ORDER` (008/FR-015, invariante Q2).
+ *
+ * **Não é uma segunda fonte de ordem.** É projeção de `selection.selected`, e a
+ * única autoridade sobre ordem continua sendo `PROVIDER_ORDER` — o `filter`
+ * sobre ela é o que garante isso estruturalmente: a saída não pode contradizer
+ * uma ordem que ela nem lê da entrada.
+ *
+ * Difere de `buildQueue` no momento em que existe. A `ExecutionQueue` só é
+ * construída ao sair da etapa Entrada; este painel precisa refletir a seleção
+ * **enquanto ela está sendo feita**, marcação a marcação.
+ *
+ * Seleção vazia devolve lista vazia, e **o painel não some** (Q3): quem trata o
+ * vazio é a superfície, com o convite de FR-015a. Um painel que aparece e
+ * desaparece a cada clique é o pior comportamento possível numa tela cuja única
+ * tarefa é clicar.
+ */
+export function displayedQueue(
+  selection: DestinationSelection,
+): readonly QueuedDestination[] {
+  const escolhidos = PROVIDER_ORDER.filter((provider) => selection.selected.includes(provider));
+
+  return escolhidos.map((provider, index) => ({
+    provider,
+    position: index + 1,
+    solo: escolhidos.length === 1,
+  }));
+}

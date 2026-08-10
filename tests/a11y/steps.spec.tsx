@@ -11,7 +11,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import axe from 'axe-core';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { CredentialStep } from '@/features/credential/CredentialStep';
 import { DestinationsStep } from '@/features/destinations/DestinationsStep';
@@ -21,11 +21,12 @@ import { QueueIndicator } from '@/features/queue/QueueIndicator';
 import { QuotaEstimateScreen } from '@/features/quota/QuotaEstimateScreen';
 import { ResultScreen } from '@/features/result/ResultScreen';
 import { ReauthDialog } from '@/features/connect/ReauthDialog';
-import { SessionHeader } from '@/features/connect/SessionHeader';
+import { ConnectionChip } from '@/features/connect/ConnectionChip';
 import { ReviewScreen } from '@/features/review/ReviewScreen';
 import { SkipButton } from '@/features/service/SkipButton';
 import { SummaryScreen } from '@/features/summary/SummaryScreen';
 import { ResetFlow } from '@/app/ResetFlow';
+import { Shell } from '@/app/Shell';
 import { t } from '@/i18n/pt-BR';
 import { configureProviderClient } from '@/services/providers/http';
 import { createRefresher } from '@/services/providers/spotify/auth';
@@ -488,8 +489,10 @@ describe('004/V17 — reconexão sem violação séria ou crítica', () => {
     await semViolacoes(container);
   });
 
-  it('o cabeçalho com um serviço desconectado não introduz violação', async () => {
-    const { container } = render(<SessionHeader />);
+  it('o chip de conexão com um serviço desconectado não introduz violação', async () => {
+    // Sucessor do `SessionHeader`, removido na 007. O chip cobre um estado a
+    // mais — sem credencial —, e os três precisam passar na auditoria.
+    const { container } = render(<ConnectionChip provider="youtube" />);
     await semViolacoes(container);
   });
 });
@@ -559,5 +562,254 @@ describe('006 — diálogos de pular e de recomeçar', () => {
     semearTrabalho006();
     const { container } = render(<ResetFlow />);
     await semViolacoes(container);
+  });
+});
+
+/**
+ * 007/SC-003 e SC-013 — a casca de três zonas, nos **dois temas** e nas **duas
+ * larguras**.
+ *
+ * Os blocos acima auditam cada tela isoladamente. Este audita a casca que passou
+ * a envolvê-las, e ela é onde os problemas novos moram: a barra superior tem
+ * dois chips com estados independentes, a trilha tem uma lista com
+ * `aria-current`, e a largura estreita troca a trilha por um resumo. Nenhuma
+ * dessas superfícies existia antes da feature.
+ *
+ * Rodar nas duas larguras não é zelo redundante: abaixo do ponto de corte a
+ * árvore é **outra** — a trilha não é renderizada e o `StepSummary` toma o seu
+ * lugar. Auditar só a largura ampla deixaria metade da casca sem prova.
+ */
+describe.each(THEMES)('007/SC-003 · a casca não introduz violação — tema %s', (theme) => {
+  const CLIENT_ID_007 = 'a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6';
+
+  function larguraDe(narrow: boolean): void {
+    vi.stubGlobal(
+      'matchMedia',
+      (query: string): MediaQueryList =>
+        ({
+          matches: narrow,
+          media: query,
+          onchange: null,
+          addEventListener: () => undefined,
+          removeEventListener: () => undefined,
+          addListener: () => undefined,
+          removeListener: () => undefined,
+          dispatchEvent: () => false,
+        }) as unknown as MediaQueryList,
+    );
+  }
+
+  beforeEach(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    useAppStore.setState({
+      credentials: makeCredentials({ spotify: CLIENT_ID_007, youtube: YT_CLIENT_ID }),
+      sessions: makeSessions({ spotify: makeSession('spotify') }),
+      queue: makeQueue(['spotify', 'youtube']),
+    });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    document.documentElement.removeAttribute('data-theme');
+  });
+
+  for (const narrow of [false, true]) {
+    const largura = narrow ? 'estreita' : 'ampla';
+
+    it(`largura ${largura}: a casca inteira passa no axe`, async () => {
+      larguraDe(narrow);
+      useAppStore.setState({ step: 'destinations' });
+
+      const { container } = render(
+        <Shell>
+          <p>conteúdo</p>
+        </Shell>,
+      );
+      await semViolacoes(container);
+    });
+
+    it(`largura ${largura}: nenhum elemento decorativo é anunciado (SC-013)`, async () => {
+      larguraDe(narrow);
+      useAppStore.setState({ step: 'destinations' });
+
+      const { container } = render(
+        <Shell>
+          <p>conteúdo</p>
+        </Shell>,
+      );
+
+      /*
+        Toda imagem desta aplicação é decoração — marca, fundo ambiente,
+        fotografia de clima e os onze adesivos —, exceto as capas de álbum da
+        revisão, que têm `alt` descritivo e não aparecem nesta etapa.
+
+        `alt=""` retira a imagem da árvore de acessibilidade; um `aria-hidden`
+        no ancestral faz o mesmo pelo ramo inteiro. Qualquer das duas basta.
+      */
+      const anunciadas = [...container.querySelectorAll('img')]
+        .filter((img) => img.getAttribute('alt') !== '')
+        .filter((img) => img.closest('[aria-hidden="true"]') === null)
+        .map((img) => img.getAttribute('src') ?? '(sem src)');
+
+      expect(anunciadas, `decoração anunciada: ${anunciadas.join(', ')}`).toEqual([]);
+    });
+  }
+});
+
+/**
+ * 008/FR-013 — a posição na fila é anunciada **uma vez só**.
+ *
+ * O requisito tem duas metades que puxam para lados opostos: a posição não pode
+ * ser o único portador da informação, e a repetição precisa ser redundante para
+ * tecnologia assistiva onde o mesmo dado já é anunciado. A leitura adotada é
+ * **um anúncio, dois lugares visíveis** (008/research §R2):
+ *
+ * - a linha de contexto do cabeçalho é texto real e anunciado, em **todas** as
+ *   fases do ciclo;
+ * - o cabeçalho do cartão de orçamento e de resultado repete a posição
+ *   visualmente, `aria-hidden`, para quem está lendo o cartão sem ter voltado o
+ *   olho ao topo da tela.
+ *
+ * As duas nunca coexistem numa mesma tela, e é isso que faz a conta fechar: o
+ * cabeçalho de cartão só existe nas fases de orçamento, criação e conclusão, e é
+ * justamente nelas que a linha de contexto troca a posição pelo sufixo da fase.
+ * Por isso o `QueueIndicator` **não** é `aria-hidden` — escondê-lo deixaria a
+ * posição sem anúncio nenhum naquelas telas.
+ *
+ * Os dois casos que este bloco existe para pegar:
+ *
+ * - alguém devolve `role="status"` ao `QueueIndicator`, e a posição passa a
+ *   competir com a linha de contexto por anúncio;
+ * - alguém move a região viva para dentro dos cartões, e as quatro fases sem
+ *   cartão ficam mudas.
+ */
+describe('008/FR-013 — a posição na fila tem um anúncio só por tela', () => {
+  const doisDestinos = () => {
+    useAppStore.setState({
+      credentials: makeCredentials({ spotify: CLIENT_ID, youtube: YT_CLIENT_ID }),
+      sessions: makeSessions({
+        spotify: makeSession('spotify'),
+        youtube: makeSession('youtube'),
+      }),
+      destinations: { selected: ['spotify', 'youtube'], locked: true },
+    });
+  };
+
+  /**
+   * A posição na fila, na forma exata em que o produto a escreve.
+   *
+   * O travessão é o que distingue "YouTube — 2 de 2" de "cerca de 2% do
+   * orçamento diário", que um `de 2` solto encontraria — e um falso positivo
+   * aqui faria a asserção medir a frase errada e passar por acidente.
+   */
+  const POSICAO = /—\s*\d+\s+de\s+\d+/u;
+
+  /**
+   * Elementos **na árvore de acessibilidade** cujo texto carrega a posição.
+   *
+   * Conta os nós folha que contêm a posição e que não estão sob `aria-hidden` —
+   * é a pergunta que FR-013 faz de verdade: quantas vezes quem usa leitor de
+   * tela ouve "2 de 2" ao percorrer esta tela.
+   */
+  function portadoresDaPosicao(container: HTMLElement): string[] {
+    return [...container.querySelectorAll('p, span, div')]
+      .filter((node) => POSICAO.test(node.textContent ?? ''))
+      .filter((node) => node.querySelector('p, span, div') === null)
+      .filter((node) => node.closest('[aria-hidden="true"]') === null)
+      .map((node) => node.textContent ?? '');
+  }
+
+  /** Regiões vivas cujo texto contém a posição na fila. */
+  function regioesVivasComPosicao(container: HTMLElement): string[] {
+    return [...container.querySelectorAll('[role="status"], [aria-live]')]
+      .filter((node) => POSICAO.test(node.textContent ?? ''))
+      .map((node) => node.textContent ?? '');
+  }
+
+  it('a fase de orçamento traz a posição uma única vez, e ela é lida', async () => {
+    doisDestinos();
+    useAppStore.setState({
+      step: 'service',
+      lines: linhas,
+      queue: makeQueue(['spotify', 'youtube'], {
+        currentIndex: 1,
+        runs: {
+          youtube: makeRun('youtube', {
+            phase: 'estimate',
+            lineIds: linhas.map((linha) => linha.id),
+            estimate: {
+              provider: 'youtube',
+              lineCount: linhas.length,
+              selectedCount: linhas.length,
+              estimatedUnits: 200,
+              availableUnits: 10_000,
+              maxLinesThatFit: 50,
+              blocked: false,
+              retryReserve: 0,
+            },
+          }),
+        },
+      }),
+    });
+
+    const { container } = render(
+      <Shell>
+        <QuotaEstimateScreen provider="youtube" />
+      </Shell>,
+    );
+
+    // Um portador, e ele é o cabeçalho do cartão: aqui a linha de contexto diz
+    // "· Conferindo o orçamento" e **não** repete a posição, então esconder o
+    // cabeçalho a deixaria sem anúncio nenhum.
+    expect(portadoresDaPosicao(container)).toHaveLength(1);
+
+    // E nenhuma região viva a repete: quem anuncia troca de serviço é a linha
+    // de contexto, e duas regiões vivas competiriam pelo mesmo anúncio.
+    expect(regioesVivasComPosicao(container)).toEqual([]);
+  });
+
+  it.each(['connect', 'awaiting_reauth', 'search', 'review'] as const)(
+    'a fase %s — sem cartão no arquivo — ainda assim anuncia a posição',
+    (phase) => {
+      // Nestas quatro fases o arquivo de design **não** desenha cabeçalho de
+      // cartão: a linha de contexto é o único lugar em que a posição aparece, e
+      // é ali que ela precisa ser anunciada. Sem esta asserção, mover a região
+      // viva para dentro dos cartões deixaria metade do ciclo mudo.
+      doisDestinos();
+      useAppStore.setState({
+        step: 'service',
+        queue: makeQueue(['spotify', 'youtube'], {
+          currentIndex: 1,
+          runs: { youtube: makeRun('youtube', { phase }) },
+        }),
+      });
+
+      const { container } = render(
+        <Shell>
+          <p>conteúdo da fase</p>
+        </Shell>,
+      );
+
+      expect(
+        regioesVivasComPosicao(container),
+        `a fase ${phase} não anuncia a posição`,
+      ).toHaveLength(1);
+      expect(portadoresDaPosicao(container), `a fase ${phase} repete a posição`).toHaveLength(1);
+    },
+  );
+
+  it('o QueueIndicator deixou de ser região viva', () => {
+    // A asserção que trava a regressão pelo caminho mais curto: quem anuncia
+    // troca de serviço é a linha de contexto. Ele continua **legível** — não é
+    // `aria-hidden` —, porque nas telas em que aparece é o único portador.
+    doisDestinos();
+    useAppStore.setState({ queue: makeQueue(['spotify', 'youtube'], { currentIndex: 0 }) });
+
+    const { container } = render(<QueueIndicator />);
+    const raiz = container.firstElementChild;
+
+    expect(raiz?.getAttribute('role')).toBeNull();
+    expect(raiz?.getAttribute('aria-label')).toBeNull();
+    expect(raiz?.getAttribute('aria-hidden')).toBeNull();
   });
 });

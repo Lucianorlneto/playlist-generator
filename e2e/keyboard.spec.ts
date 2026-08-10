@@ -162,10 +162,25 @@ test.describe('FR-047 — operação por teclado', () => {
     await acionar(page, fmt(t.connect.connect, { service: SPOTIFY }));
     await expect(tituloRevisao(page, SPOTIFY)).toBeVisible();
 
-    // FR-018: a posição na fila é anunciada, não apenas desenhada.
-    await expect(page.getByLabel(t.queue.label)).toHaveText(
-      fmt(t.queue.position, { service: SPOTIFY, current: 1, total: 2 }),
-    );
+    /*
+      FR-018: a posição na fila é anunciada, não apenas desenhada.
+
+      **O portador mudou na 008, a garantia não** (008/FR-013, SC-009). Até aqui
+      quem anunciava era o `QueueIndicator`, por `role="status"` e `aria-label`,
+      no topo da etapa de serviço. A posição passou para a **linha de contexto do
+      cabeçalho**, que é texto real, aparece em todas as fases do ciclo e é a
+      região viva que anuncia a troca de serviço — o `QueueIndicator` virou a
+      repetição visual que o arquivo de design desenha dentro do cabeçalho dos
+      cartões de orçamento e de resultado.
+
+      A asserção continua sendo a mesma pergunta: **a posição é anunciada?** O
+      que ela deixou de assumir é *qual elemento* a anuncia, que era detalhe de
+      implementação da 002.
+    */
+    const posicao = fmt(t.queue.position, { service: SPOTIFY, current: 1, total: 2 });
+    // Filtrado pelo conteúdo: o aviso de rascunho recuperado também é
+    // `role="status"`, e nesta altura do fluxo ele está na tela.
+    await expect(page.getByRole('status').filter({ hasText: posicao })).toHaveCount(1);
 
     await page.getByLabel(t.playlistConfig.nameLabel).fill('Por Teclado');
     await acionar(page, fmt(t.playlistConfig.create, { service: SPOTIFY }));
@@ -210,9 +225,14 @@ test.describe('FR-047 — operação por teclado', () => {
  * FR-016, SC-010 e SC-012 nos **dois temas** (T063).
  *
  * O anel de foco passou a usar `outline` em vez de `box-shadow` (research §12),
- * e sua cor é `--accent-text` — que **diverge entre os temas**: `#9a5b00` no
- * claro, `#f4a900` no escuro. Verificar num tema só deixaria metade da
+ * e sua cor é `--accent-text` — que **diverge entre os temas**: `#816001` no
+ * claro, `#f5b301` no escuro. Verificar num tema só deixaria metade da
  * afirmação sem prova.
+ *
+ * Os dois valores mudaram na feature 007, junto com a paleta inteira. O que não
+ * mudou é a afirmação: o anel é `outline`, tem 2px e acompanha o tema. Um teste
+ * que citasse o hex sem citar o token estaria protegendo o valor em vez da
+ * regra — por isso a linha abaixo lê os dois de `src/styles/tokens.css`.
  *
  * Nenhuma asserção de comportamento é alterada aqui: o que se acrescenta é
  * verificação sobre o que já existia.
@@ -257,8 +277,26 @@ test.describe('FR-016 e SC-010 — foco visível nos dois temas', () => {
       // `box-shadow` desaparece em modo de cores forçadas; o foco não pode
       // depender dele.
       expect(foco.boxShadow === 'none' || foco.boxShadow === '').toBe(true);
-      // A cor do anel acompanha o tema.
-      expect(foco.outlineColor).toBe(tema === 'dark' ? 'rgb(244, 169, 0)' : 'rgb(154, 91, 0)');
+
+      /*
+        A cor do anel acompanha o tema, e o valor esperado é lido do próprio
+        `--accent-text` em vigor — não de um hex copiado para cá. Comparar contra
+        uma cópia significaria que trocar a paleta quebra este teste por um
+        motivo que nada tem a ver com foco visível, que é o que ele protege.
+      */
+      const esperado = await page.evaluate(() =>
+        getComputedStyle(document.documentElement).getPropertyValue('--accent-text').trim(),
+      );
+      const emRgb = await page.evaluate((hex) => {
+        const sonda = document.createElement('span');
+        sonda.style.color = hex;
+        document.body.append(sonda);
+        const cor = getComputedStyle(sonda).color;
+        sonda.remove();
+        return cor;
+      }, esperado);
+
+      expect(foco.outlineColor).toBe(emRgb);
     });
 
     test(`o ThemeControl é uma parada única de Tab no tema ${tema}`, async ({ page }) => {
@@ -284,6 +322,128 @@ test.describe('FR-016 e SC-010 — foco visível nos dois temas', () => {
       expect(await page.locator('[role="radio"][tabindex="-1"]').count()).toBe(2);
     });
   }
+});
+
+/**
+ * 007/FR-039, FR-040 e SC-008 — o caminho de teclado pelas três zonas.
+ *
+ * A feature moveu controles entre zonas e criou outros. O risco não é que algum
+ * fique inacessível — isso o teste anterior pegaria —, é que a **ordem** deixe
+ * de seguir o olho: barra superior → trilha → conteúdo → barra de ações. Uma
+ * ordem de tabulação que salta do conteúdo de volta para o cabeçalho é
+ * navegável e é desorientadora, e nenhuma asserção de "existe e é focável"
+ * percebe isso.
+ */
+test.describe('007 — ordem de tabulação e foco visível na casca nova', () => {
+  test.use({ viewport: { width: 1280, height: 800 } });
+
+  /** Em que zona da casca vive o elemento em foco. */
+  async function zonaFocada(page: Page): Promise<'topbar' | 'rail' | 'main' | 'fora'> {
+    return page.evaluate(() => {
+      const ativo = document.activeElement;
+      if (ativo === null) return 'fora';
+      if (ativo.closest('header') !== null) return 'topbar';
+      if (ativo.closest('nav[aria-label]') !== null) return 'rail';
+      if (ativo.closest('main') !== null) return 'main';
+      return 'fora';
+    });
+  }
+
+  test('a ordem é barra superior → trilha → conteúdo, sem voltar atrás', async ({ page }) => {
+    await mockSpotify(page);
+    await seedCredential(page, CLIENT_ID, 'spotify');
+    await ateEntrada(page, LISTA);
+
+    const ordem = ['topbar', 'rail', 'main'] as const;
+    let maisLonge = -1;
+
+    // O primeiro Tab pousa no link de pular, que vive fora das três zonas.
+    await page.keyboard.press('Tab');
+
+    for (let passo = 0; passo < 40; passo += 1) {
+      await page.keyboard.press('Tab');
+      const zona = await zonaFocada(page);
+      if (zona === 'fora') continue;
+
+      const indice = ordem.indexOf(zona);
+      expect(
+        indice,
+        `o foco voltou de "${ordem[maisLonge] ?? '?'}" para "${zona}" — a ordem de tabulação descolou da ordem visual`,
+      ).toBeGreaterThanOrEqual(maisLonge);
+      maisLonge = Math.max(maisLonge, indice);
+
+      if (maisLonge === ordem.length - 1) break;
+    }
+
+    expect(maisLonge, 'a tabulação nunca alcançou a área principal').toBe(ordem.length - 1);
+  });
+
+  test('todo controle criado ou movido pela feature tem foco visível por outline', async ({
+    page,
+  }) => {
+    await mockSpotify(page);
+    await seedCredential(page, CLIENT_ID, 'spotify');
+    await ateEntrada(page, LISTA);
+
+    /*
+      Os controles que a 007 criou ou moveu: a ação do chip de conexão, na barra
+      superior, e a ação de recomeçar, que saiu do cabeçalho para o rodapé da
+      trilha. O `ThemeControl` já é coberto pelo bloco anterior, nos dois temas.
+
+      Os alvos são seletores CSS e não localizadores porque o foco precisa chegar
+      **por teclado**: `focus()` programático não casa `:focus-visible` no
+      Chromium, e `getComputedStyle` não consulta pseudoclasse — a medição leria
+      o estilo em repouso e passaria por engano.
+    */
+    const alvos = [
+      'header button[aria-label*="a conta do"]',
+      'nav[aria-label] button',
+    ];
+
+    for (const seletor of alvos) {
+      await expect(page.locator(seletor).first()).toBeVisible();
+      await focarPorTeclado(page, seletor);
+
+      const estilo = await page.locator(seletor).first().evaluate((node) => {
+        const s = getComputedStyle(node);
+        return { style: s.outlineStyle, width: s.outlineWidth, shadow: s.boxShadow };
+      });
+
+      expect(estilo.style, `o foco de "${seletor}" não é desenhado por outline`).toBe('solid');
+      expect(Number.parseFloat(estilo.width)).toBeGreaterThanOrEqual(2);
+      // `box-shadow` desaparece em modo de cores forçadas; o foco não pode
+      // depender dele (FR-028).
+      expect(estilo.shadow === 'none' || estilo.shadow === '').toBe(true);
+    }
+  });
+
+  test('a barra superior está em toda etapa, e a trilha também em largura ampla', async ({
+    page,
+  }) => {
+    await mockSpotify(page);
+    await seedCredential(page, CLIENT_ID, 'spotify');
+    await page.goto('/');
+
+    // Configuração
+    await expect(page.getByRole('banner')).toBeVisible();
+    await expect(page.getByRole('navigation', { name: t.rail.title })).toBeVisible();
+    await acionar(page, t.common.next);
+
+    // Destinos
+    await expect(page.getByRole('banner')).toBeVisible();
+    await expect(page.getByRole('navigation', { name: t.rail.title })).toBeVisible();
+    await acionar(page, t.common.next);
+
+    // Entrada
+    await page.getByLabel(t.input.textareaLabel).fill(LISTA);
+    await expect(page.getByRole('banner')).toBeVisible();
+    await expect(page.getByRole('navigation', { name: t.rail.title })).toBeVisible();
+    await acionar(page, t.input.start);
+
+    // Ciclo do serviço
+    await expect(page.getByRole('banner')).toBeVisible();
+    await expect(page.getByRole('navigation', { name: t.rail.title })).toBeVisible();
+  });
 });
 
 /**
@@ -346,5 +506,121 @@ test.describe('006 — pular e recomeçar sem mouse', () => {
     await acionar(page, t.common.discard);
 
     await expect(page.getByRole('heading', { name: t.destinations.heading })).toBeVisible();
+  });
+});
+
+/**
+ * 008/FR-025 e FR-033 — o cartão de destino trocou a apresentação do controle,
+ * e não o controle.
+ *
+ * A marca de verificação visível passou a ser um `<span aria-hidden>` estilizado
+ * por `peer-checked:`, e o `<input type="checkbox">` real ficou `sr-only`. É
+ * exatamente o tipo de troca que quebra teclado sem que nada falhe: `sr-only`
+ * esconde visualmente, mas um `display: none` ou um `hidden` posto por engano
+ * esconderia **semanticamente**, e o controle sairia da ordem de tabulação.
+ *
+ * Estes casos exigem navegador de verdade: o anel de foco depende de
+ * `:focus-visible` e de `peer-focus-visible:`, que só existem com CSS aplicado —
+ * nenhum teste de componente os alcança.
+ */
+test.describe('008/FR-025 e FR-033 — teclado no cartão de destino', () => {
+  test('Tab alcança o controle de cada cartão, e Espaço alterna a seleção', async ({ page }) => {
+    await mockSpotify(page);
+    await mockYouTube(page);
+    await seedCredential(page, CLIENT_ID, 'spotify');
+    await seedCredential(page, YT_CLIENT_ID, 'youtube');
+    await page.goto('/');
+
+    await acionar(page, t.common.next);
+    await expect(page.getByRole('heading', { name: t.destinations.heading })).toBeVisible();
+
+    for (const service of [SPOTIFY, YOUTUBE]) {
+      const caixa = page.getByRole('checkbox', {
+        name: fmt(t.destinations.selectLabel, { service }),
+      });
+
+      // Alcançável por **tabulação**, não só por `focus()` programático: é a
+      // diferença entre "está na árvore" e "está na ordem de tabulação".
+      await focarPorTeclado(page, `#destino-${service === SPOTIFY ? 'spotify' : 'youtube'}`);
+      await expect(caixa).toBeFocused();
+
+      await page.keyboard.press('Space');
+      await expect(caixa).not.toBeChecked();
+      await page.keyboard.press('Space');
+      await expect(caixa).toBeChecked();
+    }
+  });
+
+  test('o foco é visível na marca de verificação, e não no controle escondido', async ({
+    page,
+  }) => {
+    await mockSpotify(page);
+    await seedCredential(page, CLIENT_ID, 'spotify');
+    await page.goto('/');
+
+    await acionar(page, t.common.next);
+    await expect(page.getByRole('heading', { name: t.destinations.heading })).toBeVisible();
+
+    await page.locator('#destino-spotify').focus();
+
+    /*
+      O anel vive na marca de verificação por `peer-focus-visible:`. Medir o
+      `outline-style` computado é o que separa "a classe está escrita" de "o
+      anel aparece na tela" — e o segundo é o que importa para quem navega por
+      teclado.
+    */
+    const marca = page.locator('[data-destino="spotify"] > span:last-child');
+    await expect(marca).toHaveCSS('outline-style', 'solid');
+    const largura = await marca.evaluate(
+      (node) => Number.parseFloat(getComputedStyle(node).outlineWidth),
+    );
+    expect(largura, 'o anel de foco não tem espessura').toBeGreaterThan(0);
+  });
+
+  test('o cartão inteiro é alvo de clique, do título ao vazio', async ({ page }) => {
+    /*
+      `sr-only` no controle não pode custar o alvo de clique. Até a fidelidade de
+      design da 008 o alvo era só o título — uma palavra e meia num cartão de
+      quase setecentos pixels —, e o resto da área não fazia nada.
+
+      Os dois cliques abaixo são por **coordenada**, e é a única forma honesta de
+      testar isto: o alvo é um `<label>` vazio em camada absoluta, de modo que o
+      elemento que o ponteiro atinge nunca é o texto, mesmo quando o dedo do
+      usuário pousa exatamente sobre ele. Um `locator.click()` no texto falharia
+      a verificação de acionabilidade do Playwright descrevendo como defeito
+      exatamente o que se quer.
+    */
+    await mockSpotify(page);
+    await seedCredential(page, CLIENT_ID, 'spotify');
+    await page.goto('/');
+
+    await acionar(page, t.common.next);
+    await expect(page.getByRole('heading', { name: t.destinations.heading })).toBeVisible();
+
+    const caixa = page.getByRole('checkbox', {
+      name: fmt(t.destinations.selectLabel, { service: SPOTIFY }),
+    });
+    await expect(caixa).toBeChecked();
+
+    /** Clica no centro de um retângulo, como um ponteiro de verdade. */
+    async function clicarNoCentro(alvo: ReturnType<typeof page.locator>): Promise<void> {
+      const caixaDelimitadora = await alvo.boundingBox();
+      expect(caixaDelimitadora, 'o alvo não tem área na tela').not.toBeNull();
+      await page.mouse.click(
+        caixaDelimitadora!.x + caixaDelimitadora!.width / 2,
+        caixaDelimitadora!.y + caixaDelimitadora!.height / 2,
+      );
+    }
+
+    // Sobre o título, que era o único alvo antes.
+    await clicarNoCentro(page.getByText(fmt(t.destinations.selectLabel, { service: SPOTIFY })));
+    await expect(caixa, 'clicar no título não alternou').not.toBeChecked();
+
+    // E sobre a faixa vazia entre o texto e a marca de verificação, que é a
+    // parte do cartão que não respondia a nada.
+    const cartao = page.locator('[data-destino="spotify"]');
+    const area = await cartao.boundingBox();
+    await page.mouse.click(area!.x + area!.width * 0.7, area!.y + area!.height / 2);
+    await expect(caixa, 'clicar na área vazia do cartão não alternou').toBeChecked();
   });
 });

@@ -34,19 +34,41 @@ export interface DialogProps {
 }
 
 /**
- * Painel e véu (contracts/components.md §4).
+ * Painel e véu.
  *
- * A largura vem de `--container-panel` mais margem lateral pela escala, no lugar
- * do `w-[min(32rem,calc(100vw-2rem))]` anterior: a medida é restrição de layout
- * do sistema e passa a viver em `index.css`, não escolhida dentro do componente.
+ * ## A analogia adotada (FR-063, FR-064)
+ *
+ * **O arquivo de design não desenha modal algum.** Silêncio do design não é
+ * remoção: o diálogo de confirmação existe, é o que segura a promessa de
+ * "nenhuma escrita sem confirmação", e precisa de um vocabulário visual.
+ *
+ * A analogia escolhida é o **painel**, a superfície mais próxima que o design
+ * define: cartão de destino e painel lateral de apoio. Daí vêm as três decisões
+ * deste bloco, e nenhuma foi inventada no olho:
+ *
+ * - `--radius-panel` (16px) em vez de `--radius-card` (12px). O diálogo é a
+ *   superfície mais alta da pilha, e o degrau de raio mais generoso é o que o
+ *   design reserva às superfícies que contêm outras;
+ * - `--rule-strong` no contorno, porque a separação carrega significado — é ela
+ *   que diz onde o modal termina e o véu começa;
+ * - `--container-panel` para a largura, mais margem lateral pela escala. A medida
+ *   é restrição de layout do sistema e vive em `index.css`, não escolhida dentro
+ *   do componente.
  *
  * `shadow-card` é `none` no tema escuro por decisão — ali o painel se separa do
  * véu por luminosidade e pelo filete de 1px, que é como o escuro funciona
- * (contracts/tokens.md §4).
+ * (`contracts/tokens.md` §4).
+ *
+ * A analogia está registrada no guia de estilo, como FR-064 exige.
+ *
+ * **Reconferido na 008** (FR-008, T021a): o diálogo repousa sobre o véu, não
+ * sobre a área principal, e por isso a saída da moldura do `Wizard` não alterou
+ * o substrato atrás dele. A analogia permanece a mesma e nada foi redesenhado —
+ * silêncio do design continua não sendo ordem de remoção.
  */
 const DIALOG_CLASSES =
   'bg-surface text-ink border-rule-strong m-auto w-full max-w-panel ' +
-  'rounded-card border p-6 shadow-card backdrop:bg-scrim';
+  'rounded-panel border p-6 shadow-card backdrop:bg-scrim';
 
 export function Dialog({ open, onClose, labelledBy, children }: DialogProps) {
   const ref = useRef<HTMLDialogElement>(null);

@@ -81,7 +81,7 @@ test.describe('US1 — configurar credencial e conectar', () => {
     await botaoConectar(page, SPOTIFY).click();
 
     // Cenário A.5: nome de exibição visível e nenhum `?code=` sobrando na URL.
-    await expect(page.getByText(DISPLAY_NAME)).toBeVisible();
+    await expect(page.getByRole('banner').getByText(DISPLAY_NAME)).toBeVisible();
     expect(new URL(page.url()).search).toBe('');
     await expect(tituloRevisao(page, SPOTIFY)).toBeVisible();
   });
@@ -96,11 +96,11 @@ test.describe('US1 — configurar credencial e conectar', () => {
     await informarLista(page, 'Bohemian Rhapsody - Queen');
 
     await botaoConectar(page, SPOTIFY).click();
-    await expect(page.getByText(DISPLAY_NAME)).toBeVisible();
+    await expect(page.getByRole('banner').getByText(DISPLAY_NAME)).toBeVisible();
 
     // FR-036: desconectar de um serviço não toca em credencial nem em rascunho.
     await page.getByRole('button', { name: fmt(t.connect.disconnect, { service: SPOTIFY }) }).click();
-    await expect(page.getByText(DISPLAY_NAME)).toBeHidden();
+    await expect(page.getByRole('banner').getByText(DISPLAY_NAME)).toBeHidden();
 
     await page.reload();
     page.once('dialog', (dialog) => void dialog.accept());

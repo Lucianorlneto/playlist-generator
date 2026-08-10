@@ -62,6 +62,55 @@ test.describe('FR-039 e SC-014 · a página não alcança host não autorizado',
     expect(new Set(fontes).size).toBe(1);
   });
 
+  /**
+   * 007/FR-048, FR-057 e SC-012 — a decoração e os ícones também.
+   *
+   * O arquivo de design buscava o fundo ambiente de uma URL de terceiro, e a
+   * transcrição literal a teria trazido junto. A textura foi produzida e
+   * versionada localmente; `react-icons` é empacotada, nunca buscada.
+   *
+   * O caso existe porque um `<img src="https://…">` decorativo **não** violaria
+   * `connect-src`, não apareceria em verificação de `fetch`, e entregaria o IP
+   * de cada visitante a um terceiro em silêncio — exatamente o modo de falha que
+   * a tipografia já tinha e que o teste acima fecha.
+   */
+  test('imagem decorativa e ícone vêm da própria origem', async ({ page }) => {
+    const guard = guardNetwork(page);
+
+    await mockSpotify(page);
+    await seedCredential(page, CLIENT_ID, 'spotify');
+    await page.goto('/');
+
+    // Até Destinos, que é onde vivem a fotografia de clima e os onze adesivos.
+    await page.getByRole('button', { name: t.common.next, exact: true }).click();
+    await expect(page.getByRole('heading', { name: t.destinations.heading })).toBeVisible();
+
+    guard.assertClean();
+
+    const imagens = await page.evaluate(() =>
+      [...document.images].map((img) => img.currentSrc || img.src).filter((src) => src !== ''),
+    );
+
+    expect(imagens.length, 'nenhuma imagem foi carregada nesta etapa').toBeGreaterThan(0);
+    for (const src of imagens) {
+      // `data:` é local por definição; o resto precisa vir do próprio servidor.
+      if (src.startsWith('data:')) continue;
+      expect(new URL(src).hostname, `imagem de origem remota: ${src}`).toBe('127.0.0.1');
+    }
+
+    // Os ícones são SVG embutido no pacote — nenhum recurso de fonte de ícone
+    // nem folha externa é buscado por causa deles (FR-057).
+    const recursosDeIcone = await page.evaluate(() =>
+      performance
+        .getEntriesByType('resource')
+        .map((entry) => entry.name)
+        .filter((url) => /icon|fontawesome|material-icons/iu.test(url)),
+    );
+    for (const url of recursosDeIcone) {
+      expect(new URL(url).hostname).toBe('127.0.0.1');
+    }
+  });
+
   test('a folha de estilo emitida não referencia nenhuma URL absoluta', async ({ page }) => {
     const folhas: string[] = [];
     page.on('response', (response) => {

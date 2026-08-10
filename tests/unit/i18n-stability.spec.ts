@@ -6,23 +6,36 @@ import { describe, expect, it } from 'vitest';
 import { t } from '@/i18n/pt-BR';
 
 /**
- * Os textos existentes não mudaram (FR-035, SC-012) — T068.
+ * **Nenhum texto muda por acidente.**
  *
- * Esta feature troca a aparência inteira do aplicativo e **nenhuma palavra**.
- * A `frontend-design` traz uma seção forte sobre escrita de interface — voz
- * ativa, erro que não se desculpa, tela vazia como convite — e nada dela foi
- * aplicado aqui de propósito: mexer em copy junto com identidade visual
- * misturaria duas mudanças de natureza diferente na mesma revisão, e a revisão
- * de copy do fluxo ficou registrada como candidata a feature própria
- * (design.md §7).
+ * ## O que este teste afirmava, e por que a afirmação mudou
  *
- * O instantâneo é assimétrico por decisão: **permite adição de chave e recusa
- * modificação de valor existente**. Um instantâneo simétrico obrigaria a
+ * Até a feature 007 o docblock aqui dizia que aquela feature trocava a aparência
+ * inteira e **nenhuma palavra**. Era verdade então e **é falso agora**: a 008
+ * adota os textos do arquivo de design (008/FR-026 a FR-030), e o instantâneo foi
+ * rebaselinado com `ATUALIZAR_I18N=1`.
+ *
+ * Deixar o comentário como estava seria pior do que removê-lo — comentário é
+ * lido como verdade, e um que descreve o oposto do que a feature fez engana
+ * exatamente quem está tentando entender a mudança (008/research §R9).
+ *
+ * O que este teste garante hoje: **mudança de texto é deliberada e aparece no
+ * diff do instantâneo**. Ele não decide se o texto novo está certo — isso é
+ * `tests/unit/design-text-fidelity.spec.ts`, que compara cada texto adotado com a
+ * string do arquivo de design. Os dois papéis são opostos e complementares:
+ *
+ * | Teste | Garante | Falha quando |
+ * | --- | --- | --- |
+ * | este | nenhum texto muda **por acidente** | um valor muda sem o instantâneo ser regravado |
+ * | `design-text-fidelity` | todo texto adotado **coincide com o design** | o dicionário diverge do arquivo, ou uma chave some |
+ *
+ * O instantâneo continua **assimétrico** por decisão: permite adição de chave e
+ * recusa modificação de valor existente. Um instantâneo simétrico obrigaria a
  * regravá-lo a cada texto novo, e regravar por hábito é como um instantâneo
  * deixa de proteger qualquer coisa — a próxima alteração acidental passaria
  * junto com a intencional.
  *
- * Para acolher texto novo, rode com `ATUALIZAR_I18N=1`.
+ * Para acolher texto novo, rode com `ATUALIZAR_I18N=1` e **leia o diff**.
  */
 
 const SNAPSHOT = join(process.cwd(), 'tests/fixtures/i18n-pt-BR.snapshot.json');
@@ -57,7 +70,7 @@ function lerInstantaneo(): Record<string, string> | null {
   }
 }
 
-describe('FR-035 e SC-012 · nenhum texto da aplicação mudou nesta feature', () => {
+describe('nenhum texto da aplicação muda por acidente', () => {
   const gravado = lerInstantaneo();
 
   if (gravado === null || process.env['ATUALIZAR_I18N'] === '1') {
@@ -79,7 +92,9 @@ describe('FR-035 e SC-012 · nenhum texto da aplicação mudou nesta feature', (
 
     expect(
       modificados,
-      `Textos existentes foram alterados. O FR-035 os congela nesta feature:\n  ${modificados.join('\n  ')}`,
+      'Textos existentes foram alterados sem o instantâneo ser regravado. Se a mudança é ' +
+        'deliberada, rode `ATUALIZAR_I18N=1 npx vitest run tests/unit/i18n-stability.spec.ts` ' +
+        `e leia o diff — é ele que serve de revisão:\n  ${modificados.join('\n  ')}`,
     ).toEqual([]);
   });
 
@@ -105,6 +120,28 @@ describe('FR-035 e SC-012 · nenhum texto da aplicação mudou nesta feature', (
       'queue.skipEndsFlow',
       // 006/FR-013 a FR-015 — comando global de recomeço.
       'flow.',
+      // 007/FR-010 a FR-015 — a trilha vertical de etapas: título, ação de
+      // recomeço e as duas famílias de linha de apoio.
+      'rail.',
+      // 007/FR-007 a FR-009 — os três estados do chip de conexão.
+      'connectionChip.',
+      // 007/FR-016 a FR-019 — barra de ações do rodapé do conteúdo.
+      'actionBar.',
+      // 008 — a contagem de serviços configurados na faixa de Configuração, que
+      // o arquivo de design passou a desenhar (nó `N7OSfN` em `fVjnY`).
+      'credential.configuredCount',
+      // 008/FR-009 a FR-012 — a linha de contexto do cabeçalho. **Substitui**
+      // `greeting.`, da 007: o arquivo de design não repete a saudação em todas
+      // as telas, e a chave antiga saiu junto com o componente que a lia.
+      'header.',
+      // 008/FR-014 a FR-020 — o painel "Ordem de execução" da etapa Destinos.
+      'destinations.panel',
+      // 008/FR-021 e FR-021a — a linha de estado da conta no cartão de destino.
+      'destinations.account',
+      // 007 — conjunção de lista, consumida por `listAnd` para compor a linha
+      // de apoio derivada de Destinos. Vive em `common` porque não pertence a
+      // nenhuma superfície: é gramática.
+      'common.and',
     ];
 
     const novas = Object.keys(atual).filter((chave) => !(chave in gravado));

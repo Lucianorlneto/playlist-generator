@@ -1,6 +1,7 @@
 import { format, t } from '@/i18n/pt-BR';
 import { useAppStore } from '@/store';
 import { Button } from '@/ui/Button';
+import { Icon } from '@/ui/Icon';
 
 const formatter = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
 
@@ -29,7 +30,10 @@ export function DraftRecoveryBanner() {
         role="status"
         className="border-state-uncertain-edge bg-state-uncertain-tint text-ink rounded-card border p-3 text-body"
       >
-        <p>{notice === 'quota_failed' ? t.draft.quotaWarning : t.draft.quotaDegraded}</p>
+        <p className="flex items-start gap-2">
+          <Icon role="hint" className="text-state-uncertain mt-0.5" />
+          <span>{notice === 'quota_failed' ? t.draft.quotaWarning : t.draft.quotaDegraded}</span>
+        </p>
         <Button
           size="sm"
           variant="ghost"
@@ -49,7 +53,10 @@ export function DraftRecoveryBanner() {
         role="status"
         className="border-state-uncertain-edge bg-state-uncertain-tint text-ink rounded-card border p-3 text-body"
       >
-        <p>{t.draft.keptAfterQuota}</p>
+        <p className="flex items-start gap-2">
+          <Icon role="hint" className="text-state-uncertain mt-0.5" />
+          <span>{t.draft.keptAfterQuota}</span>
+        </p>
         <div className="mt-2 flex flex-wrap gap-2">
           <Button
             size="sm"
@@ -77,7 +84,10 @@ export function DraftRecoveryBanner() {
   if (notice === 'discarded') {
     return (
       <div role="status" className="border-rule bg-surface rounded-card border p-3 text-body">
-        <p>{t.draft.discarded}</p>
+        <p className="flex items-start gap-2">
+          <Icon role="status-ok" className="text-state-confident mt-0.5" />
+          <span>{t.draft.discarded}</span>
+        </p>
         <Button
           size="sm"
           variant="ghost"

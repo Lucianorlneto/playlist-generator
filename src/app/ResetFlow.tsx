@@ -16,8 +16,13 @@ import { Dialog } from '@/ui/Dialog';
  * não tinha o que clicar.
  *
  * Vive em `app/` e não em `features/` porque é cromo de aplicação e não pertence
- * a nenhuma etapa — mesmo critério que já colocou `StepIndicator` e
- * `DraftRecoveryBanner` aqui.
+ * a nenhuma etapa — mesmo critério que já colocou `DraftRecoveryBanner` e, na
+ * feature 007, as três zonas da casca aqui.
+ *
+ * **A 007 mudou onde ele mora, não o que ele faz.** Em largura ampla vive no
+ * rodapé da trilha de etapas; abaixo do ponto de corte migra para a barra
+ * superior, porque a trilha não é renderizada e ele perderia o rodapé (FR-054).
+ * A confirmação de descarte da 006 permanece intacta (FR-065).
  *
  * **Variante `ghost`, e não `danger`** (FR-026): este botão não descarta, ele
  * *pergunta*. O peso destrutivo pertence ao botão dentro do diálogo. Um `danger`

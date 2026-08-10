@@ -39,27 +39,25 @@ export function FailedLines({ provider, lines, indices = [] }: FailedLinesProps)
       </h3>
       <p className="field-message">{t.result.failedHint}</p>
       {/*
-        **Onde a assinatura prova o argumento dela.** O numeral que a pessoa viu
-        na revisão reaparece aqui, ao lado da linha que não entrou — é a resposta
-        gráfica para "quais das minhas 60 linhas falharam?" (design.md §5).
+        O numeral que a pessoa viu na revisão reaparece aqui, ao lado da linha
+        que não entrou — é a resposta gráfica para "quais das minhas 60 linhas
+        falharam?".
 
-        A goteira colapsa junto com o resto abaixo do breakpoint, e o numeral
-        continua tabular pelo `data-numeral`, para que a coluna alinhe mesmo
-        misturando `08` e `11`.
+        A coluna reservada da goteira saiu com a feature 007 (FR-029), mas o
+        `data-numeral` permaneceu: sem `tabular-nums` a diferença medida entre
+        `08` e `11` desalinha a coluna em 4,6px, e é justamente aqui que a
+        coluna precisa alinhar. A largura fixa do numeral vem de `w-6`, um
+        degrau da escala de espaço, não de uma medida avulsa.
       */}
       <ul className="mt-2 flex flex-col gap-1">
         {lines.map((line, position) => {
           const index = indices[position];
           return (
-            <li key={`${line}-${String(position)}`} className="gutter-row">
-              {index === undefined ? (
-                <span aria-hidden="true" />
-              ) : (
-                <span aria-hidden="true" className="data-numeral text-accent-text">
-                  {lineNumeral(index)}
-                </span>
-              )}
-              <span className="text-ink text-body break-words">{line}</span>
+            <li key={`${line}-${String(position)}`} className="flex items-baseline gap-2">
+              <span aria-hidden="true" className="data-numeral text-accent-text w-6 shrink-0">
+                {index === undefined ? '' : lineNumeral(index)}
+              </span>
+              <span className="text-ink text-body min-w-0 break-words">{line}</span>
             </li>
           );
         })}

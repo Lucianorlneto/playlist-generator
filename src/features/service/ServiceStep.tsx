@@ -9,7 +9,6 @@ import { ReauthDialog } from '@/features/connect/ReauthDialog';
 import { handleSessionLoss } from '@/features/connect/reconnect';
 import { runMatching } from '@/features/input/matchRunner';
 import { retryRemaining } from '@/features/result/creationRunner';
-import { QueueIndicator } from '@/features/queue/QueueIndicator';
 import { QuotaEstimateScreen } from '@/features/quota/QuotaEstimateScreen';
 import { ResultScreen } from '@/features/result/ResultScreen';
 import { startCreation } from '@/features/result/creationRunner';
@@ -244,9 +243,20 @@ export function ServiceStep() {
   const finished = run.outcome !== null;
 
   return (
-    <section className="flex flex-col gap-4">
-      <QueueIndicator />
+    /*
+      **A posição na fila saiu daqui** (008/FR-013, 008/T028).
 
+      Ela era um `QueueIndicator` com `role="status"` no topo desta seção, e
+      passou a ser dita pela linha de contexto do cabeçalho — texto real,
+      presente em todas as fases do ciclo e anunciado uma vez só. A repetição
+      **visual** que o arquivo de design desenha vive dentro do cabeçalho dos
+      cartões de orçamento e de resultado, `aria-hidden`.
+
+      Mantê-lo aqui produziria "Spotify — 1 de 2" duas vezes na mesma tela: uma
+      como linha de contexto e outra logo abaixo — a mesma falha que FR-019
+      corrige no painel de Destinos.
+    */
+    <section className="flex flex-col gap-4">
       {run.phase === 'connect' && (
         <>
           <StepHeading
