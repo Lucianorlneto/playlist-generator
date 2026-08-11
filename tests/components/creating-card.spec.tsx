@@ -88,6 +88,25 @@ function regioesVivas(): HTMLElement[] {
 }
 
 /**
+ * O aviso de espera, procurado pela frase **interpolada**.
+ *
+ * `t.review.progressWaiting` é um template com `{service}`, e consultar por ele
+ * cru é o que fazia estes casos passarem sobre o defeito em que o marcador
+ * chegava à tela. A consulta é sobre o texto que a pessoa lê.
+ */
+function fraseDeEspera(provider: ProviderId = 'spotify'): string {
+  return format(t.review.progressWaiting, { service: nomeDe[provider] });
+}
+
+function avisoDeEspera(): HTMLElement {
+  return screen.getByText(fraseDeEspera());
+}
+
+function avisoDeEsperaOuNulo(): HTMLElement | null {
+  return screen.queryByText(fraseDeEspera());
+}
+
+/**
  * A preferência de movimento, dirigida por evento — 009/FR-016.
  *
  * **Por que não basta trocar o `matchMedia` antes de cada render.** A biblioteca
@@ -294,10 +313,10 @@ describe('FR-018 a FR-018b e SC-010 · o aviso de espera na criação inicial', 
 
   it('FR-018 · aparece durante a criação, e não deixa a tela muda no backoff', () => {
     render(<ResultScreen provider="spotify" />);
-    expect(screen.queryByText(t.review.progressWaiting)).not.toBeInTheDocument();
+    expect(avisoDeEsperaOuNulo()).not.toBeInTheDocument();
 
     esperar();
-    expect(screen.getByText(t.review.progressWaiting)).toBeInTheDocument();
+    expect(avisoDeEspera()).toBeInTheDocument();
   });
 
   it('FR-018a · o aviso perde o ícone por inteiro, e não fica com um glifo parado', () => {
@@ -305,7 +324,7 @@ describe('FR-018 a FR-018b e SC-010 · o aviso de espera na criação inicial', 
     render(<ResultScreen provider="spotify" />);
     esperar();
 
-    const aviso = screen.getByText(t.review.progressWaiting).closest('[role="status"]');
+    const aviso = avisoDeEspera().closest('[role="status"]');
     expect(aviso?.querySelectorAll('svg')).toHaveLength(0);
   });
 
@@ -330,11 +349,29 @@ describe('FR-018 a FR-018b e SC-010 · o aviso de espera na criação inicial', 
     render(<ResultScreen provider="spotify" />);
     esperar();
 
-    const aviso = screen.getByText(t.review.progressWaiting).closest('[role="status"]');
+    const aviso = avisoDeEspera().closest('[role="status"]');
     const contagem = aviso?.querySelector('[aria-hidden]');
     expect(contagem).not.toBeNull();
     expect(Number(contagem?.textContent)).toBeGreaterThan(0);
     expect(Number(contagem?.textContent)).toBeLessThanOrEqual(30);
+  });
+
+  it('FR-046 · a frase chega com o nome do serviço resolvido, nunca com o marcador', () => {
+    /*
+      **O defeito que só uma conferência a olho pegou.** `t.review.progressWaiting`
+      é um template com `{service}`, e `label` era propriedade opcional com ele
+      como padrão — de modo que omiti-la renderizava `{service}` cru na tela sem
+      que nada falhasse: nem o TypeScript, nem o lint, nem teste nenhum.
+
+      A propriedade passou a ser obrigatória, o que transforma a omissão em erro
+      de compilação. Esta asserção cobre o outro lado: passar o template **sem**
+      interpolar, que o tipo não distingue de uma frase pronta.
+    */
+    render(<ResultScreen provider="spotify" />);
+    esperar();
+
+    expect(avisoDeEspera()).toBeInTheDocument();
+    expect(cartao().textContent ?? '').not.toContain('{service}');
   });
 
   it('FR-018b · não oferece cancelar', () => {

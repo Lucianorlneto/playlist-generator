@@ -106,7 +106,10 @@ export function CreatingIntro({ service }: CreatingIntroProps) {
         a mesma ação que cancelar uma busca, e esta feature não abre esse caminho.
         É o último nó acima da célula compartilhada, e some sem deixar buraco.
       */}
-      <RateLimitWaiting variant="countdown" />
+      <RateLimitWaiting
+        variant="countdown"
+        label={format(t.review.progressWaiting, { service })}
+      />
     </>
   );
 }

@@ -26,8 +26,19 @@ export interface RateLimitWaitingProps {
    * **Ignorado na variante `countdown`** (FR-018b).
    */
   onCancel?: () => void;
-  /** Mensagem já resolvida com o nome do serviço que pediu a pausa (FR-046). */
-  label?: string;
+  /**
+   * Mensagem já resolvida com o nome do serviço que pediu a pausa (FR-046).
+   *
+   * **Obrigatória, e a obrigatoriedade é a correção de um defeito.** Ela era
+   * opcional, com `t.review.progressWaiting` como padrão — e aquele texto é um
+   * **template**, com `{service}` a interpolar. Quem omitisse a propriedade
+   * renderizava o marcador cru na tela, sem que nada falhasse: nem o TypeScript,
+   * nem o lint, nem teste algum. Foi o que aconteceu na primeira escrita do
+   * ponto de uso da criação, e só apareceu numa conferência a olho.
+   *
+   * Com a propriedade exigida, o mesmo erro passa a ser erro de compilação.
+   */
+  label: string;
   /** Ver `RateLimitWaitingVariant`. Padrão: `spinner`. */
   variant?: RateLimitWaitingVariant;
 }
@@ -120,7 +131,7 @@ export function RateLimitWaiting({
         // Decorativo: a espera está escrita ao lado, e o giro comunica duração.
         <Icon role="loading" className="text-state-uncertain motion-safe:animate-spin" />
       )}
-      <span>{label ?? t.review.progressWaiting}</span>
+      <span>{label}</span>
       {mostraContagem && (
         /*
           **`aria-hidden`, e a decisão é essa.** Um número que muda a cada
