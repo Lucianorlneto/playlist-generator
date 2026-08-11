@@ -213,7 +213,7 @@ describe('SC-002 · a lista de pares aprovados está íntegra', () => {
     expect(darkTokens.size).toBeGreaterThanOrEqual(COLOR_TOKENS.length);
   });
 
-  it('a lista fechada mantém as 29 combinações declaradas em 008/contracts/tokens.md §2', () => {
+  it('a lista fechada mantém as combinações declaradas em 009/contracts/tokens.md §2', () => {
     expect(APPROVED_PAIRS).toHaveLength(APPROVED_PAIR_COUNT);
   });
 
@@ -342,6 +342,101 @@ describe.each(THEMES)('FR-003 e SC-002 · contraste no tema %s', (theme) => {
       `${pair.foreground} sobre ${pair.background} no tema ${theme}: ` +
         `${roundRatio(razao)}:1, abaixo do mínimo de ${minimo}:1 para uso "${pair.usage}"`,
     ).toBeGreaterThanOrEqual(minimo);
+  });
+});
+
+/**
+ * 009/FR-008a e 009/SC-002 — a **faixa de perceptibilidade** do esqueleto.
+ *
+ * `--skeleton` é token de cor sem par aprovado, pelo precedente literal de
+ * `--rule`: medido, ele dá 1,24:1 no escuro e 1,31:1 no claro contra `--surface`,
+ * e o mínimo da categoria `ui` é 3:1. Declarar o par reprovaria; declarar o par e
+ * afrouxar o mínimo destruiria o portão para todos os outros usos.
+ *
+ * Este é o portão que **substitui** o par, e ele verifica o que nenhuma
+ * categoria de contraste verifica: o **teto**. Uma categoria `decorative` com
+ * mínimo 1:1 aprovaria inclusive um token invisível.
+ *
+ * Se um dos dois temas sair da faixa, a correção é o valor por tema — nunca a
+ * remoção da faixa (009/contracts/tokens.md §3.2).
+ */
+describe('009/FR-008a · o esqueleto é perceptível sem parecer conteúdo', () => {
+  /** Piso: abaixo disso a barra desaparece e a forma do resultado não é antevista. */
+  const PISO = 1.15;
+  /** Teto: acima disso a barra compete com o texto e passa a parecer conteúdo. */
+  const TETO = 1.6;
+
+  it.each(THEMES)('no tema %s, --skeleton fica entre 1,15:1 e 1,60:1 contra --surface', (theme) => {
+    const razao = roundRatio(contrastRatio(resolve('--skeleton', theme), resolve('--surface', theme)));
+
+    expect(
+      razao,
+      `--skeleton sobre --surface no tema ${theme}: ${razao}:1, abaixo do piso de ${PISO}:1. ` +
+        'A barra desaparece no substrato e o esqueleto deixa de antecipar a forma do resultado (FR-008a).',
+    ).toBeGreaterThanOrEqual(PISO);
+
+    expect(
+      razao,
+      `--skeleton sobre --surface no tema ${theme}: ${razao}:1, acima do teto de ${TETO}:1. ` +
+        'A barra compete com o texto do cartão e passa a parecer conteúdo esperando ser lido (FR-008a).',
+    ).toBeLessThanOrEqual(TETO);
+  });
+
+  it('--skeleton não aparece em nenhum par aprovado, como `--rule`', () => {
+    // A ausência é a decisão, e por isso é asserida: acrescentar o par um dia
+    // exigiria afrouxar `CONTRAST_MINIMUM.ui`, que é o portão de todos os outros
+    // usos (009/contracts/tokens.md §3.1).
+    const citado = APPROVED_PAIRS.filter(
+      (p) => p.foreground === '--skeleton' || p.background === '--skeleton',
+    );
+    expect(citado).toEqual([]);
+  });
+});
+
+/**
+ * 009/FR-020 — a terceira tinta do arquivo de design **não** foi adotada.
+ *
+ * O nó `mJCdf` usa `#5b6474`, uma tinta entre `--ink-muted` e o fundo. É a mesma
+ * recusa que a 007 registrou sobre `--ink-faint` e pelo mesmo motivo: a terceira
+ * tinta reprova em todos os substratos, e todo valor que passa no limiar fica
+ * indistinguível de `--ink-muted`. Duas tintas com a mesma aparência e nomes
+ * diferentes são uma armadilha, não uma escala.
+ *
+ * **O portão é executável, e não um item de conferência manual.** Uma recusa
+ * registrada só em prosa é uma recusa que a próxima feature desfaz sem perceber —
+ * o Princípio IV vale para o que a spec proíbe tanto quanto para o que ela exige.
+ */
+describe('009/FR-020 · o conjunto de tintas é lista fechada', () => {
+  /** Os nomes que pintam **texto** neste sistema. Uma terceira não entra em silêncio. */
+  const TINTAS = ['--ink', '--ink-muted', '--accent-text', '--accent-tint-ink'] as const;
+
+  it.each(THEMES)('no tema %s, nenhum token de tinta além dos quatro conhecidos', (theme) => {
+    const declaradas = [...byTheme[theme].keys()]
+      .filter((nome) => nome === '--ink' || nome.startsWith('--ink-'))
+      .sort();
+    expect(
+      declaradas,
+      'Um token de tinta novo em tokens.css sem passar por aqui. A escala de tinta tem dois ' +
+        'degraus (`--ink`, `--ink-muted`) mais os dois de acento; um terceiro cinza fica ' +
+        'indistinguível de `--ink-muted` e vira armadilha (FR-020).',
+    ).toEqual(['--ink', '--ink-muted']);
+
+    // As quatro continuam existindo — a lista fechada não é só sobre excesso.
+    for (const tinta of TINTAS) {
+      expect(byTheme[theme].get(tinta), `${tinta} sumiu do tema ${theme}`).toBeDefined();
+    }
+  });
+
+  it.each(THEMES)('no tema %s, #5b6474 — a tinta do nó mJCdf — não aparece', (theme) => {
+    const usos = [...byTheme[theme].entries()]
+      .filter(([, valor]) => valor.toLowerCase() === '#5b6474')
+      .map(([nome]) => nome);
+
+    expect(
+      usos,
+      'A tinta `#5b6474` do arquivo de design foi recusada em favor de `--ink-muted` ' +
+        '(FR-020, 009/contracts/tokens.md §4). Adotá-la agora desfaria uma decisão registrada.',
+    ).toEqual([]);
   });
 });
 

@@ -100,6 +100,19 @@ export default tseslint.config(
     rules: { 'tp/no-icon-library-import': 'error' },
   },
   {
+    /**
+     * A fechadura em volta da biblioteca de movimento, pelo mesmo motivo e no
+     * mesmo alcance da de ícones: o ponto é que exista **um** lugar onde o
+     * movimento é escrito, e um `import` num slice do store abriria o mesmo
+     * buraco que um numa tela (009/FR-010b).
+     *
+     * O próprio `src/ui/motion/` é a exceção, resolvida dentro da regra.
+     */
+    files: ['src/**/*.{ts,tsx}'],
+    plugins: { tp },
+    rules: { 'tp/no-motion-library-import': 'error' },
+  },
+  {
     // O módulo de textos é justamente onde os literais devem estar.
     files: ['src/i18n/**/*.ts', 'src/i18n/**/*.tsx'],
     rules: { 'tp/no-ui-text-literals': 'off' },

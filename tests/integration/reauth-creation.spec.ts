@@ -215,6 +215,40 @@ describe('FR-029/SC-010 — a retomada não duplica nem pula faixa', () => {
     expect(run()?.outcome).toBe('completed');
     expect(run()?.result?.addedCount).toBe(TOTAL);
   });
+
+  it('009/FR-025 — a retomada reapresenta o carregamento já em progresso', async () => {
+    /*
+      O estado que o cartão da 009 lê ao voltar: `creation` chega com itens **já
+      confirmados**, e por isso o rodapé nasce mostrando progresso em vez de
+      "aguardando confirmação". Voltar para "aguardando" seria mentir sobre
+      trabalho que existe na conta do usuário (`009/data-model.md` §2,
+      `009/contracts/loading-card.md` §7).
+
+      A asserção é sobre o **estado** e não sobre o DOM de propósito: é ele que a
+      função do rodapé consome, e é aqui — no arquivo da retomada — que ele é
+      produzido de verdade, por um `401` no meio da adição.
+    */
+    program('ytPlaylistItems', PASS_THROUGH, PASS_THROUGH);
+    programUnauthorized('ytPlaylistItems', 1);
+    await startCreation();
+
+    const interrompida = run();
+    expect(interrompida?.resumeFrom).toBe('creating');
+
+    const confirmados = interrompida?.creation?.committedItems ?? 0;
+    expect(
+      confirmados,
+      'Com zero confirmados o rodapé diria "aguardando", e a retomada não teria o que retomar.',
+    ).toBeGreaterThan(0);
+
+    // Reconexão e retomada: a fase volta a `creating` com o progresso intacto.
+    useAppStore.setState({ sessions: makeSessions({ youtube: makeSession('youtube') }) });
+    useAppStore.getState().dispatchRun({ type: 'authorized' }, 'youtube');
+
+    const retomada = run();
+    expect(retomada?.phase).toBe('creating');
+    expect(retomada?.creation?.committedItems).toBe(confirmados);
+  });
 });
 
 describe('V27/FR-031 — reconexão a uma conta diferente', () => {

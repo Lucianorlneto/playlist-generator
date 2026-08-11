@@ -64,6 +64,16 @@ export interface IconProps {
  */
 const BASE = 'icon-glyph';
 
+/**
+ * Arte não é glifo, e por isso não usa a mesma base.
+ *
+ * `icon-glyph` trava `1em × 1em`, o que é correto para componente de biblioteca
+ * — todos desenham em caixa quadrada — e **deforma** a marca, que é um PNG com
+ * proporção própria. `icon-art` fixa só a altura e deixa a largura seguir o
+ * arquivo (ver o docblock em `src/styles/index.css`).
+ */
+const ART_BASE = 'icon-art';
+
 export function Icon({ role, label, className }: IconProps) {
   const entry = ICONS[role];
   const decorative = label === undefined;
@@ -72,7 +82,7 @@ export function Icon({ role, label, className }: IconProps) {
     return (
       <img
         src={entry.src}
-        className={cx(BASE, className)}
+        className={cx(ART_BASE, className)}
         // Arte: sem `currentColor`, sem recoloração por token. O `alt` vazio é o
         // equivalente de `aria-hidden` para imagem, e o preenchido dá o nome.
         alt={decorative ? '' : label}

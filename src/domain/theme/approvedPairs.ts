@@ -12,17 +12,22 @@
  * disciplina de token existe para impedir — e a cópia que diverge em silêncio é
  * exatamente a que o teste não pegaria, porque estaria medindo a si mesma.
  *
- * A lista cresceu de 15 (feature 005) para 27 combinações na 007, e para 29 na
- * 008. O crescimento não vem de cores novas: vem de **substratos** novos. Texto
- * e ícone sobre `--surface-zone` — a barra superior e a trilha de etapas — são
- * combinações que não existiam antes de a casca de três zonas existir; os dois
- * últimos são o glifo da marca sobre o substrato tingido da própria marca, que
- * é onde a intuição erra e por isso precisa ser medido (008/research §R4).
+ * A lista cresceu de 15 (feature 005) para 31 combinações até a 008, e para 32
+ * na 009. O crescimento não vem de cores novas: vem de **substratos** novos.
+ * Texto e ícone sobre `--surface-zone` — a barra superior e a trilha de etapas —
+ * são combinações que não existiam antes de a casca de três zonas existir; o
+ * glifo da marca sobre o substrato tingido da própria marca é onde a intuição
+ * erra e por isso precisa ser medido (008/research §R4); e o glifo de
+ * carregamento sobre o âmbar tingido de `--surface` é o mesmo caso, um cartão
+ * adiante (009/FR-019).
  */
 
 import type { ContrastUsage } from './contrast';
 
-/** Os 19 tokens de cor: os 18 de `contracts/tokens.md` §1 mais `--accent-tint-ink`. */
+/**
+ * Os 20 tokens de cor: os 18 de `contracts/tokens.md` §1, mais
+ * `--accent-tint-ink` (008) e `--skeleton` (009).
+ */
 export type TokenName =
   | '--bg'
   | '--surface-zone'
@@ -42,7 +47,18 @@ export type TokenName =
   | '--state-missing'
   | '--state-live'
   | '--brand-spotify'
-  | '--brand-youtube';
+  | '--brand-youtube'
+  /**
+   * O papel das barras de esqueleto (009/FR-019, 009/FR-019a).
+   *
+   * Está aqui e em **nenhum par**, pelo mesmo motivo que `--rule`: `#252d3a`
+   * sobre `#161c25` dá 1,24:1, e o mínimo de `ui` é 3:1. Declarar o par
+   * reprovaria; afrouxar o mínimo destruiria o portão para todos os outros usos.
+   * E está certo que seja baixo — uma barra de esqueleto a 3:1 é lida como
+   * conteúdo. O portão próprio é a faixa de perceptibilidade de
+   * `tests/unit/contrast.spec.ts` (FR-008a).
+   */
+  | '--skeleton';
 
 /**
  * Tokens **derivados** por `color-mix`, e não declarados por tema (008/FR-003).
@@ -58,7 +74,11 @@ export type TokenName =
  * `tests/unit/contrast.spec.ts` resolve o valor reproduzindo a mistura em sRGB a
  * partir dos mesmos hex lidos de `tokens.css`.
  */
-export type DerivedTokenName = '--accent-tint' | '--brand-tint-spotify' | '--brand-tint-youtube';
+export type DerivedTokenName =
+  | '--accent-tint'
+  | '--accent-tint-surface'
+  | '--brand-tint-spotify'
+  | '--brand-tint-youtube';
 
 /** A receita de cada derivado, na forma que o teste de contraste consome. */
 export interface DerivedTokenRecipe {
@@ -84,6 +104,19 @@ export const DERIVED_TOKENS: Readonly<Record<DerivedTokenName, DerivedTokenRecip
     source: '--accent',
     amount: '--state-tint-amount',
     over: '--surface-zone',
+  },
+  /**
+   * O mesmo âmbar tingido, sobre o outro substrato (009/FR-019).
+   *
+   * A duplicação aparente é o ponto: o disco da trilha vive numa zona da casca e
+   * este vive dentro de um cartão. No tema Papel `--surface-zone` é `#f1ece0` e
+   * `--surface` é `#ffffff` — reaproveitar o token de cima entregaria um disco
+   * bege num cartão branco.
+   */
+  '--accent-tint-surface': {
+    source: '--accent',
+    amount: '--state-tint-amount',
+    over: '--surface',
   },
   '--brand-tint-spotify': {
     source: '--brand-spotify',
@@ -214,6 +247,20 @@ export const APPROVED_PAIRS: readonly ApprovedPair[] = [
     usage: 'ui',
     where: 'Glifo do aviso e numeral da etapa atual, sobre o disco tingido',
   },
+  /*
+    O mesmo glifo âmbar, sobre o outro substrato tingido (009/FR-019). Entra na
+    lista pela mesma razão que os dois pares de marca abaixo: o glifo fica
+    **inteiramente** sobre a mistura, que é o caso em que a intuição erra. O
+    arquivo de design pinta este glifo com `#f5b301` — `--accent` cheio —, e a
+    tinta adotada é `--accent-text` porque âmbar cheio dá 1,7:1 como texto. No
+    tema Noite os dois valores coincidem, então ali a fidelidade é literal.
+  */
+  {
+    foreground: '--accent-text',
+    background: '--accent-tint-surface',
+    usage: 'ui',
+    where: 'Glifo de carregamento no disco do cartão de criação',
+  },
 
   // --- Selos de estado, dentro e fora de cartão ----------------------------
   {
@@ -337,7 +384,7 @@ export const APPROVED_PAIRS: readonly ApprovedPair[] = [
  * Existe para que apagar uma linha da lista seja uma falha de teste e não um
  * silêncio. Uma lista fechada que encolhe sem aviso não é fechada.
  */
-export const APPROVED_PAIR_COUNT = 31;
+export const APPROVED_PAIR_COUNT = 32;
 
 /**
  * Todo token de cor declarado em `contracts/tokens.md` §1.
@@ -367,6 +414,7 @@ export const COLOR_TOKENS: readonly TokenName[] = [
   '--state-live',
   '--brand-spotify',
   '--brand-youtube',
+  '--skeleton',
 ] as const;
 
 /** Os dois temas em que todo par é verificado (SC-002). */

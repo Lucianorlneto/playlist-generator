@@ -769,6 +769,32 @@ const messages = {
     retryRemaining: 'Adicionar os itens restantes',
     retryingRemaining: 'Adicionando os itens restantes…',
     creationProgress: '{current} de {total} itens',
+
+    // -----------------------------------------------------------------------
+    // O cartão enquanto a criação está em voo (009/FR-005, FR-006, FR-011)
+    // -----------------------------------------------------------------------
+
+    /** Subtítulo colado ao disco, verbatim do nó `yjjDB/FeEHR`. */
+    creatingSubtitle: 'Isso pode levar alguns segundos.',
+    /**
+     * Descrição de largura cheia (nó `yjjDB/G37LNR`), **sem** a oração de
+     * duração.
+     *
+     * O arquivo de design repete "Isso pode levar alguns segundos" aqui e no
+     * subtítulo acima. Lidas em sequência por um leitor de tela, as duas viram a
+     * mesma frase dita duas vezes — o subtítulo fica com ela, por ser o lugar
+     * natural da expectativa de duração, e esta preserva o que só ela diz
+     * (009/FR-006, 009/contracts/text-inventory.md §2.1).
+     */
+    creatingDescription: 'Estamos enviando sua lista para o {service} — não feche esta janela.',
+    /**
+     * O rodapé antes do primeiro lote confirmado (nó `yjjDB/mJCdf`).
+     *
+     * A partir do primeiro lote ele passa a `creationProgress`, e essa é a única
+     * troca de forma da tela — depois disso é o mesmo texto com outro número
+     * (009/FR-011, FR-012).
+     */
+    awaitingConfirmation: 'Aguardando confirmação do {service}…',
   },
 
   // -------------------------------------------------------------------------

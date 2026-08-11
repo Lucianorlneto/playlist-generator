@@ -75,6 +75,15 @@
   /* Tinta quente do texto sobre o âmbar tingido. Ver `tokens.css`: o cinza frio
      de `--ink-muted` sobre esse substrato lê como texto no lugar errado. */
   --color-accent-tint-ink: var(--accent-tint-ink);
+  /* Substrato do disco de carregamento, misturado sobre `--surface` e não sobre
+     `--surface-zone` — o disco vive dentro de um cartão (009/FR-019). Único
+     ponto de uso: `bg-accent-tint-surface` no cartão de criação. */
+  --color-accent-tint-surface: var(--accent-tint-surface);
+
+  /* Preenchimento das barras de esqueleto (009/FR-019). Só `bg-skeleton` existe:
+     `text-skeleton` e `border-skeleton` são violações, e
+     `tests/unit/no-orphan-tokens.spec.ts` as recusa. */
+  --color-skeleton: var(--skeleton);
 
   --color-state-confident: var(--state-confident);
   --color-state-uncertain: var(--state-uncertain);
@@ -604,6 +613,33 @@
   display: inline-block;
   width: 1em;
   height: 1em;
+  flex-shrink: 0;
+  vertical-align: -0.125em;
+}
+
+/**
+ * Arte, e não glifo (FR-060; `contracts/icons.md` §1).
+ *
+ * `icon-glyph` trava `1em × 1em` porque um glifo de biblioteca **é** quadrado —
+ * `LuArrowRight` e `PiSpotifyLogo` desenham numa caixa 24 × 24. A marca não: ela
+ * é um PNG com proporção própria, e servi-la pela mesma regra a esmaga na
+ * horizontal ou na vertical, conforme o desenho.
+ *
+ * A falha é do tipo que este projeto vigia: a imagem carrega, tem o tamanho
+ * certo, nada erra em lugar nenhum — só a arte fica deformada na tela de alguém.
+ * E ela volta a cada troca de arquivo da marca, porque a proporção nova nunca é
+ * a mesma da anterior.
+ *
+ * `height: 1em` conserva o que importa de `icon-glyph`: a marca acompanha a
+ * escala tipográfica do contexto, em vez de abrir uma segunda escala escolhida
+ * no olho. `width: auto` deixa a proporção ser a do arquivo, e `max-width: 100%`
+ * impede que uma arte muito larga estoure o contêiner numa barra apertada.
+ */
+@utility icon-art {
+  display: inline-block;
+  width: auto;
+  height: 1em;
+  max-width: 100%;
   flex-shrink: 0;
   vertical-align: -0.125em;
 }

@@ -384,6 +384,43 @@ describe.each(THEMES)('Acessibilidade do fluxo (FR-047) — tema %s', (theme) =>
     await semViolacoes(container);
   });
 
+  /**
+   * 009/FR-028 e SC-007 — a fase de criação, nos dois serviços e nos dois temas.
+   *
+   * É a tela que a 009 acrescenta, e ela traz duas coisas que o axe sabe avaliar
+   * e que nenhum outro teste desta suíte cobria: um substrato decorativo
+   * `aria-hidden` com glifo dentro (o disco) e uma grade inteira escondida da
+   * árvore (o esqueleto). Um `aria-hidden` mal colocado — sobre um nó que
+   * contenha algo focável — é violação séria, e é exatamente o erro que a
+   * composição deste cartão torna fácil de cometer.
+   */
+  it.each(['spotify', 'youtube'] as const)(
+    'criação em curso no %s — disco, esqueleto e duas regiões vivas',
+    async (provider) => {
+      useAppStore.setState({
+        sessions: makeSessions({ [provider]: makeSession(provider) }),
+        lines: linhas,
+        destinations: { selected: [provider], locked: true },
+        creating: true,
+        creationError: null,
+        queue: makeQueue([provider], {
+          currentIndex: 0,
+          runs: {
+            [provider]: makeRun(provider, {
+              phase: 'creating',
+              lineIds: linhas.map((line) => line.id),
+              items: itens,
+              creation: makeCreation(),
+            }),
+          },
+        }),
+      });
+
+      const { container } = render(<ResultScreen provider={provider} />);
+      await semViolacoes(container);
+    },
+  );
+
   it('resumo consolidado com dois destinos e listas divergentes', async () => {
     useAppStore.setState({
       sessions: makeSessions({

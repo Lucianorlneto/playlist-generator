@@ -57,7 +57,7 @@
   },
   {
     "chave": "result.",
-    "motivo": "Resultado por serviço. A tela `C13Hj` está inventariada campo a campo; o restante é o caminho de criação interrompida e retomada — parcial, itens restantes, linhas que falharam —, que o arquivo não desenha."
+    "motivo": "Resultado por serviço. Duas telas do arquivo caem neste ramo e **as duas estão inventariadas nó a nó**: `C13Hj` (concluído) campo a campo, e `SjphR` (carregando) desde a 009 — `creatingSubtitle`, `creatingDescription` e `awaitingConfirmation` têm item próprio, e não é este prefixo que as cobre. O que sobra para a exclusão é o caminho de criação interrompida e retomada — parcial, itens restantes, linhas que falharam —, que o arquivo não desenha."
   },
   {
     "chave": "summary.",
