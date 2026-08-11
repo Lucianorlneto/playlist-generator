@@ -362,14 +362,33 @@ test.describe('008/FR-036 · painel e cartão de destino nos dois temas', () => 
       expect(area, 'o cartão não tem área na tela').not.toBeNull();
       await page.mouse.click(area!.x + area!.width / 2, area!.y + area!.height / 2);
 
-      const desmarcado = await cartao.evaluate((node) => ({
-        fundo: getComputedStyle(node).backgroundColor,
-        borda: getComputedStyle(node).borderTopColor,
-      }));
+      /*
+        **A leitura espera a transição assentar.**
 
-      // FR-024 pede **as duas** distinções: contorno **e** substrato.
-      expect(desmarcado.fundo, 'o substrato não distingue o selecionado').not.toBe(marcado.fundo);
-      expect(desmarcado.borda, 'o contorno não distingue o selecionado').not.toBe(marcado.borda);
+        Ler no quadro seguinte ao clique captura um valor **interpolado** — o
+        contorno ainda em `--accent-text` e o substrato num `oklab()` a meio
+        caminho. Este caso passava por sorte de temporização e reprovava no
+        projeto `reduced-motion`, introduzido na 009, com o mesmo código de
+        produção e o mesmo desfecho visual.
+
+        A promessa do FR-024 é sobre o estado assentado, e é ela que o `poll`
+        verifica. As duas asserções continuam separadas: o requisito pede as
+        **duas** distinções, contorno **e** substrato, e um `toEqual` sobre o
+        par passaria com apenas uma delas mudando.
+      */
+      await expect
+        .poll(
+          () => cartao.evaluate((node) => getComputedStyle(node).backgroundColor),
+          { message: 'o substrato não distingue o selecionado' },
+        )
+        .not.toBe(marcado.fundo);
+
+      await expect
+        .poll(
+          () => cartao.evaluate((node) => getComputedStyle(node).borderTopColor),
+          { message: 'o contorno não distingue o selecionado' },
+        )
+        .not.toBe(marcado.borda);
     });
 
     test(`no tema ${tema} o painel de ordem de execução tem superfície e contorno próprios`, async ({
