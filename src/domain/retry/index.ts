@@ -20,6 +20,9 @@
 import { normalizeText } from '@/domain/normalize';
 import type { InputLine } from '@/domain/types';
 
+/** A contagem regressiva da espera por limitação de taxa (009/FR-018a). */
+export { segundosRestantes } from './countdown';
+
 /** Consulta emitida a um catálogo, já na forma que o adaptador enviará. */
 export interface QueryPlan {
   /** Consulta primária. Por campos no Spotify, texto livre no YouTube. */

@@ -334,6 +334,63 @@ describe('008/FR-004 · o substrato de identidade tem um único ponto de uso', (
 });
 
 /**
+ * Os dois tokens da 009, no mesmo molde da exceção nomeada acima
+ * (009/FR-019, 009/contracts/tokens.md §5).
+ *
+ * O disco de carregamento existe em **um** lugar — a linha do indicador do
+ * cartão de criação — e o esqueleto só tem um utilitário legítimo. As duas
+ * asserções são de forma oposta e complementares: uma exige que o uso exista e
+ * seja único, a outra exige que os utilitários errados não existam em lugar
+ * nenhum.
+ */
+describe('009/FR-019 · os dois tokens novos têm uso conhecido e único', () => {
+  const HOSPEDEIRO_DO_DISCO = 'src/features/result/CreatingBody.tsx';
+
+  it('`bg-accent-tint-surface` aparece em exatamente um arquivo de src/', () => {
+    /*
+      Ponto único de uso, no molde de 008/FR-004. O substrato do disco é âmbar
+      tingido sobre `--surface`; espalhá-lo por outras superfícies desfaria a
+      razão de ele existir separado de `--accent-tint`, que mistura sobre
+      `--surface-zone`.
+    */
+    const padrao = /\b(?:[a-z-]+:)*bg-accent-tint-surface\b/u;
+    const arquivos = files
+      .filter((file) => !file.path.endsWith('styles/index.css'))
+      .filter((file) => padrao.test(file.text))
+      .map((file) => file.path.replaceAll('\\', '/'))
+      .sort();
+
+    expect(
+      arquivos,
+      'O disco do indicador de criação é o único uso deste substrato ' +
+        `(009/contracts/tokens.md §5). Encontrado em: ${arquivos.join(', ') || '(nenhum arquivo)'}.`,
+    ).toEqual([HOSPEDEIRO_DO_DISCO]);
+  });
+
+  it('`bg-skeleton` é o único utilitário do esqueleto — nem tinta, nem contorno', () => {
+    // `--skeleton` pinta **superfície**. Como tinta de texto ele dá 1,3:1, e como
+    // contorno duplicaria o papel de `--rule`, do qual ele explicitamente não é
+    // alias (FR-019a).
+    const offences = [
+      ...scan(/\b(?:[a-z-]+:)*text-skeleton\b/gu, 'o esqueleto pinta superfície, nunca texto'),
+      ...scan(/\b(?:[a-z-]+:)*border-skeleton\b/gu, 'para contorno o token é `--rule` (FR-019a)'),
+      ...scan(/\b(?:[a-z-]+:)*ring-skeleton\b/gu, 'idem'),
+    ];
+    expect(offences, `\n${report(offences)}`).toEqual([]);
+  });
+
+  it('`bg-skeleton` de fato existe — a grade não ficou sem tinta', () => {
+    // O outro lado: um utilitário que sumisse do código deixaria o token órfão e
+    // a grade invisível, que é precisamente o modo de falha que este arquivo
+    // inteiro vigia.
+    const usos = files.filter(
+      (file) => !file.path.endsWith('styles/index.css') && /\bbg-skeleton\b/u.test(file.text),
+    );
+    expect(usos.map((f) => f.path)).toEqual(['src/features/result/ResultSkeleton.tsx']);
+  });
+});
+
+/**
  * A denylist da feature 007 — **o critério objetivo de "a migração terminou"**
  * (`contracts/token-migration.md` §5).
  *

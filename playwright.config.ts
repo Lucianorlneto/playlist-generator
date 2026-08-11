@@ -30,6 +30,27 @@ export default defineConfig({
       name: 'narrow-375',
       use: { ...devices['Desktop Chrome'], viewport: { width: 375, height: 667 } },
     },
+    {
+      /**
+       * 009/SC-003: quem pediu para reduzir movimento recebe a mesma informação
+       * sem giro, sem pulsação e sem transição.
+       *
+       * Um projeto próprio, e não uma opção dentro de um teste, porque a
+       * preferência é opção de **contexto** no Playwright — mudá-la a meio
+       * teste exigiria recriar o contexto e perder o estado do fluxo. O viewport
+       * é o do `desktop` de propósito: o que varia entre os dois é a preferência
+       * e nada mais (009/contracts/motion.md §5).
+       *
+       * A preferência vai em `contextOptions` porque é onde esta versão do
+       * Playwright a expõe; `use.reducedMotion` de topo não existe no tipo.
+       */
+      name: 'reduced-motion',
+      use: {
+        ...devices['Desktop Chrome'],
+        viewport: { width: 1280, height: 800 },
+        contextOptions: { reducedMotion: 'reduce' },
+      },
+    },
   ],
   ...(USE_EXTERNAL_SERVER
     ? {}

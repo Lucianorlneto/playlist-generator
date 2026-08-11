@@ -75,6 +75,15 @@
   /* Tinta quente do texto sobre o âmbar tingido. Ver `tokens.css`: o cinza frio
      de `--ink-muted` sobre esse substrato lê como texto no lugar errado. */
   --color-accent-tint-ink: var(--accent-tint-ink);
+  /* Substrato do disco de carregamento, misturado sobre `--surface` e não sobre
+     `--surface-zone` — o disco vive dentro de um cartão (009/FR-019). Único
+     ponto de uso: `bg-accent-tint-surface` no cartão de criação. */
+  --color-accent-tint-surface: var(--accent-tint-surface);
+
+  /* Preenchimento das barras de esqueleto (009/FR-019). Só `bg-skeleton` existe:
+     `text-skeleton` e `border-skeleton` são violações, e
+     `tests/unit/no-orphan-tokens.spec.ts` as recusa. */
+  --color-skeleton: var(--skeleton);
 
   --color-state-confident: var(--state-confident);
   --color-state-uncertain: var(--state-uncertain);

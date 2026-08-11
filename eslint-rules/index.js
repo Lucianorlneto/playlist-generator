@@ -10,6 +10,8 @@
  * - `no-raw-visual-values`: todo valor visual vem da camada de tokens.
  * - `no-icon-library-import`: uma superfície pede um **papel**, nunca um
  *   componente da biblioteca de ícones (007/FR-056, FR-059, SC-016).
+ * - `no-motion-library-import`: o movimento autorizado é exatamente três, e a
+ *   biblioteca entra por um único diretório (009/FR-010b).
  *
  * Todas compartilham o mesmo motivo de existir: são erros que **não falham**.
  * O TypeScript não reclama de uma classe que o Tailwind não emitiu, e o build
@@ -367,11 +369,89 @@ const noIconLibraryImport = {
   },
 };
 
+/**
+ * O único **diretório** autorizado a importar a biblioteca de movimento
+ * (009/FR-010b, 009/contracts/motion.md §1).
+ *
+ * Diretório, e não arquivo como em `ICON_MAP_PATH`, porque os três movimentos
+ * são três componentes e um barril — o mapa de ícones cabia num arquivo, o de
+ * movimento não. A fechadura é a mesma e pelo mesmo motivo: o FR-010b diz que o
+ * movimento autorizado é "exatamente três", e sem um ponto único de entrada essa
+ * frase é prosa.
+ *
+ * Caminho relativo à raiz, com barra normalizada — o `filename` que o ESLint
+ * entrega é absoluto e usa o separador do sistema.
+ */
+const MOTION_DIRECTORY = 'src/ui/motion/';
+
+const noMotionLibraryImport = {
+  meta: {
+    type: 'problem',
+    docs: {
+      description:
+        'A biblioteca de movimento entra por src/ui/motion/, que exporta exatamente três primitivas (009/FR-010b, SC-011).',
+    },
+    schema: [],
+    messages: {
+      outsideDirectory:
+        'Importação de "{{source}}" fora de src/ui/motion/. O movimento autorizado é **exatamente três** — `SpinningDisc`, `PulsingBar` e `CrossFade` — e a superfície pede a primitiva, nunca a biblioteca. Autorizar um quarto movimento custa editar esta regra, que é a revisão que se quer forçar (009/FR-010b, 009/contracts/motion.md §1).',
+      framerAlias:
+        'Importação de "{{source}}". `framer-motion` é o nome anterior da mesma biblioteca e só existe aqui como dependência transitiva de `motion` — importá-lo contorna a fechadura sem que a contagem de três primitivas mude. O pacote deste projeto é `motion`, e o ponto de entrada é src/ui/motion/ (009/contracts/motion.md §1).',
+    },
+  },
+  create(context) {
+    const filename = (context.filename ?? context.getFilename()).replaceAll('\\', '/');
+    const isMotionDirectory = filename.includes(MOTION_DIRECTORY);
+
+    /** Cobre `import`, `export … from` e `import()` dinâmico. */
+    function check(node, source) {
+      if (typeof source !== 'string') return;
+
+      // `framer-motion` é proibido em toda parte, **inclusive dentro do
+      // diretório**: dois nomes para a mesma biblioteca produziriam duas cópias
+      // no artefato e um `useReducedMotion` de cada uma.
+      if (source === 'framer-motion' || source.startsWith('framer-motion/')) {
+        context.report({ node, messageId: 'framerAlias', data: { source } });
+        return;
+      }
+
+      // `@/ui/motion` e `./motion` são o próprio barril, não a biblioteca.
+      if (source !== 'motion' && !source.startsWith('motion/')) return;
+
+      if (!isMotionDirectory) {
+        context.report({ node, messageId: 'outsideDirectory', data: { source } });
+      }
+    }
+
+    return {
+      ImportDeclaration(node) {
+        // `import type` não sobrevive à compilação: é anotação, não dependência.
+        if (node.importKind === 'type') return;
+        check(node, node.source.value);
+      },
+      ExportNamedDeclaration(node) {
+        if (node.source === null || node.source === undefined) return;
+        if (node.exportKind === 'type') return;
+        check(node, node.source.value);
+      },
+      ExportAllDeclaration(node) {
+        if (node.exportKind === 'type') return;
+        check(node, node.source?.value);
+      },
+      ImportExpression(node) {
+        if (node.source.type !== 'Literal') return;
+        check(node, node.source.value);
+      },
+    };
+  },
+};
+
 export default {
   rules: {
     'no-ui-text-literals': noUiTextLiterals,
     'no-dynamic-classname': noDynamicClassName,
     'no-raw-visual-values': noRawVisualValues,
     'no-icon-library-import': noIconLibraryImport,
+    'no-motion-library-import': noMotionLibraryImport,
   },
 };

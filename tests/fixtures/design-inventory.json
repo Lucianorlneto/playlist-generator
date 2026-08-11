@@ -950,8 +950,29 @@
     "tela": "Importador · Serviço · Spotify (Carregando)",
     "no": "yjjDB/FeEHR",
     "design": "Isso pode levar alguns segundos.",
+    "desfecho": "adotado",
+    "chave": "result.creatingSubtitle",
+    "amostra": {
+      "service": "Spotify"
+    }
+  },
+  {
+    "tela": "Importador · Serviço · Spotify (Carregando)",
+    "no": "yjjDB/G37LNR",
+    "design": "Estamos enviando sua lista para o Spotify. Isso pode levar alguns segundos — não feche esta janela.",
     "desfecho": "mantido-diferente",
-    "motivo": "O arquivo desenha três frases de espera — 'Isso pode levar alguns segundos.', 'Estamos enviando sua lista…' e 'Aguardando confirmação…'. A aplicação exibe **progresso real** no lugar delas: '{current} de {total} itens' (`result.creationProgress`), que diz mais e não envelhece. Substituir informação por tranquilização genérica seria uma regressão."
+    "motivo": "O arquivo repete 'Isso pode levar alguns segundos' no subtítulo (`FeEHR`) e de novo aqui. Lidas em sequência por um leitor de tela, as duas viram a mesma frase dita duas vezes. O subtítulo é mantido verbatim — é ele que fica colado no disco, o lugar natural da expectativa de duração — e esta descrição preserva 'Estamos enviando sua lista para o {service}' e 'não feche esta janela', sem a oração repetida (009/FR-006). É a mesma classe de decisão que este inventário já registra para os erros de concordância do mockup: adotar o vocabulário sem adotar o defeito.",
+    "chave": "result.creatingDescription"
+  },
+  {
+    "tela": "Importador · Serviço · Spotify (Carregando)",
+    "no": "yjjDB/mJCdf",
+    "design": "Aguardando confirmação do Spotify…",
+    "desfecho": "adotado",
+    "chave": "result.awaitingConfirmation",
+    "amostra": {
+      "service": "Spotify"
+    }
   },
   {
     "tela": "Importador · Serviço · Spotify Concluído",

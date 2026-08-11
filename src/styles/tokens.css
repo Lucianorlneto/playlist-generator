@@ -109,6 +109,26 @@
   --brand-spotify: #189946;
   --brand-youtube: #ff3126;
 
+  /**
+   * Preenchimento das barras de esqueleto (009/FR-019, 009/FR-019a).
+   *
+   * **Não é alias de `--rule`**, e a coincidência do hex no tema Noite é de
+   * paleta, não de parentesco: `--rule` pinta **contorno**, e pintar superfície
+   * com ele abriria precedente na camada mais rígida do sistema. No tema Papel
+   * os dois valores nem coincidem.
+   *
+   * Uma tinta só para as duas barras: no arquivo de design elas dão 1,02:1 entre
+   * si — não são dois tons, são o mesmo tom escrito de duas maneiras. O que
+   * separa rótulo de valor é **dimensão** (009/FR-008).
+   *
+   * O valor não tem par aprovado, pelo precedente literal de `--rule`: uma barra
+   * de esqueleto a 3:1 é lida como conteúdo. O portão dele é a **faixa de
+   * perceptibilidade** de `tests/unit/contrast.spec.ts` — piso 1,15 e teto 1,60
+   * contra `--surface` —, que é a forma executável do FR-008a. Aqui: claro
+   * 1,31:1, escuro 1,24:1.
+   */
+  --skeleton: #e7e0d2;
+
   /* Quantidade de tinta do estado sobre a superfície. Difere por tema porque o
      substrato difere: 12% de teal sobre branco lê igual a 15% sobre quase-preto. */
   --state-tint-amount: 12%;
@@ -154,6 +174,10 @@
 
   --brand-spotify: #1db954;
   --brand-youtube: #ff3b30;
+
+  /* O valor do nó `V4140k` do arquivo de design. Ver o docblock no tema Papel:
+     não é alias de `--rule`, apesar de coincidir com ele aqui. */
+  --skeleton: #252d3a;
 
   --state-tint-amount: 15%;
   --brand-tint-amount: 15%;
@@ -205,6 +229,8 @@
     --brand-spotify: #1db954;
     --brand-youtube: #ff3b30;
 
+    --skeleton: #252d3a;
+
     --state-tint-amount: 15%;
     --brand-tint-amount: 15%;
 
@@ -249,6 +275,22 @@
   /* Disco da etapa atual da trilha: âmbar tingido sobre o substrato da zona, na
      mesma proporção dos selos de estado (contracts/shell.md §4). */
   --accent-tint: color-mix(in srgb, var(--accent) var(--state-tint-amount), var(--surface-zone));
+
+  /**
+   * Disco do indicador de criação em curso (009/FR-019,
+   * 009/contracts/tokens.md §2).
+   *
+   * **São dois tokens de âmbar tingido e não um** porque o substrato difere: o
+   * de cima nasceu no disco da trilha, que é uma zona da casca e repousa sobre
+   * `--surface-zone`; este vive **dentro de um cartão**, sobre `--surface`. No
+   * tema Papel a diferença é visível a olho nu — `#f1ece0` contra `#ffffff` —, e
+   * reaproveitar o token existente entregaria um disco bege num cartão branco.
+   */
+  --accent-tint-surface: color-mix(
+    in srgb,
+    var(--accent) var(--state-tint-amount),
+    var(--surface)
+  );
 
   /**
    * Substrato de identidade por provedor (008/FR-003, 008/contracts/tokens.md §1).

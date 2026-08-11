@@ -324,6 +324,41 @@ describe('SC-001 · toda chave do dicionário está classificada', () => {
     expect(orfas, `Exclusões que não cobrem chave nenhuma: ${orfas.join(', ')}`).toEqual([]);
   });
 
+  it('009/FR-021 · as chaves do cartão de carregamento não vivem só do prefixo `result.`', () => {
+    /*
+      O ponto delicado da 009 (`009/contracts/text-inventory.md` §4).
+
+      O ramo `result.` é excluído por prefixo porque contém o caminho de criação
+      interrompida, que o arquivo não desenha. As três chaves da tela `SjphR`
+      **são** desenhadas, e o prefixo as cobriria em silêncio — o portão da 008
+      passaria sem nunca comparar as frases novas com o arquivo. Seria a mesma
+      falha que a 008 existiu para corrigir, reintroduzida pela porta dos fundos.
+
+      A asserção é sobre o item de inventário, não sobre a exclusão: é o item que
+      força a comparação caractere a caractere.
+    */
+    const DESENHADAS = [
+      'result.creatingSubtitle',
+      'result.creatingDescription',
+      'result.awaitingConfirmation',
+    ];
+
+    const orfas = DESENHADAS.filter((chave) => !cobertas.has(chave));
+    expect(
+      orfas,
+      'Chaves que o arquivo de design desenha e que estariam cobertas apenas pela exclusão ' +
+        `de prefixo \`result.\`: ${orfas.join(', ')}. Cada uma precisa de item próprio no ` +
+        'inventário (009/FR-021).',
+    ).toEqual([]);
+
+    // `creatingDescription` é a única divergência da feature, e ela é
+    // inventariada como `mantido-diferente` com motivo escrito — o item existe
+    // sob o nó `G37LNR`, não sob a chave.
+    const divergente = INVENTARIO.find((item) => item.no === 'yjjDB/G37LNR');
+    expect(divergente?.desfecho).toBe('mantido-diferente');
+    expect((divergente?.motivo ?? '').length).toBeGreaterThan(40);
+  });
+
   it('nenhuma exclusão de chave **exata** duplica um item de inventário', () => {
     /*
       A sobreposição entre um prefixo e um item **é o desenho**, não um defeito:
