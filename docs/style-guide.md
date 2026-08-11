@@ -60,7 +60,7 @@ Nomes **semânticos**, nunca descritivos. `--ink-muted` sobrevive a uma troca de
 `--cinza-claro` não. Componente consome nome, jamais valor — a regra de lint
 `tp/no-raw-visual-values` recusa o contrário.
 
-### Os 19 tokens
+### Os 20 tokens
 
 | Token | Papel | Papel (claro) | Noite (escuro) |
 | --- | --- | --- | --- |
@@ -83,6 +83,7 @@ Nomes **semânticos**, nunca descritivos. `--ink-muted` sobrevive a uma troca de
 | `--state-live` | Sessão viva no chip de conexão | `#349842` | `#3fb950` |
 | `--brand-spotify` | Acento identificador do provedor | `#189946` | `#1db954` |
 | `--brand-youtube` | Acento identificador do provedor | `#ff3126` | `#ff3b30` |
+| `--skeleton` | Barras de esqueleto do cartão de criação | `#e7e0d2` | `#252d3a` |
 
 ### Seis coisas que não são óbvias na tabela
 
@@ -95,8 +96,25 @@ indistinguível de `--ink-muted` — razão 1,03 no escuro, 1,07 no claro. A eta
 distingue por **forma**, não por tinta. Este é o achado mais consequente da feature: a medição de
 contraste alterou o **desenho**, não só os valores.
 
+A 009 recusou uma terceira tinta pela segunda vez, pelo mesmo motivo: o rodapé do cartão de criação
+usa `#5B6474` no arquivo, e adotá-lo repetiria o erro. Ele usa `--ink-muted` (009/FR-020). A escala
+de tinta tem **dois** degraus mais os dois de acento, e `tests/unit/contrast.spec.ts` assere a lista
+fechada nos dois temas — uma recusa registrada só em prosa é uma recusa que a próxima feature desfaz
+sem perceber.
+
 **`--rule` não é contorno significante.** `#252d3a` sobre `--bg` dá 1,37:1. É separação
 decorativa. Tudo que carregue significado usa `--rule-strong`.
+
+**`--skeleton` não é `--rule`, nem alias dele** (009/FR-019a). O hex do tema Noite coincide, e a
+coincidência é de paleta, não parentesco de papel: `--rule` pinta **contorno**, e pintar superfície
+com ele abriria precedente na camada mais rígida do sistema. No tema Papel os dois valores nem
+coincidem. É também o segundo token de cor **sem par aprovado**, pelo mesmo precedente de `--rule` —
+ver §3.
+
+**Uma tinta só para as duas barras do esqueleto.** O arquivo de design aparenta usar duas — opaco no
+rótulo, branco a 8% no valor —, mas resolvidas sobre `#161C25` elas dão **1,02:1 entre si**: não são
+dois tons, são o mesmo tom escrito de duas maneiras. O que separa rótulo de valor é **dimensão**,
+como no caso da etapa pendente da trilha. É o mesmo achado, um cartão adiante.
 
 **`--state-uncertain` é deliberadamente deslocado do âmbar de ação**, nos dois temas. Os dois
 aparecem na mesma tela, e o selo "incerta" não pode ser o mesmo hex do botão primário.
@@ -150,21 +168,41 @@ valores e esquecer um.
 O mesmo vale para `--accent-tint`, usado no disco da etapa atual da trilha, no cartão de destino
 selecionado e no aviso do painel lateral.
 
+**`--accent-tint-surface` é o mesmo âmbar tingido, sobre o outro substrato** (009/FR-019). São dois
+tokens e não um porque o substrato difere: `--accent-tint` nasceu no disco da trilha, que é uma zona
+da casca e repousa sobre `--surface-zone`; `--accent-tint-surface` veste o disco do indicador de
+criação, que vive **dentro de um cartão**, sobre `--surface`. No tema Papel a diferença é visível a
+olho nu — `#f1ece0` contra `#ffffff` —, e reaproveitar o primeiro entregaria um disco bege num cartão
+branco. Ele tem **um único ponto de uso**, verificado por contagem de arquivos em
+`tests/unit/no-orphan-tokens.spec.ts`, no mesmo molde da exceção de identidade acima.
+
 ---
 
 ## 3. Pares aprovados e contraste
 
-**Lista fechada de 31 combinações.** Combinação que não está em
+**Lista fechada de 32 combinações.** Combinação que não está em
 `src/domain/theme/approvedPairs.ts` é proibida em qualquer componente. É essa fechadura que torna
 a verificação exaustiva: sem ela o portão só cobriria os pares que alguém lembrou de escrever, e
 a omissão passaria como aprovação.
 
 Mínimos: `text` = 4,5:1 · `large-text` = 3:1 · `ui` (borda, ícone, anel de foco) = 3:1.
 
-A lista cresceu de 15 (feature 005) para 27 na 007, e para 31 na 008. O crescimento **não vem de
-cores novas**: vem de substratos novos. Texto e ícone sobre `--surface-zone` — a barra superior e a
-trilha — são combinações que não existiam antes de a casca de três zonas existir; e o glifo da marca
-sobre o seu próprio substrato tingido.
+A lista cresceu de 15 (feature 005) para 27 na 007, para 31 na 008 e para 32 na 009. O crescimento
+**não vem de cores novas**: vem de substratos novos. Texto e ícone sobre `--surface-zone` — a barra
+superior e a trilha — são combinações que não existiam antes de a casca de três zonas existir; o
+glifo da marca sobre o seu próprio substrato tingido; e o glifo de carregamento sobre o âmbar
+tingido de `--surface`, que é o mesmo caso um cartão adiante.
+
+O par da 009, medido:
+
+| Par | Papel (12%) | Noite (15%) |
+| --- | --- | --- |
+| `--accent-text` sobre `--accent-tint-surface` | 5,4:1 | 6,8:1 |
+
+O arquivo de design pinta esse glifo com `#F5B301` — `--accent` cheio. `text-accent` é proibido, com
+base medida: âmbar cheio como tinta dá 1,7:1. A tinta adotada é `--accent-text`, que no tema Noite
+**é** `#f5b301` — ali a fidelidade ao arquivo é literal; no Papel ele escurece para `#816001`, que é
+a única forma de o glifo existir sobre substrato claro.
 
 Os quatro pares da 008, medidos:
 
@@ -194,9 +232,35 @@ Os pares deliberadamente **ausentes**, e por quê:
 - `--brand-*` como texto — proibido por decisão de sistema, com base medida;
 - `--accent` como texto sobre qualquer substrato claro — 1,73:1. Só preenchimento;
 - qualquer coisa sobre `--rule` — `--rule` é filete, não substrato;
+- qualquer coisa com `--skeleton` — ver a faixa de perceptibilidade logo abaixo;
 - um derivado como **tinta** — uma mistura translúcida da própria cor do glifo não é tinta de nada.
 
-Todos os 31 passam nos dois temas. Um único valor foi ajustado na implementação da 007:
+### A faixa de perceptibilidade — o portão que substitui um par (009/FR-008a)
+
+`--skeleton` é o segundo token de cor **sem par aprovado**, depois de `--rule`. Medido, ele dá
+**1,2:1** no Noite e **1,3:1** no Papel contra `--surface`, e o mínimo da categoria `ui` é 3:1.
+Declarar o par reprovaria; declarar o par e afrouxar o mínimo destruiria o portão para todos os
+outros usos.
+
+**E está certo que seja baixo.** Uma barra de esqueleto a 3:1 é lida como conteúdo — o olho para
+nela e tenta decifrá-la. O requisito não pede contraste, pede **perceptibilidade**.
+
+O portão próprio, em `tests/unit/contrast.spec.ts`, é uma faixa com piso e teto nos dois temas:
+
+```text
+1,15 ≤ contrastRatio(--skeleton, --surface) ≤ 1,60
+```
+
+- **Piso 1,15** — abaixo disso a barra desaparece no substrato e a forma do resultado deixa de ser
+  antecipada, que é o motivo pelo qual o esqueleto existe;
+- **Teto 1,60** — acima disso a barra compete com o texto do cartão e passa a parecer conteúdo
+  esperando ser lido.
+
+O teto é o que **nenhuma categoria de contraste verifica**. Uma categoria `decorative` com mínimo
+1:1 aprovaria inclusive um token invisível — foi a alternativa recusada. Se um dos dois temas sair
+da faixa, a correção é o valor por tema, nunca a remoção da faixa.
+
+Todos os 32 pares passam nos dois temas. Um único valor foi ajustado na implementação da 007:
 `--accent-text` no tema claro saiu de `#896401` para `#816001`, porque o primeiro dava 4,58:1 sobre
 `--surface-zone` — passava por 0,08, e qualquer acerto futuro no substrato da zona o derrubaria.
 
@@ -815,11 +879,54 @@ quem mais depende de estrutura.
 
 ### Movimento
 
-O sistema quase não tem movimento: conector da trilha e transição de estado dos degraus em 200ms,
-e o resto é instantâneo. Sob `prefers-reduced-motion` até eles param — sem perda de informação,
-porque o conector já é `aria-hidden` e o estado está escrito no nome e na linha de apoio.
+Até a 008 este parágrafo dizia que o sistema "quase não tem movimento" e que "o resto é
+instantâneo". **A 009 tornou isso falso**, e o guia descreve o código: a fase de criação de
+playlist é a primeira superfície com movimento contínuo.
 
-A mesma regra cobre a decoração, sem que cada componente repita a consulta.
+O que permanece: conector da trilha e transição de estado dos degraus em **200ms**, e o resto
+instantâneo.
+
+O que entrou, e é **exatamente três** (009/FR-010b):
+
+| Movimento | Onde | Propriedade | Duração |
+| --- | --- | --- | --- |
+| Giro do glifo de carregamento | Disco do cartão de criação | `transform: rotate` | 1s por volta, linear, infinito |
+| Pulsação das barras de esqueleto | As oito barras da grade | `opacity`, nunca até zero | 1,2s de ida e volta, em fase única |
+| Fusão cruzada esqueleto → resultado | A célula que os dois dividem | `opacity` | **200ms**, o mesmo orçamento do conector |
+
+**Só `transform` e `opacity`.** Nenhuma outra propriedade é admitida, e o motivo é concreto e não
+higiene abstrata: a tela anima continuamente **enquanto uma requisição está em voo**. Movimento que
+forçasse recálculo de layout a cada quadro competiria com o próprio trabalho que a tela está
+esperando — e o pior caso é o YouTube, cujo lote é de um item e faz uma requisição por faixa.
+
+**As três são escritas em JavaScript, com biblioteca.** É uma exceção à simplicidade proporcional,
+registrada no Complexity Tracking de `specs/009-creating-loading-state/plan.md`: as três animações
+são escrevíveis em CSS puro, e essa alternativa é tecnicamente superior. A escolha da ferramenta foi
+do autor do projeto, não da implementação. A mitigação é a fechadura — `src/ui/motion/` é o
+**único** diretório autorizado a importar a biblioteca, exporta exatamente três primitivas, e duas
+verificações independentes falham no dia em que a quarta tentar entrar: a regra de lint
+`tp/no-motion-library-import` e `tests/unit/motion-surface.spec.ts`.
+
+**Sob `prefers-reduced-motion`, o interruptor é JavaScript — e a regra de CSS não substitui.**
+A regra global abaixo zera `animation-duration` e `transition-duration` com `!important`, e ela
+**não alcança** a biblioteca: esta anima por WAAPI e por atualização de valor, não por `@keyframes`
+que o CSS possa encurtar. Confiar nela entregaria uma tela que gira e pulsa exatamente para quem
+pediu que não girasse. `<MotionConfig reducedMotion="user">` também não bastaria — a documentação da
+biblioteca é explícita em que essa opção **preserva** a animação de `opacity`, que é justamente o
+que a pulsação do esqueleto faz. Cada uma das três primitivas consulta `useReducedMotion()` e
+devolve o estado final estático.
+
+Nenhum texto se perde com a supressão: o estado "criação em curso" está escrito em três lugares e
+não depende de movimento em nenhum. `tests/components/creating-card.spec.tsx` mede isso
+literalmente — a contagem de textos exibidos é idêntica com e sem a preferência.
+
+O que **não** anima, e a ausência é o que mantém o sistema legível: nenhuma animação de posição ou
+de dimensão (`layout`, `layoutId`, `height`, `width`, `top`, `left`); nenhuma entrada ou saída
+animada do cartão, que aparece e some em um quadro; e nenhuma animação nas demais fases do ciclo —
+conexão, estimativa, busca e revisão ficam como estavam.
+
+A regra global de `prefers-reduced-motion` cobre também a decoração, sem que cada componente repita
+a consulta.
 
 ### Dois temas, sempre
 
