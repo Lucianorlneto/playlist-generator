@@ -35,3 +35,8 @@ yarn-error.log*
 
 # Intermediário do gerador do guia de tema
 docs/theme-guidelines/.render.html
+
+# Catálogo de extensões do Spec Kit — cópia baixada de github/spec-kit, com
+# carimbo de tempo a cada consulta. É regenerável pelo `specify extension`, e
+# versioná-lo produziria churn a cada execução do comando.
+.specify/extensions/.cache/
