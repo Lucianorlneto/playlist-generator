@@ -82,6 +82,10 @@ const BRAND_TINT = {
  */
 const CHECKMARK =
   'rounded-control ml-auto flex size-6 shrink-0 items-center justify-center border ' +
+  // A caixa de marcação funde no mesmo degrau do cartão (010/FR-031). O glifo
+  // aparece por troca de tinta, e a **forma** continua sendo o portador do
+  // estado — a cor é a terceira pista, nunca a primeira (007/FR-042).
+  'transition-colors duration-quick motion-reduce:transition-none ' +
   'border-rule-strong bg-transparent text-transparent ' +
   'peer-checked:border-accent-text peer-checked:bg-accent peer-checked:text-accent-ink ' +
   'peer-focus-visible:outline-accent-text peer-focus-visible:outline-2 ' +
@@ -150,7 +154,12 @@ export function DestinationSelector() {
             key={provider}
             data-destino={provider}
             className={cx(
-              'rounded-panel relative flex items-center gap-3 border p-4',
+              // Preenchimento e contorno fundem no degrau `quick` (010/FR-031).
+              // **Só cor**: nada de escala, pressão ou deslocamento. O cartão é
+              // uma área clicável grande e contém texto que a pessoa está lendo
+              // no momento em que clica; encolhê-lo moveria esse texto
+              // (010/contracts/surfaces.md §4.1).
+              'rounded-panel relative flex items-center gap-3 border p-4 transition-colors duration-quick motion-reduce:transition-none',
               checked ? 'border-accent-text bg-accent-tint' : 'border-rule bg-surface',
               disabled ? 'opacity-60' : null,
             )}

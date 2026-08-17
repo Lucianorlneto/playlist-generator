@@ -2,6 +2,7 @@ import { composeRail, type RailStep, type RailStepState } from '@/domain/rail';
 import { format, t } from '@/i18n/pt-BR';
 import { Icon } from '@/ui/Icon';
 import { cx } from '@/ui/cx';
+import { CrossFade } from '@/ui/motion';
 
 import { useRailSnapshot } from './railSnapshot';
 import { ResetFlow } from './ResetFlow';
@@ -91,17 +92,38 @@ function Degrau({ step, ultimo, total }: { step: RailStep; ultimo: boolean; tota
         <span
           aria-hidden="true"
           className={cx(
-            'rounded-pill text-data flex size-6 shrink-0 items-center justify-center border font-semibold',
+            // O preenchimento e o contorno fundem no degrau `quick`: é
+            // microinteração de periferia, e nos 200ms de `base` a mudança
+            // terminaria depois que o olhar já passou (010/FR-025,
+            // 010/contracts/surfaces.md §2).
+            'rounded-pill text-data flex size-6 shrink-0 items-center justify-center border font-semibold transition-colors duration-quick motion-reduce:transition-none',
             DISC_CLASSES[step.state],
           )}
         >
-          {step.state === 'done' ? <Icon role="done" /> : step.ordinal}
+          {/*
+            Numeral ↔ glifo de conclusão por `CrossFade` (010/FR-025). É conteúdo
+            substituindo conteúdo na mesma célula, que é literalmente o papel da
+            primitiva — reaproveitá-la aqui é o teste mais forte de que ela foi
+            nomeada por papel e não por tela.
+
+            **A distinção entre estados continua sendo por forma** — preenchido,
+            tingido, vazado — e `DISC_CLASSES` não muda. A animação interpola
+            cor; ela não pode produzir um quadro em que o disco deixe de ser
+            legível como um dos três estados.
+          */}
+          <CrossFade
+            from={step.state === 'done' ? null : step.ordinal}
+            to={step.state === 'done' ? <Icon role="done" /> : null}
+          />
         </span>
         {!ultimo && (
           <span
             aria-hidden="true"
             className={cx(
-              'rounded-hair w-0.5 flex-1 transition-colors duration-200 motion-reduce:transition-none',
+              // `duration-base` e não `duration-200`: o valor é o mesmo, e a
+              // diferença é que agora ele vem da escala em vez de ser um número
+              // digitado aqui (010/FR-006, SC-003).
+              'rounded-hair w-0.5 flex-1 transition-colors duration-base motion-reduce:transition-none',
               CONNECTOR_CLASSES[step.state],
             )}
           />

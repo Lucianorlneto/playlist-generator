@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 
 import { t } from '../src/i18n/pt-BR';
+import { aguardarTransicao } from './support/flow';
 import { CLIENT_ID, mockSpotify, seedCredential } from './support/spotify-mock';
 
 /**
@@ -132,6 +133,14 @@ test.describe('SC-020 · nada se desloca quando o recurso chega', () => {
 
     const titulo = page.getByRole('heading', { name: t.destinations.heading });
     await expect(titulo).toBeVisible();
+    /*
+      A 010 deu direção à troca de etapa (010/FR-022): por 200ms o miolo da
+      coluna desliza no eixo `x`, e o título vai junto **por desenho**. Sem esta
+      espera a medição de "antes" cai dentro da transição, e o caso acusaria o
+      movimento certo pelo motivo errado — ele é sobre a chegada da decoração,
+      não sobre a troca de etapa.
+    */
+    await aguardarTransicao(page);
     const antes = await titulo.boundingBox();
 
     decoracao.liberar();

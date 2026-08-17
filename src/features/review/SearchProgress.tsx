@@ -18,9 +18,23 @@ export interface SearchProgressProps {
  * alcançável por teclado, inclusive durante a espera por limitação.
  *
  * A barra é o `<progress>` nativo, e não uma `<div>` com largura calculada. O
- * motivo é a CSP do artefato de produção: `style-src 'self'` também bloqueia
- * atributos `style` inline, então uma largura em porcentagem simplesmente não
- * seria aplicada — falha que não aparece em desenvolvimento.
+ * motivo é **acessibilidade**: o elemento carrega papel, valor e máximo sem uma
+ * linha de ARIA, e leitor de tela e tecnologia assistiva já sabem lê-lo.
+ *
+ * ## A razão anterior estava errada, e a correção é registrada
+ *
+ * Este comentário afirmava que a CSP do artefato de produção — `style-src 'self'`
+ * — bloquearia uma largura em porcentagem inline. **Não bloqueia** (010/research
+ * §R1): a restrição alcança estilo que chega como **texto** — o atributo `style`
+ * presente no HTML servido e blocos `<style>` —, e escrita programática via
+ * CSSOM, que é o que o React e a biblioteca de movimento fazem, não passa pelo
+ * analisador de CSP. A prova é anterior à apuração e está no próprio
+ * repositório: `src/ui/Stickers.tsx` posiciona os onze adesivos por `style` e
+ * funciona no `dist/`.
+ *
+ * A decisão continua certa; o que sai é a premissa falsa que a sustentava. Uma
+ * decisão apoiada em razão errada é uma decisão que ninguém consegue rever
+ * (010/FR-028).
  */
 export function SearchProgress({ provider }: SearchProgressProps) {
   const search = useAppStore((state) => state.search);

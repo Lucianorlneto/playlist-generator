@@ -2,6 +2,7 @@ import { format, t } from '@/i18n/pt-BR';
 import { useAppStore } from '@/store';
 import { Button } from '@/ui/Button';
 import { Icon } from '@/ui/Icon';
+import { Stagger } from '@/ui/motion';
 
 const formatter = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
 
@@ -15,8 +16,35 @@ const formatter = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeSty
  *
  * Um rascunho da versão anterior é restaurado como fluxo Spotify de destino
  * único, sem aviso além deste banner (FR-042).
+ *
+ * ## O que a feature 010 acrescentou (FR-021b)
+ *
+ * Entrada própria, no papel `enter` — o mesmo da lista de revisão. O aviso vive
+ * **fora** do bloco que transita entre etapas e permanece imóvel durante a
+ * troca: ele não pertence a nenhuma etapa, sobrevive a todas, e transitá-lo
+ * junto o faria sair e voltar a cada avanço, sugerindo que sumiu.
+ *
+ * Sendo um irmão só, a defasagem é zero e o papel degenera em entrada simples —
+ * que é por que ele não custa entrada nova no catálogo
+ * (`010/contracts/motion-catalog.md` §2.2).
+ *
+ * **O descartar continua imediato.** É ação comandada, e segurar a saída
+ * atrasaria a confirmação de que o descarte aconteceu
+ * (`010/contracts/surfaces.md` §1.5).
  */
 export function DraftRecoveryBanner() {
+  const notice = useAppStore((state) => state.draftNotice);
+
+  if (notice === 'none') return null;
+
+  return (
+    <Stagger role="enter" as="div">
+      <Aviso />
+    </Stagger>
+  );
+}
+
+function Aviso() {
   const notice = useAppStore((state) => state.draftNotice);
   const savedAt = useAppStore((state) => state.draftSavedAt);
   const setDraftNotice = useAppStore((state) => state.setDraftNotice);

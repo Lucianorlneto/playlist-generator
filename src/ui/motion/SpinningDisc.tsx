@@ -2,6 +2,8 @@ import { motion, useReducedMotion } from 'motion/react';
 
 import type { ReactNode } from 'react';
 
+import { CURVA, DURACAO } from './scale';
+
 export interface SpinningDiscProps {
   /** O glifo que gira. O disco tingido fica **fora**, no chamador. */
   readonly children: ReactNode;
@@ -16,7 +18,8 @@ export interface SpinningDiscProps {
  *
  * A cadência é a do `animate-spin` que `RateLimitWaiting` já usa na busca: uma
  * volta por segundo, temporização linear. O produto não deve ter duas
- * velocidades de giro para a mesma ideia.
+ * velocidades de giro para a mesma ideia — e desde a 010 esse "uma volta por
+ * segundo" é o degrau `spin` da escala, não uma constante local (FR-005).
  *
  * Só `rotate` anima, e `rotate` compila para `transform` — composta pela GPU sem
  * recálculo de layout (FR-017a). Isso não é higiene abstrata: esta tela anima
@@ -42,7 +45,12 @@ export function SpinningDisc({ children }: SpinningDiscProps) {
     <motion.span
       className="inline-flex"
       animate={{ rotate: 360 }}
-      transition={{ duration: 1, ease: 'linear', repeat: Infinity, repeatType: 'loop' }}
+      transition={{
+        duration: DURACAO.spin,
+        ease: CURVA.linear,
+        repeat: Infinity,
+        repeatType: 'loop',
+      }}
     >
       {children}
     </motion.span>

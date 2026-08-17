@@ -84,7 +84,19 @@ export default tseslint.config(
     // Onde a decisão visual é tomada é onde a regra precisa valer (research §10).
     files: ['src/features/**/*.{ts,tsx}', 'src/app/**/*.{ts,tsx}', 'src/ui/**/*.{ts,tsx}'],
     plugins: { tp },
-    rules: { 'tp/no-raw-visual-values': 'error' },
+    rules: {
+      'tp/no-raw-visual-values': 'error',
+      /**
+       * O par da anterior, para o **tempo** (010/FR-008). Mesmo alcance e pelo
+       * mesmo motivo: onde a decisão é tomada é onde a regra precisa valer, e
+       * duração, atraso e curva se decidem nas mesmas três camadas em que a cor
+       * se decide.
+       *
+       * `src/ui/motion/scale.ts` é a exceção, resolvida dentro da regra — é a
+       * origem, e ela cai dentro de `src/ui/**` como qualquer outro arquivo.
+       */
+      'tp/no-raw-motion-values': 'error',
+    },
   },
   {
     /**

@@ -552,6 +552,41 @@ describe('FR-046, SC-004 e SC-015 · toda superfície resolve para token', () =>
     }
     expect(corpo).toMatch(/border:\s*1px solid/u);
   });
+
+  it('010/FR-019 · a feature de movimento não acrescentou bloco nenhum', () => {
+    /*
+      **A asserção é sobre a ausência, e ela é o requisito.**
+
+      O modo de cores forçadas remove decoração de propósito: nele os adesivos
+      somem, o substrato tingido some, e a tela continua inteira porque nada ali
+      carrega informação. A feature 010 anima justamente essas superfícies — a
+      faixa de adesivos, as barras de esqueleto, o disco da trilha — e a tentação
+      correspondente é "preservar" o que o modo apagou, para que a animação
+      continue visível.
+
+      Preservar seria o defeito: quem liga cores forçadas está pedindo menos
+      superfície, não mais. Um bloco novo aqui trazia de volta exatamente o que o
+      modo removeu (FR-019).
+
+      Um único bloco, o da casca — o mesmo que o caso acima inspeciona.
+    */
+    const blocos = [...INDEX_CSS.matchAll(/@media \(forced-colors: active\)/gu)];
+    expect(
+      blocos,
+      'A 010 não deve acrescentar tratamento de cores forçadas: o modo remove decoração, e ' +
+        'esta feature não a traz de volta para manter animação visível (010/FR-019).',
+    ).toHaveLength(1);
+
+    // E nenhuma das superfícies animadas foi nomeada lá dentro.
+    const corpo = /@media \(forced-colors: active\) \{([\s\S]*?)\n\}/u.exec(INDEX_CSS)?.[1] ?? '';
+    for (const decoracao of ['sticker', 'skeleton', 'brand-tint', 'mood-photo']) {
+      expect(
+        corpo,
+        `"${decoracao}" foi preservado sob cores forçadas. O modo o remove por desenho, e ` +
+          'esta feature não o reintroduz (010/FR-019).',
+      ).not.toContain(decoracao);
+    }
+  });
 });
 
 describe('SHELL_BREAKPOINT_REM espelha --breakpoint-shell', () => {
