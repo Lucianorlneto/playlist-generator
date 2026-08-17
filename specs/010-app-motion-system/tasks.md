@@ -44,10 +44,10 @@ que substitui a contagem "exatamente três" da 009. Cada tarefa dessas diz isso 
 o da 009. O arranjo é o mesmo da feature anterior: a fechadura nova nasce guardando o que já
 existe, e não legalizando o que acabou de entrar.
 
-- [ ] T001 Confirmar que `motion@13` continua sendo a única biblioteca de animação em `package.json`, rodando `npm ls motion` e conferindo que `package-lock.json` não ganhou par novo (FR-038)
-- [ ] T002 Renomear `tests/unit/motion-surface.spec.ts` para `tests/unit/motion-catalog.spec.ts` e trocar a asserção de contagem (`PRIMITIVAS.length === 3`, `Object.keys(primitivas).sort()`) por asserção de **identidade** contra uma tabela nomeada no topo do arquivo, ainda com as três da 009 — o teste deve continuar verde sem nenhuma mudança em `src/` (FR-001, FR-002, SC-001, SC-002, contracts/motion-catalog.md §1)
-- [ ] T003 [P] Reescrever as duas mensagens de `noMotionLibraryImport` em `eslint-rules/index.js` para apontarem o catálogo de `contracts/motion-catalog.md` em vez da frase "exatamente três", preservando o comportamento da regra (FR-002, FR-003)
-- [ ] T004 [P] Confirmar em `playwright.config.ts` que o projeto `reduced-motion` roda a suíte inteira e não só `creating-loading.spec.ts`, ajustando o filtro se estiver restrito (FR-014, SC-005)
+- [X] T001 Confirmar que `motion@13` continua sendo a única biblioteca de animação em `package.json`, rodando `npm ls motion` e conferindo que `package-lock.json` não ganhou par novo (FR-038)
+- [X] T002 Renomear `tests/unit/motion-surface.spec.ts` para `tests/unit/motion-catalog.spec.ts` e trocar a asserção de contagem (`PRIMITIVAS.length === 3`, `Object.keys(primitivas).sort()`) por asserção de **identidade** contra uma tabela nomeada no topo do arquivo, ainda com as três da 009 — o teste deve continuar verde sem nenhuma mudança em `src/` (FR-001, FR-002, SC-001, SC-002, contracts/motion-catalog.md §1)
+- [X] T003 [P] Reescrever as duas mensagens de `noMotionLibraryImport` em `eslint-rules/index.js` para apontarem o catálogo de `contracts/motion-catalog.md` em vez da frase "exatamente três", preservando o comportamento da regra (FR-002, FR-003)
+- [X] T004 [P] Confirmar em `playwright.config.ts` que o projeto `reduced-motion` roda a suíte inteira e não só `creating-loading.spec.ts`, ajustando o filtro se estiver restrito (FR-014, SC-005)
 
 **Checkpoint**: o portão afirma identidade, o catálogo ainda tem três entradas, e nada de
 comportamento mudou. Se `npm test` não estiver verde aqui, a base está errada e nenhuma
@@ -68,29 +68,29 @@ motivo certo e momento errado.
 
 ### A escala
 
-- [ ] T005 Criar `src/ui/motion/scale.ts` com as durações, o par de escalonamento e as três curvas de `contracts/motion-scale.md` §1, tipado e sem exportar nada além dos valores — inclui a função `atrasoEscalonado(i)` com o teto (FR-006, FR-007, FR-013)
-- [ ] T006 Espelhar a escala no `@theme` de `src/styles/index.css`, emitindo os utilitários `duration-*` e `ease-*` correspondentes e fixando `--default-transition-duration` em `200ms` — comentando por que o padrão de 150ms do Tailwind sai de cena (FR-006, FR-007, contracts/motion-scale.md §2)
-- [ ] T007 Criar `tests/unit/motion-scale.spec.ts` que lê `scale.ts` e `index.css`, compara valor a valor e falha **tanto por divergência quanto por token presente em apenas uma das camadas** (FR-006, SC-003, contracts/motion-scale.md §4)
+- [X] T005 Criar `src/ui/motion/scale.ts` com as durações, o par de escalonamento e as três curvas de `contracts/motion-scale.md` §1, tipado e sem exportar nada além dos valores — inclui a função `atrasoEscalonado(i)` com o teto (FR-006, FR-007, FR-013)
+- [X] T006 Espelhar a escala no `@theme` de `src/styles/index.css`, emitindo os utilitários `duration-*` e `ease-*` correspondentes e fixando `--default-transition-duration` em `200ms` — comentando por que o padrão de 150ms do Tailwind sai de cena (FR-006, FR-007, contracts/motion-scale.md §2)
+- [X] T007 Criar `tests/unit/motion-scale.spec.ts` que lê `scale.ts` e `index.css`, compara valor a valor e falha **tanto por divergência quanto por token presente em apenas uma das camadas** (FR-006, SC-003, contracts/motion-scale.md §4)
 
 ### Migrar o que já existe, sem mudar comportamento
 
-- [ ] T008 [P] Substituir a constante local de `src/ui/motion/SpinningDisc.tsx` por `spin` + `linear` vindos da escala, mantendo o giro idêntico (FR-005)
-- [ ] T009 [P] Substituir `CICLO` e `'easeInOut'` em `src/ui/motion/PulsingBar.tsx` por `pulse` + `through` vindos da escala, mantendo a pulsação idêntica (FR-005)
-- [ ] T010 [P] Substituir `FUSAO` em `src/ui/motion/CrossFade.tsx` por `base` + `standard` vindos da escala, mantendo a fusão idêntica (FR-005)
-- [ ] T011 Trocar `duration-200` do conector em `src/app/StepRail.tsx` pelo utilitário que o `@theme` passou a emitir (FR-006, SC-003)
+- [X] T008 [P] Substituir a constante local de `src/ui/motion/SpinningDisc.tsx` por `spin` + `linear` vindos da escala, mantendo o giro idêntico (FR-005)
+- [X] T009 [P] Substituir `CICLO` e `'easeInOut'` em `src/ui/motion/PulsingBar.tsx` por `pulse` + `through` vindos da escala, mantendo a pulsação idêntica (FR-005)
+- [X] T010 [P] Substituir `FUSAO` em `src/ui/motion/CrossFade.tsx` por `base` + `standard` vindos da escala, mantendo a fusão idêntica (FR-005)
+- [X] T011 Trocar `duration-200` do conector em `src/app/StepRail.tsx` pelo utilitário que o `@theme` passou a emitir (FR-006, SC-003)
 
 ### A regra que fecha a escala
 
-- [ ] T012 Acrescentar `tp/no-raw-motion-values` em `eslint-rules/index.js`, no molde de `noRawVisualValues`, isentando **apenas** `src/ui/motion/scale.ts` e cobrindo literal em `duration`/`delay`/`repeatDelay`, literal de curva, e utilitário `duration-*`/`ease-*` fora do conjunto emitido (FR-008, contracts/motion-scale.md §3)
-- [ ] T013 Registrar a regra em `eslint.config.js` junto das outras quatro `tp/` e confirmar `npm run lint` verde após T005–T011 (FR-008)
+- [X] T012 Acrescentar `tp/no-raw-motion-values` em `eslint-rules/index.js`, no molde de `noRawVisualValues`, isentando **apenas** `src/ui/motion/scale.ts` e cobrindo literal em `duration`/`delay`/`repeatDelay`, literal de curva, e utilitário `duration-*`/`ease-*` fora do conjunto emitido (FR-008, contracts/motion-scale.md §3)
+- [X] T013 Registrar a regra em `eslint.config.js` junto das outras quatro `tp/` e confirmar `npm run lint` verde após T005–T011 (FR-008)
 
 ### As duas primitivas compartilhadas
 
-- [ ] T014 Criar `src/ui/motion/Stagger.tsx` com os papéis fechados `enter` e `decor` de `contracts/motion-catalog.md` §2.2, defasagem por `atrasoEscalonado`, consulta a `useReducedMotion()` devolvendo todos os irmãos visíveis sem defasagem, e **sem aceitar duração, curva ou atraso como prop** — atualiza barril, tabela do contrato e `motion-catalog.spec.ts` no mesmo commit, incluindo estender à primitiva nova o bloco `PROIBIDAS` herdado de `motion-surface.spec.ts` (FR-004, FR-009, FR-013, FR-014, SC-001)
-- [ ] T015 [P] Criar `tests/unit/stagger.spec.ts` afirmando que a defasagem da última de **120** é igual à da última de **8**, e que ambas valem 240ms (FR-013, SC-009)
-- [ ] T016 Criar `src/ui/motion/Settle.tsx` com a prop `idle: boolean` **obrigatória e sem valor padrão**, devolvendo os filhos sem animação quando `false`, e consultando `useReducedMotion()` — atualiza barril, tabela do contrato e `motion-catalog.spec.ts` no mesmo commit (FR-010, FR-010a, FR-011, FR-014)
-- [ ] T017 [P] Criar `tests/components/settle.spec.tsx` afirmando que `idle={false}` não aplica animação de posição alguma, e que sob movimento reduzido a nova posição chega em um quadro (FR-010a, SC-015)
-- [ ] T018 Estender `tests/unit/motion-catalog.spec.ts` com a asserção dirigida de que `Settle` é a **única** entrada autorizada a animar posição, e que essa lista tem um elemento (FR-010, contracts/motion-catalog.md §3)
+- [X] T014 Criar `src/ui/motion/Stagger.tsx` com os papéis fechados `enter` e `decor` de `contracts/motion-catalog.md` §2.2, defasagem por `atrasoEscalonado`, consulta a `useReducedMotion()` devolvendo todos os irmãos visíveis sem defasagem, e **sem aceitar duração, curva ou atraso como prop** — atualiza barril, tabela do contrato e `motion-catalog.spec.ts` no mesmo commit, incluindo estender à primitiva nova o bloco `PROIBIDAS` herdado de `motion-surface.spec.ts` (FR-004, FR-009, FR-013, FR-014, SC-001)
+- [X] T015 [P] Criar `tests/unit/stagger.spec.ts` afirmando que a defasagem da última de **120** é igual à da última de **8**, e que ambas valem 240ms (FR-013, SC-009)
+- [X] T016 Criar `src/ui/motion/Settle.tsx` com a prop `idle: boolean` **obrigatória e sem valor padrão**, devolvendo os filhos sem animação quando `false`, e consultando `useReducedMotion()` — atualiza barril, tabela do contrato e `motion-catalog.spec.ts` no mesmo commit (FR-010, FR-010a, FR-011, FR-014)
+- [X] T017 [P] Criar `tests/components/settle.spec.tsx` afirmando que `idle={false}` não aplica animação de posição alguma, e que sob movimento reduzido a nova posição chega em um quadro (FR-010a, SC-015)
+- [X] T018 Estender `tests/unit/motion-catalog.spec.ts` com a asserção dirigida de que `Settle` é a **única** entrada autorizada a animar posição, e que essa lista tem um elemento (FR-010, contracts/motion-catalog.md §3)
 
 **Checkpoint**: a escala é a origem única e está trancada por lint e por teste; o catálogo
 tem cinco entradas e o portão sabe quais são. `npm run lint`, `npm run typecheck` e
@@ -112,18 +112,18 @@ etapa nova.
 
 > Escrever **antes** da implementação e conferir que falham.
 
-- [ ] T019 [P] [US1] Criar `tests/unit/step-direction.spec.ts` cobrindo todo par de `WIZARD_STEPS`: avanço devolve `1`, retorno `-1`, etapa igual `0`, e `from` nulo `0` (FR-022, FR-024, data-model.md §3)
-- [ ] T020 [P] [US1] Criar `tests/components/step-transition.spec.tsx` afirmando: o foco chega ao título no mesmo quadro; a árvore que sai tem `inert` e `aria-hidden`; existe **um único** `aria-current="step"` durante a transição; a primeira montagem não anima; sob movimento reduzido a etapa entra em um quadro (FR-016, FR-017, FR-024, SC-008, SC-010)
-- [ ] T021 [P] [US1] Criar `tests/components/service-phases.spec.tsx` afirmando que percorrer `connect → estimate → search → review → creating → done` **não** produz transição de tela alguma (FR-021a, SC-016)
+- [X] T019 [P] [US1] Criar `tests/unit/step-direction.spec.ts` cobrindo todo par de `WIZARD_STEPS`: avanço devolve `1`, retorno `-1`, etapa igual `0`, e `from` nulo `0` (FR-022, FR-024, data-model.md §3)
+- [X] T020 [P] [US1] Criar `tests/components/step-transition.spec.tsx` afirmando: o foco chega ao título no mesmo quadro; a árvore que sai tem `inert` e `aria-hidden`; existe **um único** `aria-current="step"` durante a transição; a primeira montagem não anima; sob movimento reduzido a etapa entra em um quadro (FR-016, FR-017, FR-024, SC-008, SC-010)
+- [X] T021 [P] [US1] Criar `tests/components/service-phases.spec.tsx` afirmando que percorrer `connect → estimate → search → review → creating → done` **não** produz transição de tela alguma (FR-021a, SC-016)
 
 ### Implementação da US1
 
-- [ ] T022 [US1] Criar `src/domain/rail/stepDirection.ts` como função pura sobre `WIZARD_STEPS` de `src/domain/types.ts`, sem duplicar a lista, sem DOM e sem relógio (FR-022, Princípio III)
-- [ ] T023 [US1] Criar `src/ui/motion/StepTransition.tsx` com `AnimatePresence custom` + `usePresenceData()`, o nó que sai em `position: absolute` num envoltório próprio marcado `inert` e `aria-hidden`, `initial={false}`, e `useReducedMotion()` devolvendo a etapa que entra em um quadro — **sem** `mode="wait"` e **sem** `mode="popLayout"`, pelos motivos de `contracts/surfaces.md` §1.1; atualiza barril, tabela do contrato e `motion-catalog.spec.ts` no mesmo commit, incluindo estender à primitiva nova o bloco `PROIBIDAS` herdado de `motion-surface.spec.ts` (FR-009, FR-016, FR-017, FR-021, FR-022, FR-024, research.md §R6)
-- [ ] T024 [US1] Envolver **apenas** `<Screen />` em `StepTransition` dentro de `src/app/Wizard.tsx`, guardando a etapa anterior num `ref` local — sem estado novo no store e sem tocar `draftPersistence` (FR-021, FR-021a, data-model.md §3)
-- [ ] T025 [US1] Manter `DraftRecoveryBanner` **fora** do bloco que transita em `src/app/Wizard.tsx` e dar a ele entrada própria com `Stagger` no papel `enter` em `src/app/DraftRecoveryBanner.tsx`, deixando o descartar imediato (FR-021b, contracts/surfaces.md §1.5)
-- [ ] T026 [US1] Em `src/app/StepRail.tsx`, trocar o conteúdo do disco (numeral ↔ glifo de conclusão) por `CrossFade` e aplicar o degrau `quick` ao preenchimento e ao contorno, preservando a distinção por **forma** da tabela `DISC_CLASSES` (FR-025, contracts/surfaces.md §2)
-- [ ] T027 [US1] Criar `e2e/motion.spec.ts` com o bloco da US1: caixas delimitadoras da barra superior, da trilha e da barra de ação idênticas em todos os quadros da transição; a altura da coluna principal indo da altura da etapa que sai à da que entra de forma **monotônica**, sem passar pela soma das duas nem por zero; e `Tab` durante a transição alcançando só a etapa nova (FR-021, FR-023, SC-007, SC-008)
+- [X] T022 [US1] Criar `src/domain/rail/stepDirection.ts` como função pura sobre `WIZARD_STEPS` de `src/domain/types.ts`, sem duplicar a lista, sem DOM e sem relógio (FR-022, Princípio III)
+- [X] T023 [US1] Criar `src/ui/motion/StepTransition.tsx` com `AnimatePresence custom` + `usePresenceData()`, o nó que sai em `position: absolute` num envoltório próprio marcado `inert` e `aria-hidden`, `initial={false}`, e `useReducedMotion()` devolvendo a etapa que entra em um quadro — **sem** `mode="wait"` e **sem** `mode="popLayout"`, pelos motivos de `contracts/surfaces.md` §1.1; atualiza barril, tabela do contrato e `motion-catalog.spec.ts` no mesmo commit, incluindo estender à primitiva nova o bloco `PROIBIDAS` herdado de `motion-surface.spec.ts` (FR-009, FR-016, FR-017, FR-021, FR-022, FR-024, research.md §R6)
+- [X] T024 [US1] Envolver **apenas** `<Screen />` em `StepTransition` dentro de `src/app/Wizard.tsx`, guardando a etapa anterior num `ref` local — sem estado novo no store e sem tocar `draftPersistence` (FR-021, FR-021a, data-model.md §3)
+- [X] T025 [US1] Manter `DraftRecoveryBanner` **fora** do bloco que transita em `src/app/Wizard.tsx` e dar a ele entrada própria com `Stagger` no papel `enter` em `src/app/DraftRecoveryBanner.tsx`, deixando o descartar imediato (FR-021b, contracts/surfaces.md §1.5)
+- [X] T026 [US1] Em `src/app/StepRail.tsx`, trocar o conteúdo do disco (numeral ↔ glifo de conclusão) por `CrossFade` e aplicar o degrau `quick` ao preenchimento e ao contorno, preservando a distinção por **forma** da tabela `DISC_CLASSES` (FR-025, contracts/surfaces.md §2)
+- [X] T027 [US1] Criar `e2e/motion.spec.ts` com o bloco da US1: caixas delimitadoras da barra superior, da trilha e da barra de ação idênticas em todos os quadros da transição; a altura da coluna principal indo da altura da etapa que sai à da que entra de forma **monotônica**, sem passar pela soma das duas nem por zero; e `Tab` durante a transição alcançando só a etapa nova (FR-021, FR-023, SC-007, SC-008)
 
 **Checkpoint**: US1 funciona sozinha e é demonstrável. **É o MVP** — a fechadura nova, a
 escala e a superfície que todo uso do produto atravessa.
@@ -141,14 +141,37 @@ as de baixo assumem a nova posição.
 
 ### Testes da US2
 
-- [ ] T028 [P] [US2] Criar `tests/components/review-motion.spec.tsx` afirmando: durante a fase `search` nenhuma animação nova está em curso; ao chegar `search_done` as linhas entram escalonadas; numa execução **retomada**, as linhas já em cena antes da busca permanecem imóveis (FR-026, FR-026a, SC-015)
+- [X] T028 [P] [US2] Criar `tests/components/review-motion.spec.tsx` afirmando: durante a fase `search` nenhuma animação nova está em curso; ao chegar `search_done` as linhas entram escalonadas; numa execução **retomada**, as linhas já em cena antes da busca permanecem imóveis (FR-026, FR-026a, SC-015)
 
 ### Implementação da US2
 
-- [ ] T029 [US2] Envolver a `<ul>` de `src/features/review/ReviewScreen.tsx` em `Stagger` no papel `enter`, com a chave de identidade continuando a ser `item.line.id` (FR-026, contracts/surfaces.md §3.1)
-- [ ] T030 [US2] Envolver a mesma lista em `Settle` com `idle={search.running === false}`, passando o portão explicitamente mesmo sendo sempre verdadeiro na revisão — é o que o mantém auditável (FR-010a, FR-027)
+- [X] T029 [US2] Envolver a `<ul>` de `src/features/review/ReviewScreen.tsx` em `Stagger` no papel `enter`, com a chave de identidade continuando a ser `item.line.id` (FR-026, contracts/surfaces.md §3.1)
+- [X] T030 [US2] Envolver a mesma lista em `Settle` com `idle={search.running === false}`, passando o portão explicitamente mesmo sendo sempre verdadeiro na revisão — é o que o mantém auditável (FR-010a, FR-027)
 - [ ] T031 [US2] Animar a saída da linha descartada em `src/features/review/MatchRow.tsx`, em `opacity`, sem tocar a ordem por `line.index` que a 001 fixou (FR-027, contracts/surfaces.md §3.2)
-- [ ] T032 [US2] Acrescentar ao `e2e/motion.spec.ts` o bloco da US2: cento e vinte linhas entram com a última dentro do teto, e a contagem anunciada pelas regiões vivas de `SearchProgress` é idêntica à de hoje (FR-017, SC-009)
+
+  > **Não implementada: a premissa colide com o código.** `discardItem`
+  > (`src/store/itemsSlice.ts`) marca `status: 'discarded'` e é **reversível** por
+  > `restoreItem` — a linha **não sai da lista** e o nó **não desmonta**. Não há
+  > saída a animar, e `AnimatePresence` em volta de uma lista da qual nada sai
+  > seria maquinário inalcançável.
+  >
+  > A **segunda metade** do FR-027 — "as linhas abaixo assumem a nova posição com
+  > movimento, sem salto" — está entregue por T030: descartar muda a altura da
+  > linha (o selo e o rótulo do botão trocam), e `Settle` acomoda o que vem
+  > abaixo.
+  >
+  > A primeira metade exige decisão do autor, e é o mesmo tipo de colisão que a
+  > Fase 0 já resolveu **corrigindo a spec** em R1 (a CSP não bloqueia a
+  > biblioteca) e R2 (as linhas não chegam em fluxo). As duas saídas são:
+  > corrigir o FR-027 para descrever o descarte reversível que existe, ou mudar o
+  > comportamento do descarte — que é mudança de produto, fora do escopo desta
+  > feature.
+  >
+  > **Recuar a linha descartada em `opacity` não foi feito por conta própria**
+  > porque opacidade sobre texto é regressão de contraste que nem
+  > `contrast.spec.ts` (que mede tokens) nem o axe (que não resolve opacidade)
+  > pegariam — introduzir isso em silêncio contrariaria o FR-020.
+- [X] T032 [US2] Acrescentar ao `e2e/motion.spec.ts` o bloco da US2: cento e vinte linhas entram com a última dentro do teto, e a contagem anunciada pelas regiões vivas de `SearchProgress` é idêntica à de hoje (FR-017, SC-009)
 
 **Checkpoint**: US1 e US2 funcionam, cada uma verificável sozinha.
 
@@ -166,13 +189,13 @@ por causa dela.
 
 ### Testes da US3
 
-- [ ] T033 [P] [US3] Criar `tests/components/destination-card.spec.tsx` afirmando que marcar e desmarcar um cartão **não** aplica transformação alguma — nem escala, nem deslocamento — e que o estado permanece legível por forma (FR-031, contracts/surfaces.md §4.1)
+- [X] T033 [P] [US3] Criar `tests/components/destination-card.spec.tsx` afirmando que marcar e desmarcar um cartão **não** aplica transformação alguma — nem escala, nem deslocamento — e que o estado permanece legível por forma (FR-031, contracts/surfaces.md §4.1)
 
 ### Implementação da US3
 
-- [ ] T034 [P] [US3] Aplicar transição de cor no degrau `quick` em `src/features/connect/ConnectionChip.tsx`, mantendo o estado legível por texto e por forma, com `motion-reduce:transition-none` como os outros componentes já fazem (FR-029, FR-015)
-- [ ] T035 [P] [US3] Aplicar transição de cor no degrau `quick` a preenchimento, contorno e caixa de marcação em `src/features/destinations/DestinationSelector.tsx` — **sem** transformação (FR-031)
-- [ ] T036 [US3] Envolver as entradas de `src/features/destinations/ExecutionOrderPanel.tsx` em `Settle`, com o portão derivado de "nenhuma execução em curso" (FR-030, FR-010a, contracts/surfaces.md §4)
+- [X] T034 [P] [US3] Aplicar transição de cor no degrau `quick` em `src/features/connect/ConnectionChip.tsx`, mantendo o estado legível por texto e por forma, com `motion-reduce:transition-none` como os outros componentes já fazem (FR-029, FR-015)
+- [X] T035 [P] [US3] Aplicar transição de cor no degrau `quick` a preenchimento, contorno e caixa de marcação em `src/features/destinations/DestinationSelector.tsx` — **sem** transformação (FR-031)
+- [X] T036 [US3] Envolver as entradas de `src/features/destinations/ExecutionOrderPanel.tsx` em `Settle`, com o portão derivado de "nenhuma execução em curso" (FR-030, FR-010a, contracts/surfaces.md §4)
 
 **Checkpoint**: as três histórias entregues até aqui continuam verificáveis em separado.
 
@@ -188,13 +211,13 @@ já postos; ativar movimento reduzido e vê-los estáticos desde o primeiro quad
 
 ### Testes da US4
 
-- [ ] T037 [P] [US4] Criar `tests/components/stickers.spec.tsx` afirmando: a primeira montagem encena; a segunda mostra os adesivos já postos; sob movimento reduzido nenhuma etapa intermediária existe; a camada continua `aria-hidden` (FR-032, FR-032a, FR-014, SC-017)
+- [X] T037 [P] [US4] Criar `tests/components/stickers.spec.tsx` afirmando: a primeira montagem encena; a segunda mostra os adesivos já postos; sob movimento reduzido nenhuma etapa intermediária existe; a camada continua `aria-hidden` (FR-032, FR-032a, FR-014, SC-017)
 
 ### Implementação da US4
 
-- [ ] T038 [US4] Envolver os onze `<img>` de `src/ui/Stickers.tsx` em `Stagger` no papel `decor`, preservando integralmente a tabela `STICKERS` — posição, largura e a inclinação `rotate`, que é **geometria estática** e não pode ser alterada pela escala animada (FR-032, contracts/surfaces.md §5.1)
-- [ ] T039 [US4] Acrescentar em `src/ui/Stickers.tsx` o sinalizador de encenação como valor de módulo em memória, nunca no store e nunca persistido, de modo que só a primeira aparição da sessão anime (FR-032a, data-model.md §4.1)
-- [ ] T040 [US4] Acrescentar ao `e2e/motion.spec.ts` a asserção de que a faixa de adesivos não desloca nenhum conteúdo acima dela em nenhum quadro (FR-033)
+- [X] T038 [US4] Envolver os onze `<img>` de `src/ui/Stickers.tsx` em `Stagger` no papel `decor`, preservando integralmente a tabela `STICKERS` — posição, largura e a inclinação `rotate`, que é **geometria estática** e não pode ser alterada pela escala animada (FR-032, contracts/surfaces.md §5.1)
+- [X] T039 [US4] Acrescentar em `src/ui/Stickers.tsx` o sinalizador de encenação como valor de módulo em memória, nunca no store e nunca persistido, de modo que só a primeira aparição da sessão anime (FR-032a, data-model.md §4.1)
+- [X] T040 [US4] Acrescentar ao `e2e/motion.spec.ts` a asserção de que a faixa de adesivos não desloca nenhum conteúdo acima dela em nenhum quadro (FR-033)
 
 **Checkpoint**: as quatro histórias entregues, cada uma verificável sozinha.
 
@@ -205,16 +228,16 @@ já postos; ativar movimento reduzido e vê-los estáticos desde o primeiro quad
 **Propósito**: fechar os portões que atravessam histórias e acertar a documentação — que
 neste projeto **descreve** o código, e cuja divergência se resolve corrigindo o guia.
 
-- [ ] T041 [P] Reescrever `docs/style-guide.md` §Movimento: a contagem "exatamente três" sai, entram o catálogo de seis, a escala de tempo com origem única, a fronteira da animação de posição e o registro de que movimento contínuo continua significando trabalho em curso (FR-039)
-- [ ] T042 [P] Registrar em `specs/009-creating-loading-state/contracts/motion.md` que os §1 e §3 foram substituídos por `010/contracts/motion-catalog.md`, sem que os três movimentos da 009 mudem de comportamento (FR-040)
-- [ ] T043 [P] Corrigir o comentário de `src/features/review/SearchProgress.tsx` que afirma que a CSP bloquearia uma largura inline: a razão que sustenta o `<progress>` nativo é a acessibilidade (FR-028, research.md §R1)
-- [ ] T044 Completar `e2e/motion.spec.ts` com os cenários transversais: tela em repouso sem animação em curso (FR-034, SC-014); nenhuma rolagem horizontal no projeto `narrow-375` (SC-012); avançar e voltar no meio da transição resolvendo no estado final sem nó preso (FR-018, FR-018a, SC-013); a reautorização abrindo durante uma transição e ficando operável de imediato (FR-036)
-- [ ] T045 Estender `tests/a11y/steps.spec.tsx` às superfícies animadas, nos dois temas, exigindo nenhuma violação séria ou crítica (FR-020, SC-011)
-- [ ] T046 Estender a asserção de `@media (forced-colors: active)` de `tests/components/shell.spec.tsx` às superfícies animadas, afirmando que **nenhum bloco novo** foi acrescentado para preservar adesivo ou barra de esqueleto — o modo remove decoração e a feature não a traz de volta (FR-019)
-- [ ] T047 Rodar o projeto `reduced-motion` inteiro e conferir que a contagem de textos exibidos e de controles alcançáveis é idêntica à do projeto `desktop`, tela a tela (FR-015, SC-004, SC-005)
-- [ ] T048 Confirmar que `tests/unit/throughput.spec.ts`, `tests/unit/contrast.spec.ts`, `tests/unit/no-orphan-tokens.spec.ts` e `tests/unit/no-secrets.spec.ts` passam **sem alteração** — esta feature não toca vazão, cor, token nem rede (FR-012, FR-037, FR-038, SC-006)
-- [ ] T049 Executar o roteiro de `quickstart.md` de ponta a ponta, incluindo o passo 14: `npm run build`, `npm run preview`, e conferir no console que nenhuma violação de CSP é registrada enquanto as animações rodam (research.md §R1)
-- [ ] T050 Portão local completo — `npm run lint`, `npm run typecheck`, `npm test` — e `npm run test:e2e` nos três projetos, obrigatório porque esta feature altera o fluxo do assistente
+- [X] T041 [P] Reescrever `docs/style-guide.md` §Movimento: a contagem "exatamente três" sai, entram o catálogo de seis, a escala de tempo com origem única, a fronteira da animação de posição e o registro de que movimento contínuo continua significando trabalho em curso (FR-039)
+- [X] T042 [P] Registrar em `specs/009-creating-loading-state/contracts/motion.md` que os §1 e §3 foram substituídos por `010/contracts/motion-catalog.md`, sem que os três movimentos da 009 mudem de comportamento (FR-040)
+- [X] T043 [P] Corrigir o comentário de `src/features/review/SearchProgress.tsx` que afirma que a CSP bloquearia uma largura inline: a razão que sustenta o `<progress>` nativo é a acessibilidade (FR-028, research.md §R1)
+- [X] T044 Completar `e2e/motion.spec.ts` com os cenários transversais: tela em repouso sem animação em curso (FR-034, SC-014); nenhuma rolagem horizontal no projeto `narrow-375` (SC-012); avançar e voltar no meio da transição resolvendo no estado final sem nó preso (FR-018, FR-018a, SC-013); a reautorização abrindo durante uma transição e ficando operável de imediato (FR-036)
+- [X] T045 Estender `tests/a11y/steps.spec.tsx` às superfícies animadas, nos dois temas, exigindo nenhuma violação séria ou crítica (FR-020, SC-011)
+- [X] T046 Estender a asserção de `@media (forced-colors: active)` de `tests/components/shell.spec.tsx` às superfícies animadas, afirmando que **nenhum bloco novo** foi acrescentado para preservar adesivo ou barra de esqueleto — o modo remove decoração e a feature não a traz de volta (FR-019)
+- [X] T047 Rodar o projeto `reduced-motion` inteiro e conferir que a contagem de textos exibidos e de controles alcançáveis é idêntica à do projeto `desktop`, tela a tela (FR-015, SC-004, SC-005)
+- [X] T048 Confirmar que `tests/unit/throughput.spec.ts`, `tests/unit/contrast.spec.ts`, `tests/unit/no-orphan-tokens.spec.ts` e `tests/unit/no-secrets.spec.ts` passam **sem alteração** — esta feature não toca vazão, cor, token nem rede (FR-012, FR-037, FR-038, SC-006)
+- [X] T049 Executar o roteiro de `quickstart.md` de ponta a ponta, incluindo o passo 14: `npm run build`, `npm run preview`, e conferir no console que nenhuma violação de CSP é registrada enquanto as animações rodam (research.md §R1)
+- [X] T050 Portão local completo — `npm run lint`, `npm run typecheck`, `npm test` — e `npm run test:e2e` nos três projetos, obrigatório porque esta feature altera o fluxo do assistente
 
 ---
 

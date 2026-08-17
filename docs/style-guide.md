@@ -880,53 +880,177 @@ quem mais depende de estrutura.
 ### Movimento
 
 Até a 008 este parágrafo dizia que o sistema "quase não tem movimento" e que "o resto é
-instantâneo". **A 009 tornou isso falso**, e o guia descreve o código: a fase de criação de
-playlist é a primeira superfície com movimento contínuo.
+instantâneo". **A 009 tornou isso falso** no cartão de criação, e **a 010 levou movimento ao fluxo
+inteiro.** O guia descreve o código, e hoje o código tem um sistema de movimento — não três
+animações isoladas.
 
-O que permanece: conector da trilha e transição de estado dos degraus em **200ms**, e o resto
-instantâneo.
+#### A escala de tempo é finita, e tem origem única
 
-O que entrou, e é **exatamente três** (009/FR-010b):
+`src/ui/motion/scale.ts` é a origem de **todo** valor de tempo e de curva; o bloco `@theme` de
+`src/styles/index.css` é o espelho, verificado valor a valor por `tests/unit/motion-scale.spec.ts`,
+que falha por divergência **e** por token presente em apenas uma das camadas.
 
-| Movimento | Onde | Propriedade | Duração |
+| Degrau | Valor | Papel |
+| --- | --- | --- |
+| `quick` | 120ms | microinteração de periferia — cor do chip, marcação do cartão, disco da trilha |
+| `base` | **200ms** | o orçamento herdado: conector da trilha, fusão cruzada, troca de etapa, escalonamento |
+| `settle` | 320ms | acomodação de posição, o único momento em que o olho **segue** um objeto |
+| `theme` | 400ms | a fusão da troca de tema, a única mudança que cobre a tela inteira |
+| `spin` | 1000ms | período do giro (009, inalterado) |
+| `pulse` | 1200ms | período da pulsação (009, inalterado) |
+
+`base` não é escolha nova: é o orçamento que este guia já fixava para o conector da trilha antes da
+009. O sistema tem **um** tempo de transição; os outros dois existem porque têm papel que só eles
+atendem — `quick` é mais curto porque periferia acontece longe do olho, e `settle` é mais longo
+porque uma acomodação de posição em 200ms lê como um salto com borrão.
+
+Curvas, três: `standard` (entradas e trocas), `through` (ciclos de ida e volta), `linear`
+(rotação contínua). Uma quarta exige papel declarado que nenhuma das três atenda.
+
+Escalonamento: `atraso(i) = min(i × 40ms, 240ms)`. **O teto é o requisito, não o passo** — sem ele
+a centésima vigésima linha da revisão esperaria 4,8 segundos. Acima do sexto irmão a defasagem
+satura e os seguintes entram juntos, o que é o comportamento certo: o papel do escalonamento é dar
+sequência à leitura das primeiras.
+
+Nenhum valor de tempo é escrito fora da escala. `tp/no-raw-motion-values` recusa literal em
+`duration`/`delay`/`repeatDelay`, literal de curva, e utilitário `duration-*`/`ease-*` fora do
+conjunto emitido. Aqui a regra de lint é a única defesa estrutural: diferente da cor, `duration-350`
+**não** depende de token nenhum — o utilitário funcional do Tailwind acrescenta `ms` a qualquer
+inteiro cru e emite CSS válido em silêncio.
+
+#### O catálogo, e por que a contagem saiu
+
+A 009 afirmava **"exatamente três"**. A 010 afirma **quais são**. A contagem nunca foi a invariante
+— era um proxy barato para ela. A invariante é *toda animação do produto tem nome, papel e passou
+por revisão*, e um número quebra quando um movimento novo entra **com** revisão, sem dizer qual
+mudou. O catálogo é normativo em `specs/010-app-motion-system/contracts/motion-catalog.md` §2 e
+verificado por identidade em `tests/unit/motion-catalog.spec.ts`.
+
+| Primitiva | Papel | Propriedades | Degrau |
 | --- | --- | --- | --- |
-| Giro do glifo de carregamento | Disco do cartão de criação | `transform: rotate` | 1s por volta, linear, infinito |
-| Pulsação das barras de esqueleto | As oito barras da grade | `opacity`, nunca até zero | 1,2s de ida e volta, em fase única |
-| Fusão cruzada esqueleto → resultado | A célula que os dois dividem | `opacity` | **200ms**, o mesmo orçamento do conector |
+| `SpinningDisc` | giro do glifo de carregamento | `rotate` | `spin`, linear, infinito |
+| `PulsingBar` | pulsação das barras de esqueleto | `opacity`, nunca até zero | `pulse`, em fase única |
+| `CrossFade` | troca de conteúdo na mesma célula | `opacity` | `base` |
+| `StepTransition` | troca de etapa, com direção | `opacity`, `x` | `base` |
+| `Stagger` | entrada escalonada com teto | `opacity` + `y` \| `scale` | `base` |
+| `Settle` | acomodação de posição em superfície ociosa | posição, por transformação | `settle` |
 
-**Só `transform` e `opacity`.** Nenhuma outra propriedade é admitida, e o motivo é concreto e não
-higiene abstrata: a tela anima continuamente **enquanto uma requisição está em voo**. Movimento que
-forçasse recálculo de layout a cada quadro competiria com o próprio trabalho que a tela está
-esperando — e o pior caso é o YouTube, cujo lote é de um item e faz uma requisição por faixa.
+**Uma primitiva nova custa quatro edições no mesmo commit**: o arquivo, o barril, a tabela do
+contrato e a asserção de identidade. Não é cerimônia — é a revisão que se quer forçar.
 
-**As três são escritas em JavaScript, com biblioteca.** É uma exceção à simplicidade proporcional,
-registrada no Complexity Tracking de `specs/009-creating-loading-state/plan.md`: as três animações
-são escrevíveis em CSS puro, e essa alternativa é tecnicamente superior. A escolha da ferramenta foi
-do autor do projeto, não da implementação. A mitigação é a fechadura — `src/ui/motion/` é o
-**único** diretório autorizado a importar a biblioteca, exporta exatamente três primitivas, e duas
-verificações independentes falham no dia em que a quarta tentar entrar: a regra de lint
-`tp/no-motion-library-import` e `tests/unit/motion-surface.spec.ts`.
+**Superfície pede papel, nunca configura animação.** Nenhuma primitiva aceita `duration`, `ease`,
+`delay` ou `transition` como prop; quem precisa de tempo próprio vira papel novo. É a mesma
+disciplina de `<Icon role="advance" />`.
 
-**Sob `prefers-reduced-motion`, o interruptor é JavaScript — e a regra de CSS não substitui.**
-A regra global abaixo zera `animation-duration` e `transition-duration` com `!important`, e ela
-**não alcança** a biblioteca: esta anima por WAAPI e por atualização de valor, não por `@keyframes`
-que o CSS possa encurtar. Confiar nela entregaria uma tela que gira e pulsa exatamente para quem
-pediu que não girasse. `<MotionConfig reducedMotion="user">` também não bastaria — a documentação da
-biblioteca é explícita em que essa opção **preserva** a animação de `opacity`, que é justamente o
-que a pulsação do esqueleto faz. Cada uma das três primitivas consulta `useReducedMotion()` e
-devolve o estado final estático.
+`CrossFade` é o caso que prova a disciplina: a 010 o reaproveitou no disco da trilha — numeral ↔
+glifo de conclusão — sem uma linha de mudança, porque ele foi nomeado por papel e não por tela.
 
-Nenhum texto se perde com a supressão: o estado "criação em curso" está escrito em três lugares e
-não depende de movimento em nenhum. `tests/components/creating-card.spec.tsx` mede isso
-literalmente — a contagem de textos exibidos é idêntica com e sem a preferência.
+#### A fronteira da animação de posição
 
-O que **não** anima, e a ausência é o que mantém o sistema legível: nenhuma animação de posição ou
-de dimensão (`layout`, `layoutId`, `height`, `width`, `top`, `left`); nenhuma entrada ou saída
-animada do cartão, que aparece e some em um quadro; e nenhuma animação nas demais fases do ciclo —
-conexão, estimativa, busca e revisão ficam como estavam.
+**Só `transform` e `opacity`**, com uma exceção declarada por nome. O motivo é concreto e não
+higiene abstrata: parte destas telas anima **enquanto uma requisição está em voo**, e o pior caso é
+o YouTube, cujo lote é de um item e faz uma requisição por faixa.
 
-A regra global de `prefers-reduced-motion` cobre também a decoração, sem que cada componente repita
-a consulta.
+`Settle` é a **única** entrada autorizada a animar posição, e o teste afirma que essa lista tem um
+elemento. Ele o faz por transformação — nunca por `top`/`left` —, mas **mede** o layout para
+calcular o delta, e é a medição que custa. Por isso ele exige a prop `idle: boolean`, **sem valor
+padrão**: com `false` ele não anima **e não mede**. Um padrão `true` faria o esquecimento abrir o
+portão, e o modo de falha de um portão deve ser fechar.
+
+A 009 proibia animação de posição categoricamente. A proibição não foi afrouxada: foi substituída
+por uma fronteira com portão verificável, e o que se preserva é a **razão** dela.
+
+#### A troca de tema funde, e a fusão é de vista
+
+Trocar de tema atravessa uma **transição de vista** do navegador: a tela é
+fotografada antes, a mudança é aplicada, e a foto velha funde na nova no degrau `theme`.
+
+**Por que não uma `transition-colors` global.** Ela alcançaria o que é cor e nada além. O
+tratamento por tema dos onze adesivos, o véu da fotografia do painel e a textura do fundo
+ambiente trocam por regra de `[data-theme]`, não por propriedade animável — e fundir metade
+da tela enquanto a outra salta é pior do que a troca seca. A transição de vista funde o
+resultado renderizado, o que inclui imagem, filtro e mistura.
+
+Isso só é legítimo porque a árvore de zonas e componentes é **idêntica** entre os temas e a
+única divergência autorizada é cromática: nada entra nem sai de cena, e a fusão é pura cor.
+
+O que a fusão custa, dito com precisão: a API fotografa o estado atual e aplica a mudança no
+**quadro seguinte**, de modo que `data-theme` troca um quadro depois do clique. Não é visível
+— a fotografia já está na tela — mas é observável por quem lê o DOM logo após acionar o
+controle. **O estado do store continua síncrono**, e é dele que o `ThemeControl` tira qual
+segmento está selecionado. A página segue interativa: a camada de pseudo-elementos não recebe
+ponteiro. Navegador sem suporte à API recebe a troca seca de sempre, sem perda de informação.
+
+A **primeira** aplicação do tema não funde: `public/theme-boot.js` já escreveu o atributo
+antes da primeira pintura, e confirmar o que já está na tela não é uma troca — é o mesmo
+princípio do `initial={false}` da troca de etapa.
+
+Sob `prefers-reduced-motion` a fusão não acontece, e a supressão é **dupla de propósito**:
+`src/ui/motion/themeTransition.ts` nem chama a API, e `index.css` zera a animação dos
+pseudo-elementos. A regra global usa o seletor universal, e `*` não casa pseudo-elemento —
+sem a segunda metade, esta seria a única animação do produto fora do alcance da preferência.
+
+#### Movimento contínuo continua significando trabalho em curso
+
+Nada anima em repouso. O fundo ambiente não se move, os adesivos assentam uma vez por sessão e
+ficam imóveis, e nenhuma superfície ganhou movimento ocioso. É o que mantém o giro e a pulsação
+legíveis como "isto está acontecendo agora" em vez de enfeite.
+
+#### O que **não** anima, e a ausência é decisão
+
+- **Entrada e saída de diálogo.** O elemento nativo abre por chamada imperativa e vive na camada de
+  topo; animar a saída exigiria segurá-lo em cena depois do fechamento, e o diálogo de confirmação
+  é o que segura o Princípio V.
+- **As fases do ciclo de serviço** — conexão, estimativa, busca, revisão, criação, conclusão. A
+  razão é semântica: várias trocam **sozinhas**, e uma transição com direção comunica avanço
+  comandado. Aplicá-la a uma troca autônoma mentiria sobre quem agiu.
+- **A barra de progresso da busca.** É o `<progress>` nativo, escolhido por acessibilidade, e o
+  `value` já avança sozinho.
+- **O cartão de destino.** Cor sim, transformação não: ele é uma área clicável grande e contém texto
+  que a pessoa está lendo no momento em que clica.
+- **O fundo ambiente e a grade de números do resultado.**
+
+#### A biblioteca entra por um ponto
+
+**O movimento é escrito em JavaScript, com biblioteca.** É uma exceção à simplicidade proporcional,
+registrada no Complexity Tracking de `specs/009-creating-loading-state/plan.md` e **ampliada** no de
+`specs/010-app-motion-system/plan.md`: o alcance foi de três usos para o fluxo inteiro. A escolha da
+ferramenta foi do autor do projeto, não da implementação.
+
+A mitigação é a fechadura: `src/ui/motion/` é o **único** diretório autorizado a importar a
+biblioteca, o barril não reexporta nada dela, e duas verificações independentes falham no dia em que
+um movimento tentar entrar calado — `tp/no-motion-library-import` e
+`tests/unit/motion-catalog.spec.ts`. A redundância é deliberada: a de lint falha no editor, a de
+teste alcança os `.css` e sobrevive a uma supressão.
+
+#### Sob `prefers-reduced-motion`, o interruptor é JavaScript
+
+A regra global de `index.css` zera `animation-duration` e `transition-duration` com `!important`, e
+ela **não alcança** a biblioteca: esta anima por WAAPI e por atualização de valor, não por
+`@keyframes` que o CSS possa encurtar. `<MotionConfig reducedMotion="user">` também não bastaria —
+ela **preserva** a animação de `opacity`, que é justamente o que a pulsação e o escalonamento fazem.
+
+**Cada uma das seis primitivas consulta `useReducedMotion()` e devolve o estado final estático.**
+
+| Primitiva | Estado final sob movimento reduzido |
+| --- | --- |
+| `SpinningDisc` | glifo parado |
+| `PulsingBar` | barra cheia |
+| `CrossFade` | o conteúdo real assim que existe |
+| `StepTransition` | a etapa que entra, em um quadro, opaca e sem deslocamento |
+| `Stagger` | todos os irmãos visíveis, sem defasagem |
+| `Settle` | a nova posição, em um quadro |
+
+Nenhum texto se perde com a supressão, e nenhum controle fica inalcançável: a contagem de textos
+exibidos e de controles alcançáveis é **idêntica** com e sem a preferência, tela a tela. O projeto
+Playwright `reduced-motion` exercita o fluxo inteiro, não só o cartão de criação.
+
+Um detalhe de implementação que é decisão: **nenhuma primitiva zera opacidade antes de animar.** O
+estado em repouso do DOM já é o estado final, e a animação é puramente aditiva — de modo que uma
+animação que não chegue a rodar deixa o conteúdo visível, e não invisível para sempre.
+
+A regra global de `prefers-reduced-motion` cobre também a decoração em CSS, sem que cada componente
+repita a consulta.
 
 ### Dois temas, sempre
 

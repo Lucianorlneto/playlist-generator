@@ -21,6 +21,7 @@ Normativa. Alterá-la aqui sem alterar o código, ou o contrário, quebra
 | `quick` | 120ms | microinteração de periferia | cor do chip de conexão, marcação do cartão de destino, preenchimento do disco da trilha |
 | `base` | **200ms** | o orçamento herdado do sistema | conector da trilha, `CrossFade`, `StepTransition`, `Stagger` |
 | `settle` | 320ms | acomodação de posição | `Settle` |
+| `theme` | 400ms | a fusão da troca de tema | `::view-transition-*(root)` |
 | `spin` | 1000ms | período do giro | `SpinningDisc` |
 | `pulse` | 1200ms | período da pulsação | `PulsingBar` |
 
@@ -33,6 +34,14 @@ atendem:
   de `base` a mudança de um chip no canto oposto termina depois que o olhar já passou.
 - `settle` é mais longo porque é o único momento em que o olho precisa **seguir** um objeto
   de um lugar a outro. Uma acomodação de posição em 200ms lê como um salto com borrão.
+- `theme` é o mais longo porque é o único que muda a **tela inteira de uma vez**. Os outros
+  movem uma zona; a troca de tema recolore cada superfície, cada filete e cada tratamento de
+  imagem no mesmo quadro. A duração é proporcional à **quantidade** de mudança, não à
+  distância percorrida — em `base` a troca de tema lê como um piscar do monitor.
+
+  **Ele é um degrau, e não um valor solto, justamente por isto**: um papel novo que nenhum
+  dos existentes atende é a única forma prevista de a escala crescer, e o preço dela é esta
+  linha, a do código, a do CSS e a do teste.
 
 `spin` e `pulse` **não são durações de transição** — são períodos de ciclo, vêm da 009 sem
 alteração, e nenhuma transição pode usá-los.
