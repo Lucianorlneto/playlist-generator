@@ -8,10 +8,13 @@
  *   é emitido no CSS — falha que não aparece em desenvolvimento e só se manifesta
  *   no build.
  * - `no-raw-visual-values`: todo valor visual vem da camada de tokens.
+ * - `no-raw-motion-values`: o par da anterior para o **tempo**. Todo valor de
+ *   duração, atraso e curva vem de `src/ui/motion/scale.ts` (010/FR-008).
  * - `no-icon-library-import`: uma superfície pede um **papel**, nunca um
  *   componente da biblioteca de ícones (007/FR-056, FR-059, SC-016).
- * - `no-motion-library-import`: o movimento autorizado é exatamente três, e a
- *   biblioteca entra por um único diretório (009/FR-010b).
+ * - `no-motion-library-import`: o movimento autorizado é o catálogo de
+ *   `010/contracts/motion-catalog.md`, e a biblioteca entra por um único
+ *   diretório (010/FR-002, FR-003).
  *
  * Todas compartilham o mesmo motivo de existir: são erros que **não falham**.
  * O TypeScript não reclama de uma classe que o Tailwind não emitiu, e o build
@@ -371,13 +374,18 @@ const noIconLibraryImport = {
 
 /**
  * O único **diretório** autorizado a importar a biblioteca de movimento
- * (009/FR-010b, 009/contracts/motion.md §1).
+ * (010/FR-002, FR-003; 010/contracts/motion-catalog.md §1).
  *
- * Diretório, e não arquivo como em `ICON_MAP_PATH`, porque os três movimentos
- * são três componentes e um barril — o mapa de ícones cabia num arquivo, o de
- * movimento não. A fechadura é a mesma e pelo mesmo motivo: o FR-010b diz que o
- * movimento autorizado é "exatamente três", e sem um ponto único de entrada essa
- * frase é prosa.
+ * Diretório, e não arquivo como em `ICON_MAP_PATH`, porque cada movimento é um
+ * componente próprio, e a eles se soma a escala de tempo e o barril — o mapa de
+ * ícones cabia num arquivo, o de movimento não.
+ *
+ * **A 009 protegia uma contagem; esta regra protege o ponto de entrada.** O que
+ * substitui o "exatamente três" é o catálogo nomeado de
+ * `010/contracts/motion-catalog.md` §2, verificado por identidade em
+ * `tests/unit/motion-catalog.spec.ts`. Uma contagem quebrava quando um movimento
+ * novo entrava **com** revisão e não dizia qual sumiu quando quebrava; a
+ * identidade falha exatamente onde precisa e nomeia o culpado.
  *
  * Caminho relativo à raiz, com barra normalizada — o `filename` que o ESLint
  * entrega é absoluto e usa o separador do sistema.
@@ -389,14 +397,14 @@ const noMotionLibraryImport = {
     type: 'problem',
     docs: {
       description:
-        'A biblioteca de movimento entra por src/ui/motion/, que exporta exatamente três primitivas (009/FR-010b, SC-011).',
+        'A biblioteca de movimento entra por src/ui/motion/, que exporta o catálogo de 010/contracts/motion-catalog.md §2 (010/FR-002, FR-003, SC-001).',
     },
     schema: [],
     messages: {
       outsideDirectory:
-        'Importação de "{{source}}" fora de src/ui/motion/. O movimento autorizado é **exatamente três** — `SpinningDisc`, `PulsingBar` e `CrossFade` — e a superfície pede a primitiva, nunca a biblioteca. Autorizar um quarto movimento custa editar esta regra, que é a revisão que se quer forçar (009/FR-010b, 009/contracts/motion.md §1).',
+        'Importação de "{{source}}" fora de src/ui/motion/. O movimento autorizado é o **catálogo** de 010/contracts/motion-catalog.md §2, e a superfície pede a primitiva pelo papel dela, nunca a biblioteca. Acrescentar um movimento custa quatro edições no mesmo commit — o arquivo, o barril, a tabela do contrato e tests/unit/motion-catalog.spec.ts —, e é essa revisão que se quer forçar (010/FR-002).',
       framerAlias:
-        'Importação de "{{source}}". `framer-motion` é o nome anterior da mesma biblioteca e só existe aqui como dependência transitiva de `motion` — importá-lo contorna a fechadura sem que a contagem de três primitivas mude. O pacote deste projeto é `motion`, e o ponto de entrada é src/ui/motion/ (009/contracts/motion.md §1).',
+        'Importação de "{{source}}". `framer-motion` é o nome anterior da mesma biblioteca e só existe aqui como dependência transitiva de `motion` — importá-lo contorna a fechadura sem que o catálogo mude, e produz duas cópias no artefato, com um `useReducedMotion` de cada uma. O pacote deste projeto é `motion`, e o ponto de entrada é src/ui/motion/ (010/contracts/motion-catalog.md §1).',
     },
   },
   create(context) {
@@ -446,11 +454,138 @@ const noMotionLibraryImport = {
   },
 };
 
+/**
+ * O **único** arquivo autorizado a escrever valor de tempo ou de curva
+ * (010/FR-008, 010/contracts/motion-scale.md §3).
+ *
+ * Nem as próprias primitivas são isentas: elas importam da escala como qualquer
+ * outro consumidor. A isenção é da **origem**, não de quem está perto dela.
+ *
+ * Caminho relativo à raiz, com barra normalizada — o `filename` que o ESLint
+ * entrega é absoluto e usa o separador do sistema.
+ */
+const MOTION_SCALE_PATH = 'src/ui/motion/scale.ts';
+
+/** Os degraus que o `@theme` de `src/styles/index.css` emite. */
+const EMITTED_DURATIONS = '(?:quick|base|settle|spin|pulse)';
+const EMITTED_EASINGS = '(?:standard|through|linear)';
+
+/**
+ * As chaves de `transition` cujo valor é tempo. `repeatDelay` entra porque um
+ * ciclo com pausa entre voltas é tão parte da cadência quanto a volta.
+ */
+const TIME_KEYS = new Set(['duration', 'delay', 'repeatDelay']);
+
+const RAW_MOTION_PATTERNS = [
+  {
+    messageId: 'durationUtility',
+    pattern: new RegExp(`\\b${VARIANTS}duration-(?!${EMITTED_DURATIONS}\\b)[^\\s'"\`]+`, 'u'),
+  },
+  {
+    messageId: 'easeUtility',
+    pattern: new RegExp(`\\b${VARIANTS}ease-(?!${EMITTED_EASINGS}\\b)[^\\s'"\`]+`, 'u'),
+  },
+];
+
+const noRawMotionValues = {
+  meta: {
+    type: 'problem',
+    docs: {
+      description:
+        'Todo valor de tempo e de curva vem de src/ui/motion/scale.ts; valor avulso é proibido (010/FR-006, FR-008, SC-003).',
+    },
+    schema: [],
+    messages: {
+      rawTime:
+        'Valor de tempo literal em "{{key}}". Um degrau não declarado nasce exatamente assim — `{{key}}: {{value}}` gera animação válida, passa no typecheck e passa no build, e só um par de olhos numa revisão perceberia que o sistema ganhou um sexto tempo. Use um degrau de `DURACAO` em src/ui/motion/scale.ts, ou declare um papel novo lá (010/FR-006, FR-008).',
+      rawEase:
+        'Curva literal em "ease". A escala tem três — `standard` para entradas e trocas, `through` para ciclos de ida e volta, `linear` para rotação contínua —, e uma quarta exige papel declarado que nenhuma delas atenda. Use `CURVA` de src/ui/motion/scale.ts (010/contracts/motion-scale.md §1.3).',
+      durationUtility:
+        'O utilitário "{{utility}}" está fora da escala. Diferente da cor, aqui **nenhum reset alcança o caminho**: o utilitário funcional do Tailwind acrescenta `ms` a qualquer inteiro cru, e `duration-350` emite CSS válido em silêncio. Os degraus emitidos são `duration-quick`, `duration-base`, `duration-settle`, `duration-spin` e `duration-pulse` (010/FR-008).',
+      easeUtility:
+        'O utilitário "{{utility}}" está fora da escala. As curvas emitidas são `ease-standard`, `ease-through` e `ease-linear`; `ease-in`, `ease-out` e `ease-in-out` foram derrubados do tema de propósito, porque são de outra linhagem — o `--ease-out` do Tailwind é `cubic-bezier(0, 0, 0.2, 1)` e não o `easeOut` que a 009 mediu (010/FR-008).',
+    },
+  },
+  create(context) {
+    const filename = (context.filename ?? context.getFilename()).replaceAll('\\', '/');
+    if (filename.endsWith(MOTION_SCALE_PATH)) return {};
+
+    /** O nome de uma chave de objeto, literal ou identificador. */
+    function keyName(node) {
+      if (node.computed) return null;
+      if (node.key.type === 'Identifier') return node.key.name;
+      if (node.key.type === 'Literal' && typeof node.key.value === 'string') return node.key.value;
+      return null;
+    }
+
+    function isNumericLiteral(node) {
+      if (node.type === 'Literal') return typeof node.value === 'number';
+      // `delay: -0.1` chega como negação unária, não como literal negativo.
+      return node.type === 'UnaryExpression' && node.operator === '-'
+        ? isNumericLiteral(node.argument)
+        : false;
+    }
+
+    /**
+     * A varredura de classes é sobre **todo literal de string**, e não só sobre
+     * `className` — a mesma razão de `no-raw-visual-values`: as variantes vivem
+     * em mapas de literais no topo do módulo, que é a convenção que
+     * `no-dynamic-classname` obriga.
+     */
+    function inspectString(node, value) {
+      for (const { messageId, pattern } of RAW_MOTION_PATTERNS) {
+        const match = pattern.exec(value);
+        if (match === null) continue;
+        context.report({ node, messageId, data: { utility: match[0] } });
+        return;
+      }
+    }
+
+    return {
+      Property(node) {
+        const name = keyName(node);
+        if (name === null) return;
+
+        if (TIME_KEYS.has(name) && isNumericLiteral(node.value)) {
+          context.report({
+            node,
+            messageId: 'rawTime',
+            data: { key: name, value: context.sourceCode.getText(node.value) },
+          });
+          return;
+        }
+
+        if (name !== 'ease') return;
+        /*
+          As duas formas em que uma curva chega crua: os quatro pontos de
+          controle de um Bézier, e o nome de uma das curvas embutidas da
+          biblioteca. `ease: CURVA.through` é `MemberExpression` e não cai em
+          nenhuma das duas.
+        */
+        const isBezier =
+          node.value.type === 'ArrayExpression' && node.value.elements.every(isNumericLiteral);
+        const isNamed = node.value.type === 'Literal' && typeof node.value.value === 'string';
+        if (isBezier || isNamed) context.report({ node, messageId: 'rawEase' });
+      },
+      Literal(node) {
+        if (typeof node.value !== 'string') return;
+        if (node.parent?.type === 'ImportDeclaration') return;
+        if (node.parent?.type === 'ExportNamedDeclaration') return;
+        inspectString(node, node.value);
+      },
+      TemplateElement(node) {
+        inspectString(node, node.value.raw);
+      },
+    };
+  },
+};
+
 export default {
   rules: {
     'no-ui-text-literals': noUiTextLiterals,
     'no-dynamic-classname': noDynamicClassName,
     'no-raw-visual-values': noRawVisualValues,
+    'no-raw-motion-values': noRawMotionValues,
     'no-icon-library-import': noIconLibraryImport,
     'no-motion-library-import': noMotionLibraryImport,
   },

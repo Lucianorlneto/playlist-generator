@@ -1,5 +1,7 @@
 import { motion, useReducedMotion } from 'motion/react';
 
+import { CURVA, DURACAO } from './scale';
+
 /**
  * Os dois extremos da pulsação (009/FR-015, 009/contracts/motion.md §2.2).
  *
@@ -9,9 +11,6 @@ import { motion, useReducedMotion } from 'motion/react';
  */
 const OPACIDADE_CHEIA = 1;
 const OPACIDADE_MINIMA = 0.5;
-
-/** Ida e volta, em segundos. */
-const CICLO = 1.2;
 
 export interface PulsingBarProps {
   /** Dimensão e tinta da barra. Vêm do chamador, da camada de tokens. */
@@ -42,7 +41,18 @@ export function PulsingBar({ className }: PulsingBarProps) {
     <motion.div
       className={className}
       animate={{ opacity: [OPACIDADE_CHEIA, OPACIDADE_MINIMA, OPACIDADE_CHEIA] }}
-      transition={{ duration: CICLO, ease: 'easeInOut', repeat: Infinity, repeatType: 'loop' }}
+      /*
+        `pulse` e `through` vêm da escala desde a 010 (FR-005). O período e a
+        curva são **os mesmos** de antes: `through` são os pontos de controle
+        exatos do `easeInOut` da biblioteca, escritos como números para que o
+        espelho em CSS seja uma comparação de valores.
+      */
+      transition={{
+        duration: DURACAO.pulse,
+        ease: CURVA.through,
+        repeat: Infinity,
+        repeatType: 'loop',
+      }}
     />
   );
 }

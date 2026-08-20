@@ -2,11 +2,18 @@ import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 
 import type { ReactNode } from 'react';
 
+import { CURVA, DURACAO } from './scale';
+
 /**
  * O orçamento de 200ms, o mesmo que o guia de estilo já fixa para o conector da
  * trilha (009/FR-010a). O sistema tem um tempo de transição, não vários.
+ *
+ * Desde a 010 os dois valores vêm da escala e não de literais locais (FR-005).
+ * A fusão é **idêntica** à de antes: `standard` são os pontos de controle exatos
+ * do `easeOut` da biblioteca, que já era a curva padrão desta transição — o que
+ * muda é ela ter passado a ser declarada em vez de herdada.
  */
-const FUSAO = { duration: 0.2 } as const;
+const FUSAO = { duration: DURACAO.base, ease: CURVA.standard } as const;
 
 export interface CrossFadeProps {
   /** O bloco que **sai**. Fica fora do fluxo assim que `to` existe. */

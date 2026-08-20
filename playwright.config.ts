@@ -32,8 +32,13 @@ export default defineConfig({
     },
     {
       /**
-       * 009/SC-003: quem pediu para reduzir movimento recebe a mesma informação
-       * sem giro, sem pulsação e sem transição.
+       * 009/SC-003 e 010/FR-014, SC-005: quem pediu para reduzir movimento
+       * recebe a mesma informação sem giro, sem pulsação e sem transição.
+       *
+       * **Sem `testMatch`, de propósito** (010/T004). A 009 só tinha movimento no
+       * cartão de criação; a 010 leva movimento ao fluxo inteiro, e o SC-005 é
+       * medido tela a tela. Restringir este projeto a um arquivo deixaria a maior
+       * parte da supressão sem portão de ponta a ponta.
        *
        * Um projeto próprio, e não uma opção dentro de um teste, porque a
        * preferência é opção de **contexto** no Playwright — mudá-la a meio

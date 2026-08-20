@@ -30,6 +30,7 @@ import { clearSession, loadAllSessions, saveSession } from '@/services/storage/s
 import { useAppStore } from '@/store';
 import { attachDraftPersistence } from '@/store/draftPersistence';
 import { restoreDraft } from '@/store/restoreDraft';
+import { comFusaoDeTema } from '@/ui/motion/themeTransition';
 
 /**
  * Liga um cliente HTTP por provedor. A renovação só é injetada onde a capacidade
@@ -176,10 +177,32 @@ function useThemeRuntime(): void {
       document.documentElement.setAttribute('data-theme', theme);
     };
 
+    /*
+      A **primeira** aplicação não funde, e a distinção é a mesma do FR-024: ela
+      não é uma troca. `public/theme-boot.js` já escreveu o atributo antes da
+      primeira pintura, e esta chamada só confirma o que já está na tela —
+      fotografar e fundir dois quadros idênticos seria trabalho para não mostrar
+      nada.
+    */
     apply(useAppStore.getState().effectiveTheme);
 
     return useAppStore.subscribe((state, previous) => {
-      if (state.effectiveTheme !== previous.effectiveTheme) apply(state.effectiveTheme);
+      if (state.effectiveTheme === previous.effectiveTheme) return;
+
+      /*
+        Daqui em diante toda mudança é uma troca — pelo controle de tema ou pelo
+        sistema operacional mudando embaixo de nós —, e as duas merecem a fusão
+        (010/FR-029). A decisão de fundir ou não mora em `comFusaoDeTema`; aqui
+        só se declara o que muda.
+
+        Com a fusão, o atributo troca no **quadro seguinte**: a API fotografa
+        antes de aplicar. `state.effectiveTheme` é lido aqui e não relido lá
+        dentro justamente por isso — o valor que se aplica é o desta notificação,
+        e não o que estiver corrente um quadro depois.
+      */
+      comFusaoDeTema(() => {
+        apply(state.effectiveTheme);
+      });
     });
   }, []);
 }

@@ -8,7 +8,7 @@
  * contraste é responsabilidade dos tokens de `src/styles/index.css`.
  */
 
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import axe from 'axe-core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -25,7 +25,9 @@ import { ConnectionChip } from '@/features/connect/ConnectionChip';
 import { ReviewScreen } from '@/features/review/ReviewScreen';
 import { SkipButton } from '@/features/service/SkipButton';
 import { SummaryScreen } from '@/features/summary/SummaryScreen';
+import { ExecutionOrderPanel } from '@/features/destinations/ExecutionOrderPanel';
 import { ResetFlow } from '@/app/ResetFlow';
+import { Wizard } from '@/app/Wizard';
 import { Shell } from '@/app/Shell';
 import { t } from '@/i18n/pt-BR';
 import { configureProviderClient } from '@/services/providers/http';
@@ -848,5 +850,123 @@ describe('008/FR-013 — a posição na fila tem um anúncio só por tela', () =
     expect(raiz?.getAttribute('role')).toBeNull();
     expect(raiz?.getAttribute('aria-label')).toBeNull();
     expect(raiz?.getAttribute('aria-hidden')).toBeNull();
+  });
+});
+
+/**
+ * 010/FR-020, SC-011 — as superfícies animadas não introduzem violação.
+ *
+ * ## O momento que importa é o do meio
+ *
+ * Por 200ms existem **duas** telas de etapa em cena: dois cabeçalhos, dois
+ * conjuntos de controles e potencialmente dois `aria-current`. Auditar só o
+ * estado em repouso deixaria justamente a janela que a feature criou sem prova —
+ * e é nela que a árvore que sai precisa estar `inert` e `aria-hidden`.
+ *
+ * Nos dois temas, porque a árvore é idêntica entre eles e a única divergência
+ * autorizada é cromática: um resultado diferente entre os dois seria um defeito
+ * de estrutura, não de cor.
+ */
+describe.each(THEMES)('010/FR-020, SC-011 · superfícies animadas — tema %s', (theme) => {
+  const CLIENT_ID_010 = 'a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6';
+
+  /**
+   * O movimento **ligado**: é o único regime em que a árvore que sai existe.
+   *
+   * A preferência é lida uma vez por processo pela biblioteca, então o stub
+   * precisa estar de pé antes do primeiro render — e `matches: false` para
+   * `prefers-reduced-motion` é o que garante que há o que auditar.
+   */
+  function comMovimento(): void {
+    vi.stubGlobal(
+      'matchMedia',
+      (query: string): MediaQueryList =>
+        ({
+          matches: false,
+          media: query,
+          onchange: null,
+          addEventListener: () => undefined,
+          removeEventListener: () => undefined,
+          addListener: () => undefined,
+          removeListener: () => undefined,
+          dispatchEvent: () => false,
+        }) as unknown as MediaQueryList,
+    );
+  }
+
+  beforeEach(() => {
+    comMovimento();
+    document.documentElement.setAttribute('data-theme', theme);
+    useAppStore.setState({
+      step: 'credential',
+      destinations: { selected: ['spotify', 'youtube'], locked: false },
+      queue: makeQueue(['spotify', 'youtube']),
+      credentials: makeCredentials({ spotify: CLIENT_ID_010, youtube: YT_CLIENT_ID }),
+      sessions: makeSessions({ spotify: makeSession('spotify') }),
+      draftNotice: 'none',
+    });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    document.documentElement.removeAttribute('data-theme');
+  });
+
+  it('a troca de etapa, **com as duas árvores em cena**, passa no axe', async () => {
+    const { container } = render(<Wizard />);
+
+    await act(async () => {
+      useAppStore.getState().goToStep('destinations');
+    });
+
+    // O contrapeso: sem a árvore de saída em cena, este caso auditaria o
+    // repouso e não a transição.
+    expect(
+      container.querySelector('[inert]'),
+      'a transição não estava em curso — não há nada de novo a auditar',
+    ).not.toBeNull();
+
+    await semViolacoes(container);
+  });
+
+  it('a lista de revisão escalonada passa no axe', async () => {
+    const linhas = [makeLine(), makeLine(), makeLine()];
+    useAppStore.setState({
+      step: 'service',
+      lines: linhas,
+      destinations: { selected: ['spotify'], locked: true },
+      queue: makeQueue(['spotify'], {
+        runs: {
+          spotify: makeRun('spotify', {
+            phase: 'review',
+            lineIds: linhas.map((linha) => linha.id),
+            items: linhas.map((linha) => makeItem({ line: linha })),
+          }),
+        },
+      }),
+      search: { running: false, done: linhas.length, total: linhas.length, canceled: false },
+    });
+
+    const { container } = render(<ReviewScreen provider="spotify" />);
+
+    /*
+      O que se vigia aqui é a regra `list` do axe: `Stagger` renderiza a própria
+      `<ul>` e `Settle` não cria elemento nenhum justamente para que as linhas
+      continuem sendo filhas diretas dela. Um envoltório produziria `ul > div > li`,
+      que é violação **séria** (contracts/motion-catalog.md §2.2).
+    */
+    await semViolacoes(container);
+  });
+
+  it('o painel de fila com `Settle` passa no axe', async () => {
+    useAppStore.setState({ step: 'destinations' });
+    const { container } = render(<ExecutionOrderPanel />);
+    await semViolacoes(container);
+  });
+
+  it('a faixa de adesivos encenando passa no axe', async () => {
+    useAppStore.setState({ step: 'destinations' });
+    const { container } = render(<DestinationsStep />);
+    await semViolacoes(container);
   });
 });

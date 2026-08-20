@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 
 import { t } from '../src/i18n/pt-BR';
 import {
+  aguardarTransicao,
   botaoConectar,
   botaoCriar,
   fmt,
@@ -277,6 +278,17 @@ test.describe('007 — a casca colapsada', () => {
     await page.goto('/');
     await page.getByRole('button', { name: t.common.next, exact: true }).click();
     await page.getByRole('button', { name: t.common.next, exact: true }).click();
+    /*
+      A 010 deu direção à troca de etapa: por 200ms a tela que sai continua em
+      cena, fora do fluxo. Ela não desloca nada, mas **estende a área rolável**
+      do contêiner enquanto existe — um descendente `position: absolute` conta
+      para o `scrollHeight` do bloco que o contém.
+
+      Estas asserções são sobre o **repouso**, e sempre foram; sem esta espera
+      elas passariam a medir a soma das duas telas
+      (`010/contracts/surfaces.md` §1.1).
+    */
+    await aguardarTransicao(page);
   }
 
   test('a trilha some e o resumo compacto aparece', async ({ page }) => {

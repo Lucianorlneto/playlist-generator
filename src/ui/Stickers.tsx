@@ -1,3 +1,5 @@
+import { useLayoutEffect } from 'react';
+
 import boombox from '@/assets/imgs/Boombox.png';
 import cassette1 from '@/assets/imgs/Cassette 1.png';
 import cassette2 from '@/assets/imgs/Cassette 2.png';
@@ -11,6 +13,7 @@ import vinyl1 from '@/assets/imgs/Vinyl 1.png';
 import vinyl2 from '@/assets/imgs/Vinyl 2.png';
 
 import { cx } from './cx';
+import { Stagger } from './motion';
 
 /**
  * Os onze adesivos da etapa de Destinos (FR-034, FR-035, FR-049, FR-068).
@@ -48,6 +51,20 @@ import { cx } from './cx';
  * global de `index.css` já zera transição e animação; a inclinação de cada
  * adesivo é **geometria estática** — o desenho nasce torto —, e não movimento a
  * suprimir.
+ *
+ * A 010 acrescentou a entrada escalonada, e ela é suprimida pelo interruptor da
+ * própria primitiva: `Stagger` consulta `useReducedMotion()`, porque a regra
+ * global de CSS **não alcança** a biblioteca (010/FR-014).
+ *
+ * ## A entrada escalonada, uma vez por sessão (010/FR-032, FR-032a)
+ *
+ * Os onze assentam com `opacity` e `scale` por cima da inclinação, no papel
+ * `decor`. A inclinação não muda: `rotate` é propriedade individual no `style`
+ * em linha, e a biblioteca compõe `transform` — as duas convivem, e o ângulo
+ * final é o da tabela (`010/contracts/surfaces.md` §5.1).
+ *
+ * A camada continua `absolute inset-0` e nunca esteve no fluxo, de modo que
+ * nenhum quadro da entrada desloca conteúdo acima dela (FR-033).
  *
  * ## Tratamento por tema (FR-049)
  *
@@ -108,29 +125,108 @@ function percent(value: number, total: number): string {
   return `${((value / total) * 100).toFixed(3)}%`;
 }
 
+/**
+ * Já encenou nesta sessão? (FR-032a, `010/data-model.md` §4.1)
+ *
+ * Valor de **módulo, em memória**. Não entra no store porque nada além deste
+ * componente precisa dele, e uma fatia nova existiria só para carregar um
+ * booleano decorativo. Não é persistido porque um rascunho recuperado não deve
+ * carregar o que já foi encenado — e recarregar a página é uma sessão nova, em
+ * que reencenar é o comportamento certo.
+ */
+let jaEncenou = false;
+
+/**
+ * O sinalizador é lido e escrito por **função**, e nunca por atribuição direta
+ * dentro do componente.
+ *
+ * Não é estilo: `react-hooks/globals` recusa reatribuir um módulo durante o
+ * render, e com razão — sob `StrictMode` o render é invocado duas vezes em
+ * desenvolvimento, e a segunda invocação leria o valor que a primeira acabou de
+ * escrever. A leitura fica no render, a escrita fica no efeito, e as duas
+ * invocações enxergam o mesmo estado.
+ */
+function primeiraAparicao(): boolean {
+  return !jaEncenou;
+}
+
+function marcarEncenado(): void {
+  jaEncenou = true;
+}
+
+/**
+ * Devolve o sinalizador ao estado de sessão nova.
+ *
+ * **Existe para os testes**, e o prefixo diz isso. A alternativa seria exportar
+ * o próprio sinalizador e deixá-lo gravável de fora, o que daria a qualquer tela
+ * o poder de reencenar a decoração — exatamente o que o FR-032a recusa.
+ */
+export function __reencenarAdesivos(): void {
+  jaEncenou = false;
+}
+
 export function Stickers() {
+  /*
+    Quem monta primeiro encena; a segunda visita a Destinos recebe os adesivos já
+    postos (FR-032a).
+
+    A marcação vai no efeito, e não no render, e isso importa: sob `StrictMode` o
+    render roda duas vezes em desenvolvimento, e marcar durante ele faria a
+    segunda passada decidir o contrário da primeira — a primeira aparição nunca
+    encenaria. O efeito roda depois das duas, e nenhum render posterior desta
+    montagem reconsulta o sinalizador.
+  */
+  const encenar = primeiraAparicao();
+  useLayoutEffect(marcarEncenado, []);
+
+  const pecas = STICKERS.map((sticker) => (
+    <img
+      key={sticker.src}
+      src={sticker.src}
+      alt=""
+      loading="lazy"
+      decoding="async"
+      className={cx('sticker absolute', sticker.treatment)}
+      style={{
+        left: percent(sticker.x, GRID_WIDTH),
+        top: percent(sticker.y, GRID_HEIGHT),
+        width: percent(sticker.width, GRID_WIDTH),
+        // A inclinação gira em torno do centro; o arquivo gira em torno do
+        // canto. A diferença, nos ângulos usados aqui (4° a 15°), é de
+        // poucos pixels — e girar pelo canto deslocaria cada peça da
+        // posição que a tabela acima declara.
+        rotate: `${sticker.tilt}deg`,
+      }}
+    />
+  ));
+
+  /*
+    Fora da primeira aparição, a camada é a mesma de sempre — sem primitiva no
+    caminho. Montar `Stagger` e pedir que ele não anime seria maquinário ligado
+    para não fazer nada, e a segunda visita é o caso comum.
+  */
+  if (!encenar) {
+    return (
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
+        {pecas}
+      </div>
+    );
+  }
+
+  /*
+    `Stagger` **é** a camada: ele renderiza o contêiner e anima os filhos diretos.
+    Um envoltório por adesivo criaria bloco de contenção para os
+    `position: absolute` deles — a composição inteira desabaria no canto de uma
+    caixa de altura zero (contracts/motion-catalog.md §2.2).
+  */
   return (
-    <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
-      {STICKERS.map((sticker) => (
-        <img
-          key={sticker.src}
-          src={sticker.src}
-          alt=""
-          loading="lazy"
-          decoding="async"
-          className={cx('sticker absolute', sticker.treatment)}
-          style={{
-            left: percent(sticker.x, GRID_WIDTH),
-            top: percent(sticker.y, GRID_HEIGHT),
-            width: percent(sticker.width, GRID_WIDTH),
-            // A inclinação gira em torno do centro; o arquivo gira em torno do
-            // canto. A diferença, nos ângulos usados aqui (4° a 15°), é de
-            // poucos pixels — e girar pelo canto deslocaria cada peça da
-            // posição que a tabela acima declara.
-            rotate: `${sticker.tilt}deg`,
-          }}
-        />
-      ))}
-    </div>
+    <Stagger
+      role="decor"
+      as="div"
+      decorative
+      className="pointer-events-none absolute inset-0 overflow-hidden"
+    >
+      {pecas}
+    </Stagger>
   );
 }

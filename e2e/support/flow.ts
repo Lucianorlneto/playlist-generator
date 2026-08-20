@@ -25,6 +25,27 @@ export function fmt(template: string, values: Record<string, string | number>): 
   );
 }
 
+/**
+ * Espera a troca de etapa **assentar** antes de a suíte medir qualquer coisa.
+ *
+ * A 010 deu direção à troca de etapa (010/FR-021): por `base` — 200ms — a tela
+ * que sai continua em cena, fora do fluxo, marcada `inert`. Ela não desloca
+ * nada, mas **estende a área rolável** do contêiner enquanto existe, porque um
+ * descendente `position: absolute` conta para o `scrollHeight` do bloco que o
+ * contém.
+ *
+ * Toda medição geométrica feita logo depois de um clique de avanço, portanto,
+ * cai dentro dessa janela e mede a soma das duas telas. Esperar aqui, no
+ * caminho compartilhado, é o que mantém as suítes de layout medindo o repouso —
+ * que é o que elas sempre quiseram medir.
+ *
+ * A espera é pelo **desaparecimento do nó**, e não por um relógio: um `timeout`
+ * fixo apodrece no dia em que o degrau mudar.
+ */
+export async function aguardarTransicao(page: Page): Promise<void> {
+  await expect(page.locator('[inert]')).toHaveCount(0);
+}
+
 /** Bloco de credencial de um serviço na etapa 1 — evita ambiguidade entre os dois. */
 export function secaoCredencial(page: Page, service: string) {
   const heading =
@@ -38,12 +59,14 @@ export function secaoCredencial(page: Page, service: string) {
 export async function avancarDaCredencial(page: Page): Promise<void> {
   await expect(page.getByRole('heading', { name: t.credential.heading })).toBeVisible();
   await page.getByRole('button', { name: t.common.next, exact: true }).click();
+  await aguardarTransicao(page);
 }
 
 /** Etapa 2 → 3. Os destinos com credencial já vêm marcados (SC-003). */
 export async function avancarDosDestinos(page: Page): Promise<void> {
   await expect(page.getByRole('heading', { name: t.destinations.heading })).toBeVisible();
   await page.getByRole('button', { name: t.common.next, exact: true }).click();
+  await aguardarTransicao(page);
 }
 
 /** Etapa 3 → ciclo do primeiro serviço. A lista é informada uma vez só (FR-013). */
@@ -55,6 +78,7 @@ export async function informarLista(page: Page, lista: string): Promise<void> {
   // recomeço que a `006` pôs no cabeçalho de todas as etapas. Sem isto o
   // localizador resolve para dois elementos.
   await page.getByRole('button', { name: t.input.start, exact: true }).click();
+  await aguardarTransicao(page);
 }
 
 /** Abertura → entrada, parando antes do ciclo do primeiro serviço. */

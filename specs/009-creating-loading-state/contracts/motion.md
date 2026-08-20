@@ -9,6 +9,30 @@ abrir a porta para a próxima animação e a seguinte.
 
 ---
 
+> ## ⚠️ Os §1 e §3 foram substituídos pela feature 010
+>
+> `specs/010-app-motion-system/contracts/motion-catalog.md` é a definição normativa em
+> vigor para o **ponto de importação** (§1 abaixo) e para a **fronteira de propriedades
+> animadas** (§3 abaixo). Onde os dois divergirem, vale o da 010.
+>
+> **Os três movimentos desta feature não mudaram de comportamento** (010/FR-005): o giro,
+> a pulsação e a fusão cruzada continuam com o mesmo período, a mesma curva e o mesmo
+> orçamento. O que mudou foi de onde os valores vêm — hoje de `src/ui/motion/scale.ts`, e
+> não de constantes locais.
+>
+> O que a 010 substituiu, e por quê:
+>
+> | Desta feature | Passa a valer | Razão |
+> | --- | --- | --- |
+> | §1 — o diretório exporta **exatamente três** | um **catálogo nomeado** de seis, verificado por identidade | a contagem nunca foi a invariante: ela quebra quando um movimento entra **com** revisão, e não diz qual sumiu quando quebra (010/research §R3) |
+> | §3 — **nenhuma** animação de posição | `Settle` é a única autorizada, atrás de um portão de ociosidade declarado por quem chama | a proibição não foi afrouxada: foi trocada por uma fronteira verificável, preservando a **razão** dela — animação de posição fora de todo momento com requisição em voo (010/research §R8) |
+>
+> O §5 (movimento reduzido) permanece válido **palavra por palavra** e a 010 o cita como
+> herdado. `tests/unit/motion-surface.spec.ts` foi renomeado para
+> `tests/unit/motion-catalog.spec.ts`.
+
+---
+
 ## 1. Um único ponto de importação, com fechadura
 
 **`src/ui/motion/` é o único diretório de `src/` autorizado a importar de `motion` ou

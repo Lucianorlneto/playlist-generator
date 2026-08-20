@@ -140,10 +140,12 @@ export function ConnectionChip({ provider, navigate }: ConnectionChipProps) {
       <Icon
         role={PROVIDER_ICON[provider]}
         className={cx(
-          'text-section',
+          // A saturação do glifo funde no degrau `quick` (010/FR-029): é
+          // microinteração de periferia, e nos 200ms de `base` a mudança de um
+          // chip no canto oposto termina depois que o olhar já passou.
+          'text-section transition-colors duration-quick motion-reduce:transition-none',
           state === 'no-credential' ? 'text-ink-muted' : BRAND_INK[provider],
           state === 'disconnected' ? 'opacity-60' : null,
-          'bg-blue'
         )}
       />
 
@@ -160,7 +162,11 @@ export function ConnectionChip({ provider, navigate }: ConnectionChipProps) {
         <span
           aria-hidden="true"
           className={cx(
-            'rounded-pill size-2 shrink-0',
+            // O indicador funde a cor no mesmo degrau (010/FR-029). O que
+            // distingue os estados continua sendo **forma** — preenchido,
+            // vazado, ausente —, e a fusão não pode produzir um quadro em que a
+            // forma deixe de ser legível.
+            'rounded-pill size-2 shrink-0 transition-colors duration-quick motion-reduce:transition-none',
             state === 'connected'
               ? 'bg-state-live'
               : 'border-rule-strong border bg-transparent',

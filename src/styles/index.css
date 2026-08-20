@@ -255,6 +255,51 @@
      CSS não lê constante de JavaScript e `@media` não aceita `var()`.
      `tests/components/shell.spec.tsx` falha se as duas divergirem. */
   --breakpoint-shell: 64rem;
+
+  /* --- Movimento: o espelho da escala (010/contracts/motion-scale.md §2) ---
+
+     **A origem é `src/ui/motion/scale.ts`, não este bloco.** O movimento do
+     catálogo roda em JavaScript e precisa dos números como números; o CSS
+     precisa deles como texto, para `transition-colors` de `Button` e `Toggle` e
+     para o conector da trilha. Ler o CSS de dentro de uma primitiva colocaria
+     acesso ao DOM na camada errada e não funcionaria em `happy-dom`
+     (research §R5).
+
+     A duplicação é aceita **porque é verificada**:
+     `tests/unit/motion-scale.spec.ts` lê as duas camadas e falha por divergência
+     e também por token presente em apenas uma delas — o molde de
+     `tests/unit/no-secrets.spec.ts` (FR-006, SC-003). */
+
+  /* Não há `--transition-duration-*: initial` aqui, e a ausência é deliberada:
+     ao contrário da cor, `duration-350` **não** depende de token nenhum — o
+     utilitário funcional do Tailwind acrescenta `ms` a qualquer inteiro cru e
+     emite CSS válido. Nenhum reset alcança esse caminho. Quem fecha a escala é
+     `tp/no-raw-motion-values`, que recusa todo `duration-*` fora dos cinco
+     nomes abaixo (contracts/motion-scale.md §3). */
+  --transition-duration-quick: 120ms;
+  --transition-duration-base: 200ms;
+  --transition-duration-settle: 320ms;
+  --transition-duration-theme: 400ms;
+  --transition-duration-spin: 1000ms;
+  --transition-duration-pulse: 1200ms;
+
+  /* `initial` derruba `--ease-in`, `--ease-out` e `--ease-in-out` do Tailwind,
+     que são de outra linhagem — o `--ease-out` dele é `cubic-bezier(0, 0, 0.2, 1)`,
+     e adotá-lo mudaria a pulsação e o giro que a 009 já mediu. Os três abaixo
+     são os mesmos pontos de controle de `CURVA` em `scale.ts`. */
+  --ease-*: initial;
+
+  --ease-standard: cubic-bezier(0, 0, 0.58, 1);
+  --ease-through: cubic-bezier(0.42, 0, 0.58, 1);
+  --ease-linear: linear;
+
+  /* O que o espelho corrige de passagem (contracts/motion-scale.md §2).
+
+     Até aqui `transition-colors` em `Button`, `Toggle` e `ConnectionChip`
+     herdava os **150ms padrão do Tailwind** — um valor que o sistema nunca
+     escolheu e que não aparece em documento nenhum. Depois desta feature o
+     sistema tem uma duração padrão porque decidiu ter, e ela é `base`. */
+  --default-transition-duration: 200ms;
 }
 
 /**
@@ -655,6 +700,21 @@
   &:focus-visible {
     outline: 2px solid var(--accent-text);
     outline-offset: 2px;
+
+    /*
+      **O anel de foco aparece pronto, sempre** (007/FR-016, 010/FR-016).
+
+      `transition-colors` do Tailwind 4 inclui `outline-color`, e muitos dos
+      controles que carregam este utilitário também carregam aquele. Com a 010
+      fixando `--default-transition-duration` em `base`, o anel passou a levar
+      200ms para chegar à cor final — um indicador de foco que esmaece para
+      dentro é pior do que um que aparece, e quem navega por teclado atravessa
+      controles bem mais rápido do que isso.
+
+      A exclusão é do `outline`, e só dele: a cor de fundo e a de texto do mesmo
+      controle continuam fundindo no degrau que a superfície escolheu.
+    */
+    transition-property: none;
   }
 }
 
@@ -746,6 +806,57 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/**
+ * A fusão da troca de tema (010/FR-029; degrau `theme` da escala).
+ *
+ * ## Por que a transição é de **vista**, e não de cor
+ *
+ * O caminho óbvio seria uma `transition-colors` global. Ela recolore o que é
+ * cor e **não alcança o resto**: o tratamento por tema dos onze adesivos, o véu
+ * da fotografia do painel e a textura do fundo ambiente trocam por regra de
+ * `[data-theme]`, não por propriedade animável. Uma fusão pela metade — os
+ * substratos deslizando e as imagens saltando — é pior do que a troca seca.
+ *
+ * A transição de vista funde o **resultado renderizado**, o que inclui imagem,
+ * filtro e mistura. E ela é exatamente proporcional ao que o guia de estilo já
+ * afirma: a árvore de zonas e componentes é idêntica entre os temas, e a única
+ * divergência autorizada é cromática — logo a fusão é pura cor, sem nada
+ * entrando ou saindo de cena.
+ *
+ * Custo zero quando não há troca: a API só roda quando alguém a chama, e
+ * navegador sem suporte cai na troca seca de sempre (`src/ui/motion/themeTransition.ts`).
+ */
+::view-transition-group(root),
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: var(--transition-duration-theme);
+  animation-timing-function: var(--ease-standard);
+}
+
+/*
+  `group` entra na lista **pelo mesmo motivo que os outros dois**, e não por
+  simetria: sem ele o navegador anima o grupo nos 250ms padrão dele — um sexto
+  tempo que o sistema nunca escolheu, exatamente o que a escala existe para não
+  ter. Aqui ele não move nada, porque a árvore é idêntica entre os temas e só a
+  cor muda; o que se corrige é a origem do número, não um defeito visível.
+*/
+
+/**
+ * A supressão, e ela é **redundante de propósito**.
+ *
+ * `src/ui/motion/themeTransition.ts` já consulta a preferência e nem chama a
+ * API sob movimento reduzido. Esta regra é a segunda metade: a regra global
+ * acima usa o seletor universal, e `*` **não casa pseudo-elemento** — sem estas
+ * três linhas, a única fusão do produto que a preferência não alcançaria seria
+ * justamente a que cobre a tela inteira.
+ */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none !important;
   }
 }
 

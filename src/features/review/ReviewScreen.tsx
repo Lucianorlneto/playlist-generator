@@ -6,6 +6,7 @@ import { SkipButton } from '@/features/service/SkipButton';
 import { format, t } from '@/i18n/pt-BR';
 import { useAppStore } from '@/store';
 import { StepHeading } from '@/ui/StepHeading';
+import { Settle, Stagger } from '@/ui/motion';
 
 import { MatchRow } from './MatchRow';
 import { PlaylistConfigForm } from './PlaylistConfigForm';
@@ -29,6 +30,9 @@ export interface ReviewScreenProps {
 export function ReviewScreen({ provider }: ReviewScreenProps) {
   const stepToken = useAppStore((state) => state.stepToken);
   const run = useAppStore((state) => state.queue.runs[provider] ?? null);
+  // O portão de ociosidade de `Settle` (010/FR-027): durante a busca há
+  // requisição em voo, e animação de posição fica do lado de fora da fronteira.
+  const search = useAppStore((state) => state.search);
 
   // Estabilizado: `run?.items ?? []` cria um array novo quando não há execução,
   // o que invalidaria os `useMemo` abaixo a cada render.
@@ -81,11 +85,32 @@ export function ReviewScreen({ provider }: ReviewScreenProps) {
         Nada se perde em acessibilidade: o elemento era `aria-hidden`, e cada
         campo da linha continua rotulado por texto próprio.
       */}
-      <ul aria-label={t.review.listLabel} className="flex flex-col gap-2">
-        {ordered.map((item) => (
-          <MatchRow key={item.line.id} item={item} provider={provider} />
-        ))}
-      </ul>
+      {/*
+        A lista entra escalonada e acomoda depois (010/FR-026, FR-027).
+
+        **Uma `<ul>` só, com duas primitivas.** `Settle` não cria elemento
+        nenhum: ele pendura a referência dele no contêiner que `Stagger`
+        renderiza. Dois envoltórios produziriam `ul > div > li`, que é violação
+        séria na regra `list` do axe (contracts/motion-catalog.md §2.2).
+
+        O portão de `Settle` é passado **mesmo sendo sempre verdadeiro aqui** —
+        na revisão a busca já terminou. Passá-lo assim mesmo é o que o mantém
+        auditável em vez de decorativo: quem lê esta linha vê qual estado abre a
+        animação de posição, e o teste de componente afirma os dois lados
+        (contracts/motion-catalog.md §4).
+      */}
+      <Settle idle={search.running === false}>
+        <Stagger
+          role="enter"
+          as="ul"
+          label={t.review.listLabel}
+          className="flex flex-col gap-2"
+        >
+          {ordered.map((item) => (
+            <MatchRow key={item.line.id} item={item} provider={provider} />
+          ))}
+        </Stagger>
+      </Settle>
 
       <PlaylistConfigForm provider={provider} />
 
